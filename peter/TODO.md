@@ -6,6 +6,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 |---|---|---|---|
 | P1 | [International shipping online](#p1-international-shipping-online) | ⏸ Later | The US-only site going live, then a talk with William and Rin |
 | P2 | [Return labels on the Ship page](#p2-return-labels-on-the-ship-page) | ✅ Done Nov 14 | Pay-only-if-used is D9 in FOR-WILLIAM.md |
+| P3 | [Insurance terms: do's and don'ts, limits, what can't be insured](#p3-insurance-terms-dos-and-donts-limits-what-cant-be-insured) | ⏸ Later | Research each carrier's rules first |
 
 ---
 
@@ -71,3 +72,43 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 1. Charge the return label up front, or only if it's used? (Up front is simpler; only-if-used depends on the carrier.)
 2. Same service as the outgoing label, or the cheapest?
 3. Email it to the sender, or to the receiver to keep in the box?
+
+---
+
+## P3. Insurance terms: do's and don'ts, limits, what can't be insured
+
+**Added:** 2026-11-14 13:08 CST. **Status:** later, not started. Nothing goes on the website until each carrier's rules have been read and checked.
+
+**What it is:** A short, plain-English insurance disclaimer on the Ship page, next to the insurance box, with a "Read the insurance terms" link that opens a window (like the hazardous materials guide). It tells customers before they pay:
+- **Do's:** pack it properly, keep the receipt or proof of value, keep the box and packing if it arrives damaged, report problems quickly.
+- **Don'ts:** don't over-declare the value, don't ship items the carrier won't cover, don't throw away the damaged box before the claim is decided.
+- **How much can be insured**, with which carrier and service.
+- **What can't be insured** at all, and what's only covered up to a lower amount.
+- **How a claim works** and how long the customer has to file.
+
+**Why it's waiting:** each carrier (USPS, UPS, FedEx) has its own rules, limits and exclusions, and they change. They have to be read from each carrier's own published terms, not guessed. A wrong promise here could cost the store money on a denied claim.
+
+**What the site does today, for reference:**
+- Insurance is offered up to **$5,000** declared value; the first **$100** is the carrier's built-in cover at no charge (both set at /counter/rules, stored in `site/src/data/addons.json`).
+- Since Nov 14, the insured amount is added to the label as the carrier's own insurance or declared value (see EDIT-LOG.md).
+- "What's inside" and the value are asked only when insurance is ticked.
+
+### Research checklist, per carrier (USPS, UPS, FedEx)
+
+- [ ] The **maximum** that can be insured or declared, by service. Does it differ for envelopes, flat rate packaging, or Ground versus Express?
+- [ ] What the carrier **covers for free** (built-in cover), by service.
+- [ ] Items that are **never covered** (for example cash, and other things the carrier lists).
+- [ ] Items covered only **up to a lower limit** (for example jewelry, art, collectibles, or other "unusual value" items, if the carrier has such a rule).
+- [ ] **Packing rules** a claim depends on (what counts as "properly packed").
+- [ ] **Proof** the carrier asks for in a claim: receipts, photos, the box.
+- [ ] **Deadlines** to report damage or loss and to file a claim.
+- [ ] Who files: the customer or the store (the store's account bought the label).
+- [ ] Whether the store's **$5,000** maximum should be lower for some carriers or services.
+
+### Then decide
+
+1. The wording of the disclaimer and the do's and don'ts.
+2. Whether the website should **block** insurance that a carrier won't honor (over a carrier's limit, or an excluded item), not just warn.
+3. Whether the customer ticks **"I've read the insurance terms"** before paying.
+4. How it fits with the open insurance questions in [FOR-WILLIAM.md](FOR-WILLIAM.md): D1 (the fee covers the carrier's cost?), D7 ("we handle your claim" as a selling point), D8 (which insurance the counter uses today).
+5. A lawyer or the franchise reviews the final wording.

@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 14, 2026, 13:05 CST.
+**Last updated:** November 14, 2026, 13:08 CST.
 
 ## How Peter is working
 
@@ -61,6 +61,7 @@ The site runs on demo rates, so these follow each carrier's published format but
 | D7 | **Idea:** "We handle your claim" as a selling point for insurance, on the site and at the counter. The site already has a claims tracker (/counter/claims). Free with insurance, or a fee? | Peter, William | Only promise what's delivered; check with Goin' Postal, which has its own insurance arrangement |
 | D8 | Which insurance does the counter (Rate Pro) use today, carrier or a third-party insurer? Could the website use the same one? | William, Goin' Postal | Peter's understanding: the franchise has customers file claims with each carrier themselves |
 | D10 | **Packaging pictures:** the general, USPS and UPS ones are cropped from Pirate Ship's site (Peter's call, for now). Replace them before going live: official carrier photos through the store's carrier or Goin' Postal accounts, or store-drawn ones like the FedEx set. | Peter, William | Files in `site/public/packaging/`; swapping is replacing files |
+| D12 | **Insurance terms on the website:** a disclaimer with do's and don'ts, each carrier's limits, and what can't be insured. Needs each carrier's rules researched first. | Peter, William | [TODO P3](TODO.md#p3-insurance-terms-dos-and-donts-limits-what-cant-be-insured). Ties in with D1, D7, D8 |
 | D11 | The packaging list says "Ask for one at our counter". Does the store keep USPS, UPS and FedEx packaging on hand to give out? | Peter | Change the wording if not |
 | D9 | Return labels "charged only if used", like Pirate Ship? Needs the postal service's pay-on-use returns on the store's account, and a way to bill the customer later. Business accounts could be billed on their monthly statement; walk-in website customers would need a saved card. | Peter, William, Rin | For the prices meeting. Today: charged up front, and the page says so |
 

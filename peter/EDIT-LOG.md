@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 13:08 CST · To-do: insurance terms, do's and don'ts, limits
+
+- **Asked for:** "Let's add to the to-do list about insurance, like a disclaimer with do's and don'ts, how much we can actually insure, what is not insurable. I don't want to add it yet because we would have to look at all the regulations per carrier."
+- **What changed:** Added **P3** to the to-do list: what the disclaimer should cover, why it's waiting, what the site does today, a research checklist to fill in for each carrier (limits, free cover, items never covered, lower-limit items, packing rules, proof, deadlines, who files), and the decisions after that. Also added as **D12** in the meeting notes for William. Nothing on the website changed.
+- **Why:** So the insurance terms are written from each carrier's real rules, not guessed, before customers see them.
+- **Files:** [TODO.md](TODO.md) (P3), [FOR-WILLIAM.md](FOR-WILLIAM.md) (D12)
+- **How to check it:** On GitHub, open `peter/TODO.md` on the `peter` branch and scroll to P3.
+
 ## 2026-11-14 13:05 CST · "What's inside" only asked with insurance
 
 - **Asked for:** "For the What's inside box near the insurance tickbox, let's only make that box pop up if they check the insurance tickbox, because that's the only time it matters."
