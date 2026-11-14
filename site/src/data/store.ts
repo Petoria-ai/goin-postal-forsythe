@@ -24,13 +24,13 @@ export const defaults: StoreFacts = {
   id: 'forsythe',
   name: "Goin' Postal Forsythe",
   address: "1800 Forsythe Ave Ste 2, Monroe, LA 71201",
-  phone: "(318) 000-0000", // TODO: real store number
+  phone: "(318) 570-2132", // Peter, Nov 14 2026
   email: "wbp93623@gmail.com",
-  // Ship-from address printed on labels. TODO: phone.
+  // Ship-from address printed on labels.
   origin: {
     contact_name: "Goin' Postal Forsythe",
     company_name: "Goin' Postal Forsythe",
-    contact_phone: "+13180000000",
+    contact_phone: "+13185702132",
     contact_email: "wbp93623@gmail.com",
     line_1: "1800 Forsythe Ave Ste 2",
     city: "Monroe",
@@ -41,9 +41,10 @@ export const defaults: StoreFacts = {
   formEndpoint: "https://formspree.io/f/REPLACE_ME", // TODO: create a Formspree form and paste its ID
   reviewUrl: "", // TODO: the Google review link from the Business Profile (issue 7); blank sends no review ask
   hours: [
-    { days: "Monday to Friday", key: "days.monfri", open: "9:00 am to 6:00 pm" }, // TODO: confirm
-    { days: "Saturday", key: "days.sat", open: "10:00 am to 2:00 pm" }, // TODO: confirm
-    { days: "Sunday", key: "days.sun", open: "Closed", openKey: "hours.closed" },
+    // Peter, Nov 14 2026
+    { days: "Monday to Friday", key: "days.monfri", open: "9:00 am to 6:30 pm" },
+    { days: "Saturday", key: "days.sat", open: "9:00 am to 3:00 pm" },
+    { days: "Sunday", key: "days.sun", open: "10:00 am to 3:00 pm" },
   ],
   services: [
     { key: "ship", name: "Shipping", blurb: "UPS, FedEx, USPS and DHL under one roof. We compare rates so you pay the least." },

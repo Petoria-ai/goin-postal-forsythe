@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 15:39 CST · Store hours and phone number
+
+- **Asked for:** "Change my hours to 9 AM to 6:30 PM Monday to Friday, Saturdays 9 am to 3 pm and Sundays 10 am to 3 pm. And my store phone number is (318) 570-2132."
+- **What changed:**
+  - **Hours:** Monday to Friday 9:00 am to 6:30 pm; Saturday 9:00 am to 3:00 pm; Sunday 10:00 am to 3:00 pm (Sunday was "Closed").
+  - **Phone:** (318) 570-2132 (was the placeholder (318) 000-0000). It shows wherever the site lists the store's phone, and it's now the store's contact number on shipping labels (+1 318 570 2132), which carriers use if there's a problem with a package.
+  - The same facts in `site/stores/forsythe.json`, the template for the next store.
+- **Not changed:** the printed counter flyer leaves blank HOURS and PHONE lines to fill in by hand; the business-card designer's sample card keeps its made-up number.
+- **Files:** [store facts](../site/src/data/store.ts), [store file](../site/stores/forsythe.json)
+- **How to check it:** `git pull`, refresh the home page: "Hours and directions" in the right column shows the new hours and phone. The Contact page shows them too.
+- **Checks run:** 166 tests pass, the site builds, and the built home and contact pages show the new hours and phone.
+
 ## 2026-11-14 15:28 CST · New look: Theme B, Friendly & warm, with the Goin' Postal logo
 
 - **Asked for:** "Let's do B" (from the three theme ideas), with the company logo at the top left. The logo is the file the franchise supplies.
