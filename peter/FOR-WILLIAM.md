@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 14, 2026, 14:41 CST.
+**Last updated:** November 14, 2026, 14:54 CST.
 
 ## How Peter is working
 
@@ -36,6 +36,7 @@ All on the `peter` branch, all with tests passing and the site building. Details
 | Extra services: signature, Media Mail, irregular, hazardous materials, saved packages | new `lib/options.ts`, `shipping/engine.ts`, all carrier adapters, `api/orders.ts`, `lib/validate.ts`, `shipping/types.ts`, i18n files | `Parcel` gained `options`; the rate cache key includes them; `applyOptions` filters rates in `getQuotes` |
 | Insurance bought from the carrier with the label | new `lib/labelExtras.ts`, `lib/fulfil.ts`, all carrier adapters, `lib/easyship.ts` | `Parcel` gained `insured_usd`, set only at label time |
 | Packaging picker: own packaging or a carrier's (USPS flat rate, UPS Express, FedEx Express), with pictures | new `lib/packaging.ts`, `lib/validate.ts`, `shipping/engine.ts`, all carrier adapters, `lib/easyship.ts` (3 new demo rates), `public/packaging/` | `Parcel` gained `packaging`; carrier packaging overrides the typed size; `forPackaging` in `getQuotes` filters rates and explains when nothing fits |
+| **Passwords** for customer accounts (the email link stays as "forgot password") | new `lib/password.ts` (PBKDF2-SHA256, 100k rounds), `lib/session.ts` (`createSignupToken`, `consumeLoginTokenFull`, fail counters in KV), `api/account.ts` (`password_login`, `signup`, `set_password`), `pages/account/index.astro`, `shipping/store.ts` (`customer_logins`: `getLogin`, `setPasswordHash`, `markEmailVerified`; hashes blanked in the export), `db/schema.sql` | A sign-up link carries the pending hash and applies it only when opened, so a password can never be attached to an unproven email; opening any link records `email_verified_at` |
 | Log in button in the header; **business cards: review page, account to order**, then Stripe Checkout | `layouts/Base.astro` (button, fetches `GET /api/account`), `api/account.ts` (new GET: signed-in first name only), `pages/cards/index.astro` (Review order; the order waits in localStorage `gp-card-order`), new `pages/cards/review.astro`, `api/cards.ts` (`action: preview` prices without saving; ordering returns 401 without a session; needs `proofed`) | The customer's name, email and phone come from the account; Stripe Checkout and the confirmation page are unchanged |
 | Tracking menu; recently tracked; **buying online needs an account**; phone on first purchase; marketing consent | `layouts/Base.astro`, `pages/track/index.astro`, `api/track.ts`, `pages/ship/index.astro`, `api/orders.ts`, `pages/account/index.astro`, `api/account.ts`, `lib/session.ts` (`safeNext`), new `lib/consent.ts`, `shipping/store.ts`, `db/schema.sql` (2 new tables) | `/api/orders` now returns 401 without a session (counter, API and batch paths unchanged); new tables `customer_tracked` and `marketing_consents`, in `EXPORT_TABLES` with memory branches; the sign-in link carries `next` |
 | Home page "Track a package" box; carrier links on /track for numbers the store didn't ship | `pages/index.astro`, `pages/track/index.astro`, new `lib/carrierTrack.ts`, `styles/global.css` | The box is a plain GET form to `/track?q=`; carrier detection is by number shape only, client side |
@@ -53,7 +54,7 @@ The site runs on demo rates, so these follow each carrier's published format but
 - [ ] Easyship doesn't receive signature or hazmat yet (only insurance). Decide whether that matters while Easyship is the bridge.
 - [ ] **Stripe keys connected and a test-card order run through** for both labels and business cards (demo mode skips Stripe's page).
 - [ ] **Email (Resend) connected before going live.** Buying online now needs the sign-in email, so without email nobody can buy online.
-- [ ] **Re-run the database setup** for the two new tables: `npm run db:local` on each computer, `npm run db:remote` on the live site.
+- [ ] **Re-run the database setup** for the new tables (`customer_tracked`, `marketing_consents`, `customer_logins`): `npm run db:local` on each computer, `npm run db:remote` on the live site.
 - [ ] **Packaging codes** on real accounts: USPS rate indicators (FS, FB, PL, FE, FA, FP, E4, E6, PA), UPS packaging codes (01, 2a, 2b, 2c, 03, 04), FedEx packaging types; flat rate prices come back as flat rate. The sizes in `lib/packaging.ts` are approximate.
 - [ ] **Return labels** on a real account: the "included" return label is bought from the receiver's address back to the sender, and shows in the carrier's records.
 
@@ -75,6 +76,7 @@ The site runs on demo rates, so these follow each carrier's published format but
 | D14 | **Accounts to buy online:** Peter's call, for email and text marketing. Fewer quick one-off buyers may finish checkout; rates stay open to everyone so they see prices first. Revisit if online sales drop. | Peter, William | Counter walk-ups don't need an account |
 | D15 | **Texting platform:** Twilio (already in the code for shipping texts) or a marketing platform, number type and registration, the consent wording's "up to 4 a month". | Peter, William, Rin | [TODO P4](TODO.md#p4-find-a-texting-sms-platform-for-messages-and-marketing) |
 | D16 | The header now has both a **Log in** button and an **Account** tab. Keep both, or drop the Account tab? | Peter, William | Kept both for now |
+| D17 | **"Sign in with Google"** (and maybe Apple): needs the real web address, a privacy policy page, and Peter's Google Cloud setup. | Peter | [TODO P5](TODO.md#p5-sign-in-with-google) |
 | D11 | The packaging list says "Ask for one at our counter". Does the store keep USPS, UPS and FedEx packaging on hand to give out? | Peter | Change the wording if not |
 | D9 | Return labels "charged only if used", like Pirate Ship? Needs the postal service's pay-on-use returns on the store's account, and a way to bill the customer later. Business accounts could be billed on their monthly statement; walk-in website customers would need a saved card. | Peter, William, Rin | For the prices meeting. Today: charged up front, and the page says so |
 

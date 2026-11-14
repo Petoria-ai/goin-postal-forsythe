@@ -487,3 +487,8 @@ html:root[data-contrast="high"] .login-btn.in { background: #000; color: #fff; b
 .confirm .check input { margin-top: 2px; flex: none; }
 .secure { font-size: .9rem; margin: 0; }
 @media (max-width: 760px) { .review-grid { grid-template-columns: 1fr; } }
+
+/* Password sign-in and sign-up (Peter, Nov 14 2026) */
+.auth { display: grid; gap: 10px; align-content: start; }
+.auth h3, .pwf h3 { margin: 0; }
+.pwf { display: grid; gap: 8px; margin: 16px 0; }

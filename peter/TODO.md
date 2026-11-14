@@ -8,6 +8,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P2 | [Return labels on the Ship page](#p2-return-labels-on-the-ship-page) | ✅ Done Nov 14 | Pay-only-if-used is D9 in FOR-WILLIAM.md |
 | P3 | [Insurance terms: do's and don'ts, limits, what can't be insured](#p3-insurance-terms-dos-and-donts-limits-what-cant-be-insured) | ⏸ Later | Research each carrier's rules first |
 | P4 | [Find a texting (SMS) platform for messages and marketing](#p4-find-a-texting-sms-platform-for-messages-and-marketing) | ⏳ Next to research | Pick the platform, then register the store's texting |
+| P5 | ["Sign in with Google"](#p5-sign-in-with-google) | ⏸ Later | The site's real web address, a privacy policy page, and Peter's Google setup |
 
 ---
 
@@ -152,3 +153,28 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 2. Register the store's texting (10DLC or toll-free).
 3. Connect it: shipping texts through the site; marketing lists from customers who said yes (`marketing_consents`, newest choice per customer).
 4. Write the first message and a calendar (ties in with the year-round shipping calendar, agenda item 19).
+
+---
+
+## P5. "Sign in with Google"
+
+**Added:** 2026-11-14 14:54 CST. **Status:** later.
+
+**What it is:** A "Sign in with Google" button next to the email and password sign-in. One tap creates or opens the account, with an email Google has already confirmed, so there's no confirmation email and no password. It eases sign-up, especially on phones. "Sign in with Apple" can follow the same way.
+
+**Is it hard?** The code is about a day, and it can be built ahead and stay hidden until the keys are added. Most of the work is setup that only Peter (or William) can do, because it's done in the store's own Google account.
+
+### What Peter has to do (about an hour, once)
+
+- [ ] **The site's real web address** has to exist first: Google only sends people back to a registered address.
+- [ ] **A privacy policy page** on the site (Google requires one; texting registration in P4 needs one too). Claude can draft it; it should be checked by whoever handles the store's legal questions.
+- [ ] In **Google Cloud Console** (console.cloud.google.com), with the store's Google account: create a project, then **OAuth consent screen**: app name (Goin' Postal Forsythe), support email, logo, the site's address, the privacy policy link; ask only for the basic scopes (email, name).
+- [ ] **Credentials → OAuth client ID** (type "Web application"), with the redirect address Claude gives (for example `https://<site>/api/auth/google`).
+- [ ] Put the **Client ID** and **Client secret** into the site's secrets (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`). Never paste the secret into a chat or a file in the repo.
+- [ ] Publish the consent screen (basic email-and-name sign-in usually needs no Google review).
+
+### What Claude builds
+
+- [ ] The button on the Account page, the Ship page's sign-in prompt and the card review page.
+- [ ] The sign-in flow with Google's security checks (state and nonce), matching the Google email to an existing customer, so counter customers keep their history.
+- [ ] Tests, and a note in the edit log and meeting notes.

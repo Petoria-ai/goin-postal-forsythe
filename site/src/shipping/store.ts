@@ -121,6 +121,7 @@ const mem = {
   customerAddresses: [] as CustomerAddress[],
   tracked: [] as TrackedRow[],
   consents: [] as ConsentRow[],
+  logins: new Map<string, LoginRow>(),
   returnLinks: [] as ReturnLink[],
   products: [] as ProductRow[],
   stockMoves: [] as StockMove[],
@@ -150,7 +151,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -184,6 +185,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'customer_addresses': return mem.customerAddresses;
     case 'customer_tracked': return mem.tracked;
     case 'marketing_consents': return mem.consents;
+    case 'customer_logins': return [...mem.logins.values()];
     case 'return_links': return mem.returnLinks;
     case 'benchmark_log': return mem.benchmarks;
     case 'products': return mem.products;
@@ -197,7 +199,7 @@ const memTable = (name: ExportTable): unknown[] => {
 export async function exportTable(env: Env, name: ExportTable): Promise<Record<string, unknown>[]> {
   if (!(EXPORT_TABLES as readonly string[]).includes(name)) throw new Error(`No such table: ${name}`);
   const rows = env.DB ? (await env.DB.prepare(`SELECT * FROM ${name}`).all<Record<string, unknown>>()).results : (memTable(name) as Record<string, unknown>[]).map((r) => ({ ...r }));
-  for (const r of rows) for (const k of ['pin_hash', 'key_hash', 'webhook_secret']) if (k in r) r[k] = '';
+  for (const r of rows) for (const k of ['pin_hash', 'key_hash', 'webhook_secret', 'pw_hash', 'pw_salt']) if (k in r) r[k] = '';
   return rows;
 }
 /** Row counts for every table, for the export page. */
@@ -1308,6 +1310,35 @@ export async function removeTracked(env: Env, customerId: string, query: string)
   const q = query.trim().toUpperCase();
   if (env.DB) { await env.DB.prepare('DELETE FROM customer_tracked WHERE customer_id = ?1 AND query = ?2').bind(customerId, q).run(); return; }
   mem.tracked = mem.tracked.filter((r) => !(r.customer_id === customerId && r.query === q));
+}
+
+// ---- passwords and email confirmation (Peter, Nov 14 2026) ---------------------------------------------
+export interface LoginRow { customer_id: string; pw_hash: string | null; pw_salt: string | null; pw_iter: number | null; email_verified_at: string | null; updated_at: string }
+export async function getLogin(env: Env, customerId: string): Promise<LoginRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM customer_logins WHERE customer_id = ?1').bind(customerId).first<LoginRow>()) ?? null;
+  return mem.logins.get(customerId) ?? null;
+}
+/** Set or replace a customer's password hash. Callers must have proven the email first (a link) or be signed in. */
+export async function setPasswordHash(env: Env, customerId: string, h: { hash: string; salt: string; iter: number }): Promise<void> {
+  const t = now();
+  if (env.DB) {
+    await env.DB.prepare(`INSERT INTO customer_logins (customer_id, pw_hash, pw_salt, pw_iter, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)
+      ON CONFLICT (customer_id) DO UPDATE SET pw_hash = excluded.pw_hash, pw_salt = excluded.pw_salt, pw_iter = excluded.pw_iter, updated_at = excluded.updated_at`).bind(customerId, h.hash, h.salt, h.iter, t).run();
+    return;
+  }
+  const r = mem.logins.get(customerId);
+  mem.logins.set(customerId, { customer_id: customerId, pw_hash: h.hash, pw_salt: h.salt, pw_iter: h.iter, email_verified_at: r?.email_verified_at ?? null, updated_at: t });
+}
+/** The customer just proved the email is theirs. */
+export async function markEmailVerified(env: Env, customerId: string): Promise<void> {
+  const t = now();
+  if (env.DB) {
+    await env.DB.prepare(`INSERT INTO customer_logins (customer_id, email_verified_at, updated_at) VALUES (?1, ?2, ?2)
+      ON CONFLICT (customer_id) DO UPDATE SET email_verified_at = excluded.email_verified_at, updated_at = excluded.updated_at`).bind(customerId, t).run();
+    return;
+  }
+  const r = mem.logins.get(customerId);
+  mem.logins.set(customerId, { customer_id: customerId, pw_hash: r?.pw_hash ?? null, pw_salt: r?.pw_salt ?? null, pw_iter: r?.pw_iter ?? null, email_verified_at: t, updated_at: t });
 }
 
 // ---- marketing consent (Peter, Nov 14 2026) -----------------------------------------------------------

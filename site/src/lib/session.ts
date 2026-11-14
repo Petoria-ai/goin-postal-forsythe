@@ -22,10 +22,36 @@ export async function createLoginToken(env: Env, email: string): Promise<string>
 }
 /** The email a token was made for, and the token is burnt. Null when unknown or used. */
 export async function consumeLoginToken(env: Env, token: string): Promise<string | null> {
+  return (await consumeLoginTokenFull(env, token))?.email ?? null;
+}
+
+/** A sign-up or set-password link (Peter, Nov 14 2026): the email, plus the password hash and name to apply only
+ *  once the link is opened, so nobody can put a password on an email they don't own. Thirty minutes. */
+export async function createSignupToken(env: Env, email: string, pending: { pw: { hash: string; salt: string; iter: number }; name?: string }): Promise<string> {
+  const token = hex(crypto.getRandomValues(new Uint8Array(24)).buffer);
+  await kv(env).put(`login:${token}`, JSON.stringify({ email: email.trim().toLowerCase(), ...pending }), { expirationTtl: 30 * 60 });
+  return token;
+}
+/** What a link carries: always the email; a pending password and name for sign-up links. Burnt on use. */
+export async function consumeLoginTokenFull(env: Env, token: string): Promise<{ email: string; pw?: { hash: string; salt: string; iter: number }; name?: string } | null> {
   if (!/^[0-9a-f]{48}$/.test(token)) return null;
-  const email = await kv(env).get(`login:${token}`);
-  if (email) await kv(env).delete(`login:${token}`);
-  return email;
+  const v = await kv(env).get(`login:${token}`);
+  if (!v) return null;
+  await kv(env).delete(`login:${token}`);
+  if (v.startsWith('{')) { try { const j = JSON.parse(v); return j?.email ? j : null; } catch { return null; } }
+  return { email: v };
+}
+
+/** Failed password sign-ins (Peter, Nov 14 2026): after `max` in fifteen minutes the key is locked until the window ends. */
+export async function tooManyFails(env: Env, key: string, max: number): Promise<boolean> {
+  return Number(await kv(env).get(`fail:${key}`) ?? 0) >= max;
+}
+export async function recordFail(env: Env, key: string): Promise<void> {
+  const n = Number(await kv(env).get(`fail:${key}`) ?? 0) + 1;
+  await kv(env).put(`fail:${key}`, String(n), { expirationTtl: 15 * 60 });
+}
+export async function clearFails(env: Env, key: string): Promise<void> {
+  await kv(env).delete(`fail:${key}`);
 }
 
 /** The cookie value for a customer: id.expiry.signature. */

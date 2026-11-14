@@ -3,7 +3,8 @@ export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { store } from '../../data/store';
 import { env } from '../../lib/env';
-import { consumeLoginToken, readSession, signSession, sessionCookie, safeNext } from '../../lib/session';
+import { consumeLoginTokenFull, readSession, signSession, sessionCookie, safeNext } from '../../lib/session';
+import { upsertCustomer, setPasswordHash, markEmailVerified, getLogin, setCustomerName } from '../../shipping/store';
 import { marketingConsent } from '../../shipping/store';
 import { CONSENT_WORDING } from '../../lib/consent';
 import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
@@ -11,8 +12,16 @@ import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accou
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
 const token = Astro.url.searchParams.get('token');
 if (token) {
-  const email = await consumeLoginToken(env, token);
+  const t = await consumeLoginTokenFull(env, token);
+  const email = t?.email ?? null;
+  // A sign-up link makes the account if it's new, and only now, with the email proven, sets the password.
+  if (t?.pw && email && !(await findCustomer(env, email, null))) await upsertCustomer(env, { name: t.name || 'Customer', email });
   const c = email ? await findCustomer(env, email, null) : null;
+  if (c) {
+    await markEmailVerified(env, c.id);
+    if (t?.pw) await setPasswordHash(env, c.id, t.pw);
+    if (t?.name && (!c.name || c.name === 'Customer')) await setCustomerName(env, c.id, t.name, null);
+  }
   if (c) {
     Astro.cookies; // Astro needs the cookies API touched before set-cookie on a redirect in some adapters
     return new Response(null, { status: 302, headers: { Location: safeNext(Astro.url.searchParams.get('next')), 'Set-Cookie': sessionCookie(await signSession(env, c.id), Astro.url.protocol === 'https:') } });
@@ -39,17 +48,29 @@ const consent = me ? await marketingConsent(env, me.id) : null;
 ---
 <Base title={`Your account · ${store.name}`} description="Sign in with your email, keep your addresses, see your orders, ship again in two clicks.">
   <section class="hero">
-    <h1 data-i18n="acct.h1">{me ? 'Your account' : 'Sign in'}</h1>
-    <p class="lead" data-i18n={me ? 'acct.lead.in' : 'acct.lead'}>{me ? 'Your addresses and orders. Ship again in two clicks.' : 'No password. Type your email and we send a link that signs you in.'}</p>
+    <h1 data-i18n={me ? 'acct.h1' : 'acct.signin'}>{me ? 'Your account' : 'Sign in'}</h1>
+    <p class="lead" data-i18n={me ? 'acct.lead.in' : 'acct.lead'}>{me ? 'Your addresses and orders. Ship again in two clicks.' : 'Sign in with your email and password, or create a free account.'}</p>
     {expired && <p class="card" data-i18n="acct.expired">That link has expired or was already used. Ask for a new one.</p>}
   </section>
   {!me ? (
     <div class="grid">
-      <form id="login" class="card">
+      <!-- Sign in with a password, or create an account (Peter, Nov 14 2026). The email link stays as "forgot password". -->
+      <form id="login" class="card auth">
+        <h3 data-i18n="acct.signin">Sign in</h3>
         <label><span data-i18n="f.email">Email</span> <input name="email" type="email" required autocomplete="email" /></label>
-        <button class="btn" type="submit" data-i18n="acct.send">Email me a sign-in link</button>
-        <p class="muted" data-i18n="acct.newhere">New here? The same link creates your free account.</p>
+        <label><span data-i18n="acct.pw">Password</span> <input name="password" type="password" required autocomplete="current-password" /></label>
+        <button class="btn" type="submit" data-i18n="acct.signin">Sign in</button>
+        <p><button type="button" class="linkish" id="forgotBtn" data-i18n="acct.forgot">Forgot your password? Email me a sign-in link</button></p>
         <p id="msg" role="alert"></p>
+      </form>
+      <form id="signup" class="card auth">
+        <h3 data-i18n="acct.create.h">Create a free account</h3>
+        <label><span data-i18n="f.name">Name</span> <input name="name" maxlength="60" autocomplete="name" /></label>
+        <label><span data-i18n="f.email">Email</span> <input name="email" type="email" required autocomplete="email" /></label>
+        <label><span data-i18n="acct.pw">Password</span> <input name="password" type="password" required minlength="8" autocomplete="new-password" /></label>
+        <p class="muted" data-i18n="acct.pw.hint">At least 8 characters. A short sentence is easy to remember.</p>
+        <button class="btn kraft" type="submit" data-i18n="acct.create">Create an account</button>
+        <p id="smsg" role="status"></p>
       </form>
       <div class="card">
         <h3 data-i18n="acct.why">What an account is for</h3>
@@ -71,6 +92,13 @@ const consent = me ? await marketingConsent(env, me.id) : null;
           <p class="btnrow"><button class="btn small" type="submit" data-i18n="acct.save">Save</button> <button class="btn small kraft" type="button" id="logout" data-i18n="acct.logout">Sign out</button></p>
         </form>
         <!-- Marketing choices (Peter, Nov 14 2026): change them anytime; each change is logged with its wording. -->
+        <!-- Password (Peter, Nov 14 2026): set one after signing in by link, or change it. -->
+        <form id="pwf" class="pwf">
+          <h3 data-i18n="acct.pw">Password</h3>
+          <p class="muted" data-i18n="acct.pw.set.p">Set a password to sign in quickly next time, or change the one you have.</p>
+          <label><span data-i18n="acct.pw">Password</span> <input name="password" type="password" required minlength="8" autocomplete="new-password" /></label>
+          <p class="btnrow"><button class="btn small" type="submit" data-i18n="acct.pw.save">Save password</button></p>
+        </form>
         <fieldset class="mkt" id="mktf">
           <legend data-i18n="mkt.h">Deals and news (optional)</legend>
           <label class="check"><input type="checkbox" data-channel="email" checked={consent?.email} /> <span data-i18n="mkt.email">{CONSENT_WORDING.email}</span></label>
@@ -119,15 +147,51 @@ const consent = me ? await marketingConsent(env, me.id) : null;
     </div>
   )}
   <script>
+    import { t } from '../../i18n';
     const $ = (id: string) => document.getElementById(id);
     const msg = () => $('msg')!;
     async function api(body: Record<string, unknown>) {
       const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await res.json(); if (!res.ok) throw new Error(j.error); return j;
     }
+    // Where to go after signing in: the page the customer came from (a path on this site only), else this account page.
+    const nextParam = new URLSearchParams(location.search).get('next') ?? undefined;
+    const goNext = (n?: string) => { location.href = n && /^\/(?![\/\\])/.test(n) ? n : (nextParam && /^\/(?![\/\\])/.test(nextParam) ? nextParam : '/account'); };
+    const codeMsg = (e: any) => ({ bad_login: t('acct.badlogin'), locked: t('acct.locked'), pw_short: t('acct.weak'), pw_long: t('acct.weak'), pw_common: t('acct.weak') } as Record<string, string>)[e.code] ?? e.message;
+    async function apiCoded(body: Record<string, unknown>) {
+      const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const j = await res.json().catch(() => ({})); if (!res.ok) throw Object.assign(new Error(j.error ?? 'Try again'), { code: j.code }); return j;
+    }
+    const devLink = (el: HTMLElement, link?: string) => { if (link) { const a = document.createElement('a'); a.href = link; a.textContent = ' (dev: open it)'; el.append(a); } };
     $('login')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
-      const email = (document.querySelector('#login [name=email]') as HTMLInputElement).value;
+      const f = ev.target as HTMLFormElement;
+      try { const j = await apiCoded({ action: 'password_login', email: (f.querySelector('[name=email]') as HTMLInputElement).value, password: (f.querySelector('[name=password]') as HTMLInputElement).value, next: nextParam }); goNext(j.next); }
+      catch (e: any) { msg().className = 'err'; msg().textContent = codeMsg(e); }
+    });
+    $('signup')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const f = ev.target as HTMLFormElement, sm = $('smsg')!;
+      const val = (n: string) => (f.querySelector(`[name=${n}]`) as HTMLInputElement).value;
+      try { const j = await apiCoded({ action: 'signup', name: val('name'), email: val('email'), password: val('password'), next: nextParam }); sm.className = 'card'; sm.textContent = t('acct.confirm.sent'); devLink(sm, j.mock_link); f.querySelector('button[type=submit]')!.setAttribute('disabled', ''); }
+      catch (e: any) { sm.className = 'err'; sm.textContent = codeMsg(e); }
+    });
+    $('pwf')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const f = ev.target as HTMLFormElement, input = f.querySelector('[name=password]') as HTMLInputElement;
+      try { await apiCoded({ action: 'set_password', password: input.value }); input.value = ''; msg().className = ''; msg().textContent = t('acct.pw.saved'); }
+      catch (e: any) { msg().className = 'err'; msg().textContent = codeMsg(e); }
+    });
+    $('forgotBtn')?.addEventListener('click', async () => {
+      const emailEl = document.querySelector('#login [name=email]') as HTMLInputElement;
+      if (!emailEl.value.trim() || !emailEl.checkValidity()) { emailEl.reportValidity(); return; }
+      try { const j = await apiCoded({ action: 'login', email: emailEl.value.trim(), next: nextParam }); msg().className = ''; msg().textContent = t('ship.gate.sent'); devLink(msg(), j.mock_link); }
+      catch (e: any) { msg().className = 'err'; msg().textContent = codeMsg(e); }
+    });
+    // (the email-link sign-in form below is kept for pages that still post it)
+    $('login-link')?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const email = (document.querySelector('#login-link [name=email]') as HTMLInputElement).value;
       try { const j = await api({ action: 'login', email, next: new URLSearchParams(location.search).get('next') ?? undefined }); msg().className = ''; msg().textContent = 'Check your email for the link.'; if (j.mock_link) { const a = document.createElement('a'); a.href = j.mock_link; a.textContent = ' (dev: open it)'; msg().appendChild(a); } }
       catch (e: any) { msg().className = 'err'; msg().textContent = e.message; }
     });

@@ -145,10 +145,7 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
         <div id="signinGate" class="card gate" data-note="Buying needs a free account (Peter, Nov 14 2026). Rates are open to all; the form and rates are kept while the customer opens the sign-in link.">
           <h3 data-i18n="ship.gate.h">Sign in to buy your label</h3>
           <p data-i18n="ship.gate.p">Labels are bought with a free account, so your shipments and tracking stay in one place. We keep this form and your rates while you open the link in your email.</p>
-          <label><span data-i18n="f.email">Email</span> <input name="gate_email" type="email" autocomplete="email" /></label>
-          <p class="btnrow"><button type="button" class="btn" id="gateBtn" data-i18n="acct.send">Email me a sign-in link</button></p>
-          <p class="muted" data-i18n="acct.newhere">New here? The same link creates your free account.</p>
-          <p id="gateMsg" role="status"></p>
+          <p class="btnrow"><a class="btn" href="/account?next=%2Fship%3Fresume%3D1" data-gate data-i18n="acct.signin">Sign in</a> <a class="btn kraft" href="/account?next=%2Fship%3Fresume%3D1" data-gate data-i18n="acct.create">Create an account</a></p>
         </div>
       )}
       {me && !me.phone && <label><span data-i18n="ship.acctphone">Your mobile number (for problems with this shipment)</span> <input name="acct_phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="318 555 0100" /></label>}
@@ -465,17 +462,8 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
       pkgPaint(); retPaint(); hzPaint(); insPaint();
       return true;
     }
-    document.getElementById('gateBtn')?.addEventListener('click', async () => {
-      const emailEl = buy.querySelector('[name=gate_email]') as HTMLInputElement, gm = document.getElementById('gateMsg')!;
-      const email = emailEl.value.trim();
-      if (!emailEl.checkValidity() || !email) { emailEl.reportValidity(); return; }
-      saveDraft();
-      const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', email, next: '/ship?resume=1' }) });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) { gm.className = 'err'; gm.textContent = j.error ?? 'Try again'; return; }
-      gm.className = 'card'; gm.textContent = t('ship.gate.sent');
-      if (j.mock_link) { const a = document.createElement('a'); a.href = j.mock_link; a.textContent = ' (dev: open it)'; gm.append(a); }
-    });
+    // Sign in or create an account on the account page; the whole form is kept on this device and comes back after.
+    document.querySelectorAll<HTMLAnchorElement>('[data-gate]').forEach((a) => a.addEventListener('click', () => saveDraft()));
     if (new URLSearchParams(location.search).has('resume') && restoreDraft()) f.requestSubmit();
 
     buy.addEventListener('submit', async (e) => {

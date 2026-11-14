@@ -4,6 +4,26 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 14:54 CST · Passwords for customer accounts, with the email link kept as a backup
+
+- **Asked for:** "Why is it 'email me a sign-in link'? They can't just put a password?" Peter picked: add passwords, keep the link for "forgot password". Also asked about "Sign in with Google" (added as P5 on the to-do list).
+- **What changed:**
+  - **The Account page** now has two boxes: **Sign in** (email and password, with "Forgot your password? Email me a sign-in link") and **Create a free account** (name, email, password).
+  - **Creating an account** asks for a password, then sends one confirmation email; opening the link signs the customer in and brings them back to where they were (the Ship page with its form, or the card review page with the design). After that it's email and password every time.
+  - **Existing customers** (from the counter or the old email-link sign-in) "create an account" with their usual email: the confirmation link adds the password to their existing account, so their history stays.
+  - **Signed-in customers** can set or change their password on the Account page. **Forgot password:** the email link signs them in, then they set a new one.
+  - **The Ship page and the card review page** now show **Sign in** and **Create an account** buttons (the form or design is kept on the device meanwhile).
+  - All new and changed text in all 14 languages.
+- **Security:**
+  - Passwords are stored only as a one-way scrambled code (PBKDF2-SHA256, salted, 100,000 rounds), never as typed, and the staff export blanks those codes.
+  - **A password only takes effect once the email is proven** (the confirmation link), so nobody can put a password on someone else's email and see their orders.
+  - Five wrong passwords for an email (or thirty from one connection) lock sign-in for fifteen minutes; the message is the same whether the email exists or not; sign-ups from one connection are limited too.
+  - Passwords need 8 or more characters and can't be one of the most common passwords or the email itself.
+- **Before going live:** email (Resend) must be connected, since sign-up confirmation and "forgot password" use it. The new table needs the database setup re-run (`npm run db:local`, and `db:remote` on the live site).
+- **Files:** [password helpers (new)](../site/src/lib/password.ts), [tests (new)](../site/tests/password.test.ts), [sign-in links and lockout](../site/src/lib/session.ts), [account API](../site/src/pages/api/account.ts), [account page](../site/src/pages/account/index.astro), [store](../site/src/shipping/store.ts), [database table](../site/db/schema.sql), [ship page](../site/src/pages/ship/index.astro), [card review page](../site/src/pages/cards/review.astro), [text, 14 languages](../site/src/i18n/strings.ts), [styles](../site/src/styles/global.css), [TODO.md](TODO.md) (P5)
+- **How to check it:** `git pull`, `npm run db:local` (new table), `npm run dev`. Open **Log in**, create an account (the confirmation email prints in the PowerShell window; the page also shows a "dev: open it" link). Sign out from the Account page, then sign back in with the password.
+- **Checks run:** 166 tests pass (6 new), the type check is clean, the site builds, the database setup runs twice cleanly. In a real browser: sign-up from the Ship page back to a filled-in form; a common password refused; wrong and right passwords; changing the password; the lockout on the sixth try even with the right password; an existing customer's new password doing nothing until their email link is opened, then working with their history kept; "forgot password" sending the link.
+
 ## 2026-11-14 14:41 CST · Log in button, and business cards: review page, secure payment, confirmation
 
 - **Asked for:** "A login button on the far right top of the page, so it allows customers to immediately log in", so that once logged in they can use all the features, like business cards; and for business cards, "a second page like a secure payment section ... and a confirmation page for them to hit confirm order." Peter picked: a review page on our site, then Stripe's secure payment page; anyone can design, sign in to order.

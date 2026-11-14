@@ -443,6 +443,18 @@ CREATE TABLE IF NOT EXISTS marketing_consents (
 );
 CREATE INDEX IF NOT EXISTS marketing_consents_customer ON marketing_consents(customer_id, channel, at);
 
+-- Customer passwords (Peter, Nov 14 2026): PBKDF2-SHA256, salted, never the password itself (lib/password.ts).
+-- A password is only ever set after the email was confirmed by a link, or by a customer already signed in.
+-- email_verified_at: when the customer last proved the email is theirs (a link opened, or confirmed sign-up).
+CREATE TABLE IF NOT EXISTS customer_logins (
+  customer_id TEXT PRIMARY KEY REFERENCES customers(id),
+  pw_hash TEXT,
+  pw_salt TEXT,
+  pw_iter INTEGER,
+  email_verified_at TEXT,
+  updated_at TEXT NOT NULL
+);
+
 -- Merchant returns portal (to-do T22): a public link per business account; its customers make prepaid return labels billed to the account.
 CREATE TABLE IF NOT EXISTS return_links (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

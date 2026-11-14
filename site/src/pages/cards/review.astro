@@ -53,10 +53,7 @@ const needName = !!me && (!me.name || me.name === 'Customer');
         <div id="signinGate" class="gate">
           <h3 data-i18n="cardsrev.gate.h">Sign in to order your cards</h3>
           <p data-i18n="cardsrev.gate.p">Card orders are kept on your free account, with your pickup code. Your design waits here while you open the link in your email.</p>
-          <label><span data-i18n="f.email">Email</span> <input name="gate_email" type="email" autocomplete="email" /></label>
-          <p class="btnrow"><button type="button" class="btn" id="gateBtn" data-i18n="acct.send">Email me a sign-in link</button></p>
-          <p class="muted" data-i18n="acct.newhere">New here? The same link creates your free account.</p>
-          <p id="gateMsg" role="status"></p>
+          <p class="btnrow"><a class="btn" href="/account?next=%2Fcards%2Freview" data-i18n="acct.signin">Sign in</a> <a class="btn kraft" href="/account?next=%2Fcards%2Freview" data-i18n="acct.create">Create an account</a></p>
         </div>
       )}
       <p id="err" class="err" role="alert"></p>
@@ -94,16 +91,7 @@ const needName = !!me && (!me.name || me.name === 'Customer');
         .catch((e) => { $('err').textContent = e.message; });
       document.addEventListener('langchange', () => { if (priced) paintLines(priced); });
 
-      // Signed out: sign in here; the design stays on this device and the link comes back to this page.
-      document.getElementById('gateBtn')?.addEventListener('click', async () => {
-        const emailEl = document.querySelector('[name=gate_email]') as HTMLInputElement, gm = $('gateMsg');
-        if (!emailEl.value.trim() || !emailEl.checkValidity()) { emailEl.reportValidity(); return; }
-        const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', email: emailEl.value.trim(), next: '/cards/review' }) });
-        const j = await res.json().catch(() => ({}));
-        if (!res.ok) { gm.className = 'err'; gm.textContent = j.error ?? 'Try again'; return; }
-        gm.className = 'card'; gm.textContent = t('ship.gate.sent');
-        if (j.mock_link) { const a = document.createElement('a'); a.href = j.mock_link; a.textContent = ' (dev: open it)'; gm.append(a); }
-      });
+      // Signed out: the Sign in and Create an account buttons go to the account page; the design waits on this device.
 
       // Signed in: Confirm and pay opens Stripe's secure page; after paying, Stripe returns to the confirmation page.
       document.getElementById('confirm')?.addEventListener('submit', async (ev) => {

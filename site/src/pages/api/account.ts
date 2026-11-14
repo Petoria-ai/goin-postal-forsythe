@@ -2,7 +2,9 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json, parseAddress } from '../../lib/validate';
-import { createLoginToken, readSession, clearCookie, safeNext } from '../../lib/session';
+import { createLoginToken, readSession, clearCookie, safeNext, createSignupToken, tooManyFails, recordFail, clearFails, signSession, sessionCookie } from '../../lib/session';
+import { hashPassword, verifyPassword, passwordProblem } from '../../lib/password';
+import { getLogin, setPasswordHash } from '../../shipping/store';
 import { sendEmail } from '../../shipping/notify';
 import { store } from '../../data/store';
 import { upsertCustomer, getCustomer, findCustomer, saveCustomerAddress, deleteCustomerAddress, setCustomerName, normalizePhone, logAudit } from '../../shipping/store';
@@ -36,6 +38,37 @@ export const POST: APIRoute = async ({ request }) => {
       const mock = await sendEmail(env, email, `Sign in to ${store.name}`, `Click to sign in to your ${store.name} account (the link works once, for fifteen minutes):\n\n${link}\n\nIf you did not ask for this, ignore it.`);
       return json({ ok: true, sent: true, ...(mock ? { mock_link: link } : {}) });
     }
+    // Password sign-in (Peter, Nov 14 2026). The same answer whether the email is unknown or the password wrong;
+    // five misses for an email, or thirty from one address, lock it for fifteen minutes.
+    if (b.action === 'password_login') {
+      const email = String(b.email ?? '').trim().toLowerCase();
+      const ip = request.headers.get('cf-connecting-ip') ?? 'local';
+      if (await tooManyFails(env, `e:${email}`, 5) || await tooManyFails(env, `ip:${ip}`, 30)) return json({ error: 'Too many tries. Wait 15 minutes, or use the email link.', code: 'locked' }, 429);
+      const c = email ? await findCustomer(env, email, null) : null;
+      const login = c ? await getLogin(env, c.id) : null;
+      const ok = login?.pw_hash ? await verifyPassword(String(b.password ?? ''), { hash: login.pw_hash, salt: login.pw_salt!, iter: login.pw_iter ?? 0 }) : (await hashPassword('timing-equaliser', 1000), false);
+      if (!c || !ok) { await recordFail(env, `e:${email}`); await recordFail(env, `ip:${ip}`); return json({ error: 'Email or password is wrong.', code: 'bad_login' }, 401); }
+      await clearFails(env, `e:${email}`);
+      const secure = new URL(request.url).protocol === 'https:';
+      return new Response(JSON.stringify({ ok: true, next: safeNext(b.next) }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': sessionCookie(await signSession(env, c.id), secure) } });
+    }
+    // Create an account, or put a password on an existing email: the password waits inside a link sent to the
+    // email, and is set only when the link is opened. Same reply whatever the email, so nobody learns who has an account.
+    if (b.action === 'signup') {
+      const email = String(b.email ?? '').trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'A valid email is needed' }, 400);
+      const problem = passwordProblem(String(b.password ?? ''), email);
+      if (problem) return json({ error: 'Use at least 8 characters, and not a common password.', code: `pw_${problem}` }, 400);
+      const ip = request.headers.get('cf-connecting-ip') ?? 'local';
+      if (await tooManyFails(env, `su:${ip}`, 20)) return json({ error: 'Too many tries. Wait 15 minutes.', code: 'locked' }, 429);
+      await recordFail(env, `su:${ip}`); // counts sign-ups from one address, so the form can't be used to flood inboxes
+      const pw = await hashPassword(String(b.password));
+      const token = await createSignupToken(env, email, { pw, name: String(b.name ?? '').trim().slice(0, 60) || undefined });
+      const next = safeNext(b.next);
+      const link = `${env.SITE_URL}/account?token=${token}${next !== '/account' ? `&next=${encodeURIComponent(next)}` : ''}`;
+      const mock = await sendEmail(env, email, `Confirm your email for ${store.name}`, `Click to confirm your email and finish setting up your ${store.name} account (the link works once, for thirty minutes):\n\n${link}\n\nIf you did not ask for this, ignore it; nothing changes.`);
+      return json({ ok: true, sent: true, ...(mock ? { mock_link: link } : {}) });
+    }
     if (b.action === 'logout') return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json', 'Set-Cookie': clearCookie() } });
     const id = await readSession(env, request.headers.get('cookie'));
     const c = id ? await getCustomer(env, id) : null;
@@ -54,6 +87,14 @@ export const POST: APIRoute = async ({ request }) => {
       const contact = b.channel === 'email' ? c.email : c.phone;
       if (granted && !contact) return json({ error: b.channel === 'sms' ? 'Add your mobile number first' : 'Add your email first' }, 400);
       await recordConsent(env, { customer_id: c.id, channel: b.channel, granted, contact, wording: loggedWording(b.channel, b.lang), source: 'account_page' });
+      return json({ ok: true });
+    }
+    // Set or change the password while signed in (also how "forgot password" ends: sign in by link, then set a new one).
+    if (b.action === 'set_password') {
+      const problem = passwordProblem(String(b.password ?? ''), c.email ?? '');
+      if (problem) return json({ error: 'Use at least 8 characters, and not a common password.', code: `pw_${problem}` }, 400);
+      await setPasswordHash(env, c.id, await hashPassword(String(b.password)));
+      await logAudit(env, { id: null, name: `customer ${c.id}` }, 'customer.password', c.id).catch(() => {});
       return json({ ok: true });
     }
     if (b.action === 'save_address') {
