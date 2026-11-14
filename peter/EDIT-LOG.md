@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 13:05 CST · "What's inside" only asked with insurance
+
+- **Asked for:** "For the What's inside box near the insurance tickbox, let's only make that box pop up if they check the insurance tickbox, because that's the only time it matters."
+- **What changed:**
+  - **What's inside** moved from "What is it?" into the insurance box, under **Value in USD**. It's hidden until **Insure it for the full value** is ticked.
+  - When insurance is ticked, it's required, along with the value: Get rates asks for both.
+  - Without insurance, the contents aren't sent at all; carriers get "Merchandise" on the label, as they already did when it was left blank.
+- **Why:** One less box for most customers. The contents matter for an insurance claim, so they're asked exactly then.
+- **Files:** [ship page](../site/src/pages/ship/index.astro)
+- **How to check it:** `git pull`, open http://localhost:4321/ship. No "What's inside" box at first. Tick **Insure it for the full value**: Value in USD and What's inside appear. Untick it: both disappear.
+- **Checks run:** 147 tests pass, the site builds. In a real browser: hidden at first, shown and required with insurance, sent only with insurance, hidden and not sent again after unticking.
+
 ## 2026-11-14 13:00 CST · Packaging picker with pictures on the Ship page
 
 - **Asked for:** a packaging choice like Pirate Ship's (USPS flat rate boxes and envelopes, UPS Express packaging), with pictures so customers see what they're shipping in. "Use the photos I have for now, and draw the ones for FedEx."

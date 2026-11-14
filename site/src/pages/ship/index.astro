@@ -92,13 +92,14 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
         <label class="dim"><span data-i18n="ship.width">Width (in)</span> <input name="width_in" type="number" min="1" step="any" required /></label>
         <label class="dim"><span data-i18n="ship.height">Height (in)</span> <input name="height_in" type="number" min="1" step="any" required /></label>
       </div>
-      <label><span data-i18n="ship.desc">What's inside</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
       <!-- Extra services (Peter, Nov 14 2026, modelled on Pirate Ship). They change which rates are offered, so they sit before Get rates. -->
       <!-- Insurance sits above Extra services, highlighted, so every customer sees the offer before rates (Peter, Nov 14 2026).
            Ticking it opens the declared value, like Pirate Ship; the fee updates as the value is typed. -->
       <div class="upsell">
         <label class="check" id="insRow"><input name="insure" type="checkbox" /> <span><strong data-i18n="ship.insure">Insure it for the full value</strong> <span id="insFee" class="muted"></span></span></label>
         <label id="insValueRow" hidden><span data-i18n="ship.value">Value in USD</span> <input name="declared_usd" type="number" min="1" step="0.01" inputmode="decimal" placeholder="250" /></label>
+        <!-- What's inside: asked only with insurance, the one time it matters (for a claim). Peter, Nov 14 2026. Carriers get "Merchandise" otherwise. -->
+        <label id="insDescRow" hidden><span data-i18n="ship.desc">What's inside</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
         <p id="insCovered" class="muted" hidden></p>
       </div>
       <script type="application/json" id="insTermsJson" set:html={JSON.stringify(insTerms)} />
@@ -272,6 +273,9 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
     function insPaint() {
       insValueRow.hidden = !insBox.checked;
       declEl.required = insBox.checked;
+      const descRow = document.getElementById('insDescRow') as HTMLElement, descEl = f.querySelector('[name=description]') as HTMLInputElement;
+      descRow.hidden = !insBox.checked;
+      descEl.required = insBox.checked;
       const q = insTerms() && insBox.checked && declared() > 0 ? insuranceFee(insTerms(), declared()) : null;
       insFeeEl.textContent = q && !q.covered ? t('ship.insfee').replace('{fee}', q.fee.toFixed(2)).replace('{value}', String(q.declared_usd)) : '';
       insCovered.hidden = !(q && q.covered);
@@ -359,7 +363,7 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
         online: true,
         origin: { contact_name: d.from_contact_name, line_1: d.from_line_1, line_2: d.from_line_2, city: d.from_city, state: d.from_state, postal_code: d.from_postal_code, country_alpha2: 'US' },
         destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: 'US' },
-        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, options: readOptions(), packaging: pkgValue() },
+        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: insBox.checked ? d.description : '', options: readOptions(), packaging: pkgValue() }, // contents only with insurance
       };
     }
 

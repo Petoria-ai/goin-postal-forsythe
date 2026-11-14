@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 14, 2026, 13:00 CST.
+**Last updated:** November 14, 2026, 13:05 CST.
 
 ## How Peter is working
 
@@ -29,7 +29,7 @@ All on the `peter` branch, all with tests passing and the site building. Details
 | Change | Main files | Worth William's review because |
 |---|---|---|
 | Address dropdown on both street boxes | `pages/ship/index.astro`, `api/address-suggest.ts`, `lib/address.ts` | Changes the Census lookup to try the store's city |
-| Item value only asked when insurance is ticked; insurance box moved above Extra services | `pages/ship/index.astro`, new `lib/insurance.ts`, `lib/addons.ts` | The fee formula moved to its own file (re-exported from `addons.ts`, so other callers are unchanged) |
+| Item value and "What's inside" only asked when insurance is ticked; insurance box moved above Extra services | `pages/ship/index.astro`, new `lib/insurance.ts`, `lib/addons.ts` | The fee formula moved to its own file (re-exported from `addons.ts`, so other callers are unchanged) |
 | Extra services: signature, Media Mail, irregular, hazardous materials, saved packages | new `lib/options.ts`, `shipping/engine.ts`, all carrier adapters, `api/orders.ts`, `lib/validate.ts`, `shipping/types.ts`, i18n files | `Parcel` gained `options`; the rate cache key includes them; `applyOptions` filters rates in `getQuotes` |
 | Insurance bought from the carrier with the label | new `lib/labelExtras.ts`, `lib/fulfil.ts`, all carrier adapters, `lib/easyship.ts` | `Parcel` gained `insured_usd`, set only at label time |
 | Packaging picker: own packaging or a carrier's (USPS flat rate, UPS Express, FedEx Express), with pictures | new `lib/packaging.ts`, `lib/validate.ts`, `shipping/engine.ts`, all carrier adapters, `lib/easyship.ts` (3 new demo rates), `public/packaging/` | `Parcel` gained `packaging`; carrier packaging overrides the typed size; `forPackaging` in `getQuotes` filters rates and explains when nothing fits |
