@@ -4,6 +4,15 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 14:23 CST · State boxes say "State" instead of "LA"
+
+- **Asked for:** "Instead of LA, I want 'State'."
+- **What changed:** Both **State** boxes on the Ship page (return address and "Where is it going?") now show a grey "State" hint instead of "LA". It follows the language picker, like the rest of the page. The box still takes the two-letter state code, and the address dropdown and ZIP lookup still fill it in.
+- **Why:** "LA" looked like it was already filled in.
+- **Files:** [ship page](../site/src/pages/ship/index.astro)
+- **How to check it:** `git pull`, open http://localhost:4321/ship: both State boxes read "State" in grey.
+- **Checks run:** the site builds.
+
 ## 2026-11-14 14:22 CST · Sample address removed from the street boxes
 
 - **Asked for:** "Remove the address in the address box."

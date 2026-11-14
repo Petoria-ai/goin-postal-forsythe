@@ -43,7 +43,7 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
       <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="from_line_2" maxlength="35" autocomplete="address-line2" /></label>
       <div class="row">
         <label><span data-i18n="ship.city">City</span> <input name="from_city" required autocomplete="address-level2" /></label>
-        <label><span data-i18n="ship.state">State</span> <input name="from_state" required placeholder="LA" maxlength="2" autocomplete="address-level1" /></label>
+        <label><span data-i18n="ship.state">State</span> <input name="from_state" required placeholder="State" data-i18n-ph="ship.state" maxlength="2" autocomplete="address-level1" /></label>
         <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="from_postal_code" required autocomplete="postal-code" inputmode="numeric" maxlength="10" /></label>
       </div>
     </fieldset>
@@ -54,7 +54,7 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
       <label><span data-i18n="ship.apt">Apt, suite (optional)</span> <input name="line_2" maxlength="35" autocomplete="shipping address-line2" /></label>
       <div class="row">
         <label><span data-i18n="ship.city">City</span> <input name="city" required autocomplete="shipping address-level2" /></label>
-        <label><span data-i18n="ship.state">State</span> <input name="state" placeholder="LA" maxlength="2" autocomplete="shipping address-level1" /></label>
+        <label><span data-i18n="ship.state">State</span> <input name="state" placeholder="State" data-i18n-ph="ship.state" maxlength="2" autocomplete="shipping address-level1" /></label>
         <label><span data-i18n="ship.zip">ZIP / postal code</span> <input name="postal_code" required autocomplete="shipping postal-code" inputmode="numeric" /></label>
       </div>
       <input type="hidden" name="country_alpha2" value="US" />
