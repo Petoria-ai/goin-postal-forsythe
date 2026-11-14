@@ -26,7 +26,11 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
     <a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
     <header class="top">
       <div class="wrap">
-        <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
+        <div class="top-row">
+          <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
+          <!-- Log in, top right of every page (Peter, Nov 14 2026). Signed in, it greets the customer and opens their account. -->
+          <a class="login-btn" id="loginBtn" href="/account" data-i18n="acct.login">Log in</a>
+        </div>
         <nav>
           <a href="/ship" class="ps-tab" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
           <!-- Tracking menu (Peter, Nov 14 2026, like ups.com): opens on hover or keyboard focus; the arrow opens it on a phone. -->
@@ -94,6 +98,16 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
       contrast(get('gp-contrast') === '1'); // off unless the visitor turned it on (v1.70.0: the glossy look is the default; High contrast is one click away)
       document.querySelectorAll<HTMLElement>('.size[data-size]').forEach((b) => b.addEventListener('click', () => size(b.dataset.size!)));
       document.getElementById('contrast')!.addEventListener('click', () => contrast(root.dataset.contrast !== 'high'));
+      // Log in button: ask who is signed in. Signed out, the link comes back to this page after signing in.
+      const loginBtn = document.getElementById('loginBtn') as HTMLAnchorElement | null;
+      let me: { signed_in: boolean; name?: string } | null = null;
+      const paintLogin = () => {
+        if (!loginBtn) return;
+        if (me?.signed_in) { delete loginBtn.dataset.i18n; loginBtn.textContent = me.name ? t('acct.hi').replace('{name}', me.name) : t('nav.account'); loginBtn.href = '/account'; loginBtn.classList.add('in'); }
+        else if (!location.pathname.startsWith('/account')) loginBtn.href = `/account?next=${encodeURIComponent(location.pathname + location.search)}`;
+      };
+      if (loginBtn && !location.pathname.startsWith('/counter')) fetch('/api/account', { credentials: 'same-origin' }).then((r) => r.json()).then((j) => { me = j; paintLogin(); }).catch(() => {});
+      paintLogin(); document.addEventListener('langchange', paintLogin);
       // Tracking menu: the arrow button opens and closes it (hover and keyboard focus open it through CSS); Escape or a click elsewhere closes it.
       const drop = document.getElementById('trackDrop'), caret = drop?.querySelector<HTMLButtonElement>('.nav-caret');
       const openDrop = (on: boolean) => { drop?.classList.toggle('open', on); caret?.setAttribute('aria-expanded', String(on)); };

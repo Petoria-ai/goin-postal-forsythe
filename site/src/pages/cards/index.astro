@@ -96,11 +96,9 @@ const cancelled = Astro.url.searchParams.get('cancelled');
         </fieldset>
       ))}
       <p class="subtotal"><span data-i18n="cards.subtotal">Total before the online fee</span>: <strong id="subtotal">$0.00</strong></p>
-      <label><span data-i18n="cards.yourname">Your name</span> <input name="cname" required /></label>
-      <label><span data-i18n="f.email">Email</span> <input name="cemail" type="email" required /></label>
-      <label><span data-i18n="cards.phone">Phone (we text when ready)</span> <input name="cphone" type="tel" /></label>
       <label><span data-i18n="cards.notes">Notes</span> <input name="notes" maxlength="300" placeholder="Anything else we should know" /></label>
-      <button class="btn" type="submit" id="orderBtn" data-i18n="cards.order">Pay and order</button>
+      <!-- Review order (Peter, Nov 14 2026): the next page shows the cards and the total, asks to sign in if needed, then Stripe takes payment. -->
+      <button class="btn" type="submit" id="orderBtn" data-i18n="cards.review">Review order</button>
       <p class="err" id="err" hidden></p>
     </form>
   </section>
@@ -315,13 +313,10 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       if (left && !confirm(`${left} ${t('cards.leftph')}`)) return;
       if (!d.front.elements.some((e) => e.type === 'text')) { err.textContent = t('cards.nofront'); err.hidden = false; return; }
       const o = Object.fromEntries(new FormData(order).entries()) as Record<string, string>;
-      const btn = $('orderBtn'); btn.setAttribute('disabled', '');
-      const res = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ design: d, quantity: Number(o.quantity), options: picks(), customer: { name: o.cname, email: o.cemail, phone: o.cphone }, notes: o.notes }) });
-      const j = await res.json();
-      if (!res.ok) { err.textContent = j.error; err.hidden = false; btn.removeAttribute('disabled'); return; }
-      try { localStorage.removeItem('gp-card-design'); } catch {}
-      location.href = j.next;
+      // The order waits on this device for the review page (and through a sign-in); nothing is charged yet.
+      try { localStorage.setItem('gp-card-order', JSON.stringify({ at: Date.now(), design: d, quantity: Number(o.quantity), options: picks(), notes: o.notes })); }
+      catch { err.textContent = 'This browser is blocking saved data, so the order cannot continue. Try another browser.'; err.hidden = false; return; }
+      location.href = '/cards/review';
     });
   </script>
 </Base>

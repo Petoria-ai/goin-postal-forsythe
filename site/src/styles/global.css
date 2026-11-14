@@ -464,3 +464,26 @@ html:root[data-contrast="high"] nav .nav-menu a { color: #fff; }
 .track-page #msg, .track-page #elsewhere { max-width: 40rem; margin: 14px auto 0; }
 .track-page #elsewhere .btnrow { justify-content: center; }
 @media (max-width: 600px) { .track-page h1 { font-size: 1.6rem; } }
+
+/* Log in button, top right of the header (Peter, Nov 14 2026) */
+.top-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; }
+.login-btn { flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 8px 22px; border-radius: 999px; background: linear-gradient(to bottom, #ffd97a, var(--kraft)); color: var(--navy); font-weight: 800; text-decoration: none; border: 1px solid #7a5a30; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5); white-space: nowrap; }
+.login-btn:hover { background: linear-gradient(to bottom, #ffe7a3, #cfa061); color: var(--navy); }
+.login-btn.in { background: none; color: #fff; border-color: #ffffff99; }
+.login-btn.in:hover { color: var(--kraft); }
+html:root[data-contrast="high"] .login-btn { background: #ffd166; color: #000; border-color: #000; box-shadow: none; }
+html:root[data-contrast="high"] .login-btn.in { background: #000; color: #fff; border-color: #fff; }
+
+/* Business card review page (Peter, Nov 14 2026) */
+.review-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px; align-items: start; }
+.review-cards .card-wrap { max-width: 34rem; }
+.review-cards .card-wrap svg { width: 100%; height: auto; display: block; border-radius: 6px; box-shadow: 3px 3px 10px var(--shadow); }
+.review-side { display: grid; gap: 10px; }
+.review-side h3 { margin: 4px 0 0; }
+.lines { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.lines li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dotted var(--hair); padding: 4px 0; }
+.confirm { display: grid; gap: 10px; }
+.confirm .check { align-items: flex-start; font-weight: 500; }
+.confirm .check input { margin-top: 2px; flex: none; }
+.secure { font-size: .9rem; margin: 0; }
+@media (max-width: 760px) { .review-grid { grid-template-columns: 1fr; } }

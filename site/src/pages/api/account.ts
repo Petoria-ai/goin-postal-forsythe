@@ -12,6 +12,14 @@ import { isChannel, loggedWording } from '../../lib/consent';
 
 // Customer accounts (T20). login { email } emails a magic link; the rest need the session cookie:
 // name { name }, save_address { label, address }, delete_address { id }, logout.
+// Who is signed in, for the header's Log in button (Peter, Nov 14 2026). First name only; nothing else leaves.
+export const GET: APIRoute = async ({ request }) => {
+  const id = await readSession(env, request.headers.get('cookie')).catch(() => null);
+  const c = id ? await getCustomer(env, id) : null;
+  const first = c ? (c.name && c.name !== 'Customer' ? c.name.split(/\s+/)[0] : '') : '';
+  return new Response(JSON.stringify(c ? { signed_in: true, name: first } : { signed_in: false }), { headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store' } });
+};
+
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
   try {

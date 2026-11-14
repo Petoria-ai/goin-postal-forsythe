@@ -4,6 +4,23 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 14:41 CST · Log in button, and business cards: review page, secure payment, confirmation
+
+- **Asked for:** "A login button on the far right top of the page, so it allows customers to immediately log in", so that once logged in they can use all the features, like business cards; and for business cards, "a second page like a secure payment section ... and a confirmation page for them to hit confirm order." Peter picked: a review page on our site, then Stripe's secure payment page; anyone can design, sign in to order.
+- **What changed:**
+  - **Log in button** at the top right of every page (gold, like the Ship a package tab). Signed out it says **Log in** and comes back to the same page after signing in. Signed in it says **Hi, Pat** (or **Account** until the customer has a name) and opens their account. Staff pages don't show it.
+  - **Business cards, step by step:**
+    1. **Design** as before. The name, email and phone boxes are gone from the designer (they come from the account). The button is now **Review order**.
+    2. **Review your order** (new page): both sides of the card, the quantity and options, sales tax, the online fee and the total (priced by the server, so they match the charge), the pickup details from the account (name and phone asked here if the account doesn't have them yet), a required box "I checked the spelling, phone numbers and layout. The cards are printed exactly as shown.", and **Confirm and pay**. A line says payment is by Stripe and the store never sees the card number. Signed-out customers sign in right on this page; the design waits on their device while they open the email link.
+    3. **Stripe's secure payment page** takes the card details.
+    4. **The confirmation page** ("Paid. We are printing your cards.") with the pickup code and a QR to show at the counter.
+  - **Ordering cards needs an account**, like buying labels. Designing is open to everyone.
+  - All new text in all 14 languages.
+- **Why the card form isn't on our own page:** card numbers that pass through the store's own site bring the full card-security rules (PCI) and the liability if they're ever stolen. Stripe's page keeps card numbers off the site entirely.
+- **Files:** [header](../site/src/layouts/Base.astro), [account API](../site/src/pages/api/account.ts) (who is signed in), [card designer](../site/src/pages/cards/index.astro), [review page (new)](../site/src/pages/cards/review.astro), [card orders API](../site/src/pages/api/cards.ts), [text, 14 languages](../site/src/i18n/strings.ts), [styles](../site/src/styles/global.css)
+- **How to check it:** `git pull`, `npm run dev`. See **Log in** at the top right. Open **Business cards**, pick a layout, click the sample name on the card and type yours, then **Review order**. Sign in from the review page (open the link printed in the PowerShell window or the "dev: open it" link), tick the box and press **Confirm and pay**. In demo mode the Stripe step is skipped and you land on the confirmation page.
+- **Checks run:** 160 tests pass, the type check is clean, the site builds. In a real browser: the button's text and link signed out and signed in; the designer's Review order; the review page's server prices ($39.99 + $4.39 tax + $1.40 fee = $45.78 for 250 cards); sign-in from the review page with the design kept; Confirm blocked until the box is ticked; the confirmation page; the review page empty after ordering; ordering cards without an account refused.
+
 ## 2026-11-14 14:26 CST · Tracking page search made bigger and centered, like the home page
 
 - **Asked for:** "In the tracking tab, can you make the track a code box bigger and centered like the front page of the website."

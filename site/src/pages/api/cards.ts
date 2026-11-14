@@ -8,8 +8,13 @@ import { sanitizeDesign, PRICES, priceCards } from '../../lib/cards';
 import { newCardId, saveCardOrder, type CardOrder } from '../../lib/cardOrders';
 import { json } from '../../lib/validate';
 import { createCardCheckout } from '../../lib/stripe';
+import { readSession } from '../../lib/session';
+import { getCustomer, setCustomerName, normalizePhone } from '../../shipping/store';
 
-// Customer orders cards. Paid by card on Stripe Checkout at creation, picked up in the shop.
+// Customer orders cards (Peter, Nov 14 2026: design, then /cards/review, then Stripe's secure page, then the
+// confirmation page). action "preview" prices an order for the review page without saving anything; anyone may
+// ask. Placing the order needs a signed-in customer, whose account gives the pickup name, email and phone.
+// Card numbers never reach this site: Stripe Checkout takes them on Stripe's own page.
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json();
@@ -17,11 +22,28 @@ export const POST: APIRoute = async ({ request }) => {
     if (!PRICES[quantity]) throw new Error('Pick a quantity');
     const priced = priceCards(quantity, b.options);
     const cfg = await effectiveAddons(env);
-    const name = String(b.customer?.name ?? '').trim();
-    const email = String(b.customer?.email ?? '').trim();
-    const phone = String(b.customer?.phone ?? '').trim();
+    if (b.action === 'preview') {
+      const tax = salesTax(cfg, priced.subtotal), fee = onlineFee(cfg, priced.subtotal);
+      const lines = [
+        { key: 'cards.unit', label: `${quantity} cards`, amount: priced.price, qty: quantity },
+        ...priced.options.map((o) => ({ key: `cards.opt.${o.code}`, label: o.name, amount: o.price })),
+        ...(tax ? [{ key: 'done.tax', label: 'Sales tax', amount: tax.amount }] : []),
+        ...(fee ? [{ key: 'done.fee', label: 'Online fee', amount: fee.amount }] : []),
+      ];
+      return json({ lines, total: Math.round((priced.subtotal + (tax?.amount ?? 0) + (fee?.amount ?? 0)) * 100) / 100 });
+    }
+    const meId = await readSession(env, request.headers.get('cookie')).catch(() => null);
+    const me = meId ? await getCustomer(env, meId) : null;
+    if (!me || !me.email) return json({ error: 'Sign in to order your cards.', signin: true }, 401);
+    if (b.proofed !== true) throw new Error('Tick the box to say you checked the spelling and layout');
+    // The account gives the pickup details; a missing name or phone is asked on the review page and saved to the account.
+    const name = me.name && me.name !== 'Customer' ? me.name : String(b.customer?.name ?? '').trim().slice(0, 60);
+    const newPhone = normalizePhone(String(b.customer?.phone ?? ''));
+    const phone = me.phone ?? newPhone ?? '';
     if (!name) throw new Error('Your name is needed for pickup');
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('A valid email is needed');
+    if (!phone) throw new Error('Your mobile number is needed, so we can text you when the cards are ready');
+    if (name !== me.name || (!me.phone && newPhone)) await setCustomerName(env, me.id, name, me.phone ? null : newPhone);
+    const email = me.email;
     const order: CardOrder = {
       id: newCardId(),
       created_at: new Date().toISOString(),
