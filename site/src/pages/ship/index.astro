@@ -56,7 +56,6 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
         <label><span data-i18n="ship.height">Height (in)</span> <input name="height_in" type="number" min="1" required /></label>
       </div>
       <label><span data-i18n="ship.desc">What's inside</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
-      <label><span data-i18n="ship.value">Value in USD</span> <input name="value_usd" type="number" min="1" placeholder="25" /></label>
     </fieldset>
 
     <button class="btn" type="submit" data-i18n="ship.getrates">Get rates</button>
@@ -73,7 +72,9 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     <form id="buy" class="buy" hidden>
       <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required autocomplete="email" value={me?.email ?? ''} /></label>
       {me && <label class="check"><input name="save_address" type="checkbox" /> <span data-i18n="acct.savethis">Save this address to my account</span></label>}
-      <label class="check" id="insRow" hidden><input name="insure" type="checkbox" /> <span data-i18n="ship.insure">Insure it for the full value</span> <span id="insFee" class="muted"></span></label>
+      <!-- Insurance (Peter, Nov 14 2026): the declared value is asked only when the customer ticks insurance, like Pirate Ship. -->
+      <label class="check" id="insRow"><input name="insure" type="checkbox" /> <span data-i18n="ship.insure">Insure it for the full value</span> <span id="insFee" class="muted"></span></label>
+      <label id="insValueRow" hidden><span data-i18n="ship.value">Value in USD</span> <input name="declared_usd" type="number" min="1" step="0.01" inputmode="decimal" placeholder="250" /></label>
       <p id="insCovered" class="muted" hidden></p>
       <p id="feeRow" class="muted" hidden></p>
       <p id="totalRow" class="price"><span data-i18n="ship.total">Total</span>: <strong id="totalAmt"></strong></p>
@@ -86,6 +87,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
   <script type="application/json" id="savedJson" set:html={JSON.stringify(saved)} />
   <script>
     import { t } from '../../i18n';
+    import { insuranceFee } from '../../lib/insurance';
     const f = document.getElementById('quote') as HTMLFormElement;
     const err = document.getElementById('err')!;
     const results = document.getElementById('results')!;
@@ -166,7 +168,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     let extras: any = null;
     const insBox = buy.querySelector('[name=insure]') as HTMLInputElement;
     function total() {
-      const ins = insBox.checked && extras && !extras.insurance.covered ? extras.insurance.fee : 0;
+      const ins = insBox.checked && extras ? insuranceFee(extras.insurance, declared()).fee : 0;
       const smsOn = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
       const text = smsOn && extras?.text_updates_price ? extras.text_updates_price : 0;
       const subtotal = pickedPrice + ins + text;
@@ -176,7 +178,21 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       if (f) feeRow.textContent = t('ship.fee').replace('{fee}', f.toFixed(2)).replace('{pct}', String(extras.online_fee.percent));
       document.getElementById('totalAmt')!.textContent = `$${(subtotal + f).toFixed(2)}`;
     }
-    insBox.addEventListener('change', total);
+    // Insurance: ticking the box opens the declared value; the fee updates as it is typed.
+    const insValueRow = document.getElementById('insValueRow') as HTMLElement, declEl = buy.querySelector('[name=declared_usd]') as HTMLInputElement;
+    const insCovered = document.getElementById('insCovered') as HTMLElement, insFeeEl = document.getElementById('insFee') as HTMLElement;
+    const declared = () => Math.max(0, Number(declEl.value) || 0);
+    function insPaint() {
+      insValueRow.hidden = !insBox.checked;
+      declEl.required = insBox.checked;
+      const q = extras && insBox.checked && declared() > 0 ? insuranceFee(extras.insurance, declared()) : null;
+      insFeeEl.textContent = q && !q.covered ? t('ship.insfee').replace('{fee}', q.fee.toFixed(2)).replace('{value}', String(q.declared_usd)) : '';
+      insCovered.hidden = !(q && q.covered);
+      if (q && q.covered) insCovered.textContent = t('ship.inscovered').replace('{n}', String(extras.insurance.included_usd));
+      total();
+    }
+    insBox.addEventListener('change', () => { insPaint(); if (insBox.checked) declEl.focus(); });
+    declEl.addEventListener('input', insPaint);
 
     function read() {
       const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
@@ -184,7 +200,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
         online: true,
         origin: { contact_name: d.from_contact_name, line_1: d.from_line_1, line_2: d.from_line_2, city: d.from_city, state: d.from_state, postal_code: d.from_postal_code, country_alpha2: 'US' },
         destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: 'US' },
-        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, value_usd: d.value_usd },
+        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description },
       };
     }
 
@@ -206,9 +222,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       if (!res.ok) { err.textContent = j.error; err.hidden = false; return; }
       extras = j.extras;
       document.getElementById('smsFee')!.textContent = extras?.text_updates_price ? t('ship.textfee').replace('{fee}', extras.text_updates_price.toFixed(2)) : '';
-      const insRow = document.getElementById('insRow')!, insCovered = document.getElementById('insCovered')!;
-      if (extras?.insurance.covered) { insRow.hidden = true; insBox.checked = false; insCovered.hidden = false; insCovered.textContent = t('ship.inscovered').replace('{n}', String(extras.insurance.included_usd)); }
-      else { insRow.hidden = false; insCovered.hidden = true; document.getElementById('insFee')!.textContent = t('ship.insfee').replace('{fee}', extras.insurance.fee.toFixed(2)).replace('{value}', String(extras.insurance.declared_usd)); }
+      insPaint();
       const an = document.getElementById('addrNote')!, ad = j.address;
       if (ad && (ad.errors.length || ad.warnings.length)) { an.textContent = [...ad.errors, ...ad.warnings].join(' '); an.className = ad.errors.length ? 'err' : 'card'; an.hidden = false; } else an.hidden = true;
       const pk = j.packing, pn = document.getElementById('packNote')!;
@@ -247,7 +261,9 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       const sms = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
       const phone = (buy.querySelector('[name=phone]') as HTMLInputElement).value;
       const insure = insBox.checked;
-      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, email, sms, phone, rate_id: picked, insure, save_address: (buy.querySelector('[name=save_address]') as HTMLInputElement | null)?.checked === true }) });
+      // The declared value travels with the parcel only when insured; the server prices the insurance from it.
+      const parcel = { ...payload.parcel, ...(insure ? { value_usd: declared() } : {}) };
+      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, parcel, email, sms, phone, rate_id: picked, insure, save_address: (buy.querySelector('[name=save_address]') as HTMLInputElement | null)?.checked === true }) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; buyBtn.removeAttribute('disabled'); return; }
       location.href = j.next;

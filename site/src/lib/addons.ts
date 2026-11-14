@@ -4,6 +4,7 @@
 // on the server from the catalog, never taken from the browser.
 import fileAddons from '../data/addons.json';
 import { loadAddons, type AddonRow } from '../shipping/store';
+import { insuranceFee } from './insurance';
 
 export interface Insurance { included_usd: number; per_100_usd: number; minimum_usd: number; max_declared_usd: number }
 export interface OnlineFee { percent: number; flat: number }
@@ -29,13 +30,8 @@ export async function effectiveAddons(env: Env): Promise<AddonsConfig & { source
   return saved ? { ...saved, source: 'table' } : { ...addonsFromFile(), source: 'file' };
 }
 
-/** Insurance fee for a declared value. Zero while the carrier's included cover is enough. */
-export function insuranceFee(ins: Insurance, declared: number): { declared_usd: number; fee: number; covered: boolean } {
-  const d = Math.min(Math.max(0, declared || 0), ins.max_declared_usd);
-  if (d <= ins.included_usd) return { declared_usd: d, fee: 0, covered: true };
-  const hundreds = Math.ceil((d - ins.included_usd) / 100);
-  return { declared_usd: d, fee: round2(Math.max(ins.minimum_usd, hundreds * ins.per_100_usd)), covered: false };
-}
+/** Insurance fee for a declared value. Zero while the carrier's included cover is enough. Lives in lib/insurance.ts so the ship page can use it too. */
+export { insuranceFee } from './insurance';
 
 /** Price the extras a customer or staff member picked. Unknown or inactive codes are ignored, quantities capped at 20. */
 export function priceExtras(cfg: AddonsConfig, picks: { code: string; qty: number }[] | undefined, declared: number, insure: boolean): Extras {
@@ -87,7 +83,7 @@ export function textUpdatesPrice(cfg: AddonsConfig): number | null {
 export function extrasOffer(cfg: AddonsConfig, declared: number) {
   const ins = insuranceFee(cfg.insurance, declared);
   return {
-    insurance: { ...ins, included_usd: cfg.insurance.included_usd, max_declared_usd: cfg.insurance.max_declared_usd },
+    insurance: { ...ins, included_usd: cfg.insurance.included_usd, per_100_usd: cfg.insurance.per_100_usd, minimum_usd: cfg.insurance.minimum_usd, max_declared_usd: cfg.insurance.max_declared_usd },
     addons: cfg.items.filter((i) => i.active).sort((a, b) => a.sort - b.sort).map(({ code, kind, name, price }) => ({ code, kind, name, price })),
     online_fee: cfg.online_fee,
     sales_tax: cfg.sales_tax,
