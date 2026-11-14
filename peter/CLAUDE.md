@@ -19,3 +19,10 @@ These rules apply whenever Claude works for Peter in this repo. They add to the 
    One request that touches many files is one entry. A follow-up fix is its own entry.
 4. **Commits.** One commit per log entry, message starting `peter: `. The commit and the log entry describe the same change.
 5. **Plain English.** Peter is the owner, not a programmer. Write entries and explanations so he can read them without knowing code.
+6. **Keep the meeting notes current.** `peter/FOR-WILLIAM.md` is what Peter and William go through when they meet. In the same commit as the edit, add to it whenever any of these happen:
+   - **A problem is found** in the project (a bug, a missing step in the docs, something that doesn't work the way people thought): a new row in section 1 with the next H number, what was wrong, what was done, and the status.
+   - **William's code is changed**: a row in section 2.
+   - **Something can only be proven later** (for example once carrier accounts are connected): a checkbox in section 3.
+   - **A decision is left open** for Peter, William or Rin: a row in section 4 with the next D number. When it's decided, mark it and say what was decided.
+   - **Something is left alone on purpose**: a line in section 5.
+   Update the "Last updated" line with the time from the same `date` command. Don't remove items; mark them ✅ when they're done.

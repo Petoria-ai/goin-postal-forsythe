@@ -4,6 +4,21 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 12:25 CST · Meeting notes for Peter and William
+
+- **Asked for:** "Let's make sure we are documenting all these hiccups so when me and William meet again we can pick up what we are talking about."
+- **What changed:**
+  - New file [FOR-WILLIAM.md](FOR-WILLIAM.md), in five sections:
+    1. **Problems found** (H1 to H5): the two missing README setup steps, the insurance that was charged but never bought, the signature total bug, and the address dropdown that looked broken.
+    2. **Changes to William's code**, and why each is worth his review.
+    3. **Things to check once carrier accounts are connected.**
+    4. **Decisions waiting** (D1 to D8), with who decides.
+    5. **Things left alone on purpose.**
+  - A new rule in Peter's Claude instructions: every future hiccup, open decision or change to William's code goes into this file in the same commit, so it stays current without being asked.
+- **Why:** So the next meeting with William starts from one page instead of memory.
+- **Files:** [FOR-WILLIAM.md (new)](FOR-WILLIAM.md), [CLAUDE.md](CLAUDE.md) (rule 6), [README.md](README.md) (lists the new file)
+- **How to check it:** On GitHub, open the `peter` folder on the `peter` branch and click FOR-WILLIAM.md.
+
 ## 2026-11-14 12:23 CST · Insurance is now bought from the carrier with the label
 
 - **Asked for:** "Yes, let's make that fix." (Insurance should be added with each carrier when we buy the label.)
