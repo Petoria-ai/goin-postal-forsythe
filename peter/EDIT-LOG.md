@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 11:03 CST · To-do list started, with international shipping as the first item
+
+- **Asked for:** "Let's do that" (put international shipping on the to-do list instead of building it now).
+- **What changed:** Added Peter's own to-do list. Its first item, P1, is international shipping online: how Pirate Ship does it, where the store's risk is higher, the business steps, the build steps, and questions for William and Rin.
+- **Why:** The US-only site isn't live yet, the paperwork has to come before the code, and William removed international on November 7, so it's a decision for all three.
+- **Files:** [TODO.md (new)](TODO.md), [README.md](README.md) (lists the new file)
+- **How to check it:** On GitHub, open the `peter` folder on the `peter` branch and click TODO.md.
+
 ## 2026-11-14 10:58 CST · Item value only asked when insurance is ticked
 
 - **Asked for:** "I don't like it has an item value. I don't see the point of having it unless the customer is adding insurance. So let's make it like Pirate Ship where if they click insurance it will pop up a fill in the blank for declared value in dollars."

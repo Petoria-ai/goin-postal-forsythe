@@ -42,4 +42,5 @@ In a Claude Code session, ask Claude to work on the `peter` branch. Claude follo
 |---|---|
 | [README.md](README.md) | This page |
 | [EDIT-LOG.md](EDIT-LOG.md) | Every edit, dated and timed |
+| [TODO.md](TODO.md) | Peter's to-do list: ideas for later, with the steps for each |
 | [CLAUDE.md](CLAUDE.md) | Instructions Claude follows when working on Peter's edits |
