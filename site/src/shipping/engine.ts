@@ -10,6 +10,7 @@ import { easyship } from './providers/easyship';
 import { retail } from '../lib/pricing';
 import { lengthPlusGirth } from './dim';
 import { applyOptions, hazmatAllowed, HAZMAT_AREA, optionsKey } from '../lib/options';
+import { applyPackaging, noServiceFor, packagingById } from '../lib/packaging';
 
 const DIRECT = [usps, ups, fedex, dhl];
 const CACHE_TTL = 300;
@@ -23,7 +24,15 @@ export function activeProviders(env: Env) {
 
 function cacheKey(o: Address, d: Address, p: Parcel) {
   const round = (n: number) => Math.round(n * 10) / 10;
-  return `rates:${o.postal_code}:${d.country_alpha2}:${d.postal_code}:${round(p.weight_lb)}:${round(p.length_in)}x${round(p.width_in)}x${round(p.height_in)}:${d.residential ? 'r' : 'c'}:${optionsKey(p.options)}`;
+  return `rates:${o.postal_code}:${d.country_alpha2}:${d.postal_code}:${round(p.weight_lb)}:${round(p.length_in)}x${round(p.width_in)}x${round(p.height_in)}:${d.residential ? 'r' : 'c'}:${optionsKey(p.options)}:${p.packaging ?? ''}`;
+}
+
+/** Rates for the chosen packaging. When carriers answered but none of their services fits the packaging, say why instead of showing nothing. */
+function forPackaging(rates: Rate[], parcel: Parcel, answered: number): Rate[] {
+  const out = applyPackaging(rates, parcel.packaging);
+  const pk = packagingById(parcel.packaging);
+  if (answered && !out.length && pk && pk.group !== 'own') throw new Error(noServiceFor(pk));
+  return out;
 }
 
 export interface QuoteResult { rates: Rate[]; demo: boolean; errors: { carrier: string; message: string }[]; oversize: boolean }
@@ -37,7 +46,7 @@ export async function getQuotes(env: Env, origin: Address, destination: Address,
     const hit = await env.ORDERS.get(key);
     if (hit) {
       const cached = JSON.parse(hit) as QuoteResult;
-      return { ...cached, rates: applyOptions(await retail(env, cached.rates), parcel.options).sort((a, b) => a.total_charge - b.total_charge), oversize };
+      return { ...cached, rates: forPackaging(applyOptions(await retail(env, cached.rates), parcel.options), parcel, cached.rates.length).sort((a, b) => a.total_charge - b.total_charge), oversize };
     }
   }
 
@@ -61,7 +70,8 @@ export async function getQuotes(env: Env, origin: Address, destination: Address,
   const demo = direct.length === 0 && !env.EASYSHIP_TOKEN;
   if (env.ORDERS && rates.length) await env.ORDERS.put(key, JSON.stringify({ rates, demo, errors, oversize }), { expirationTtl: CACHE_TTL });
   // Extra services decide which rates may be picked: Media Mail only when ticked, hazardous materials by Ground Advantage only.
-  const priced = applyOptions(await retail(env, rates), parcel.options).sort((a, b) => a.total_charge - b.total_charge);
+  // Packaging decides the carrier and its services: a USPS flat rate box goes by Priority Mail only, and so on.
+  const priced = forPackaging(applyOptions(await retail(env, rates), parcel.options), parcel, rates.length).sort((a, b) => a.total_charge - b.total_charge);
   return { rates: priced, demo, errors, oversize };
 }
 

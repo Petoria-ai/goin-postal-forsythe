@@ -7,6 +7,7 @@ import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, oauthToken, money } from '../http';
 import { billableWeightLb } from '../dim';
 import { uspsExtras } from '../../lib/labelExtras';
+import { uspsRateIndicator } from '../../lib/packaging';
 
 const base = (env: Env) => (env.USPS_SANDBOX ? 'https://apis-tem.usps.com' : 'https://apis.usps.com');
 
@@ -31,7 +32,7 @@ function pkg(parcel: Parcel) {
     width: parcel.width_in,
     height: parcel.height_in,
     processingCategory: parcel.options?.irregular || parcel.length_in > 22 || parcel.width_in > 18 || parcel.height_in > 15 ? 'NONSTANDARD' : 'MACHINABLE',
-    rateIndicator: 'SP',
+    rateIndicator: uspsRateIndicator(parcel.packaging), // flat rate boxes and envelopes: lib/packaging.ts
     priceType: 'COMMERCIAL',
     mailingDate: new Date().toISOString().slice(0, 10),
   };

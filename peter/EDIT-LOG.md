@@ -4,6 +4,32 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 13:00 CST · Packaging picker with pictures on the Ship page
+
+- **Asked for:** a packaging choice like Pirate Ship's (USPS flat rate boxes and envelopes, UPS Express packaging), with pictures so customers see what they're shipping in. "Use the photos I have for now, and draw the ones for FedEx."
+- **What changed:**
+  - **A "Packaging" picker** at the top of "What is it?". It shows the current choice with its picture; **Change** opens the full list with pictures, in four groups:
+    - **Your own packaging:** envelope or soft pack, box (the default), tube or irregular.
+    - **USPS:** Small, Medium and Large Flat Rate boxes; Flat Rate, Legal and Padded envelopes; Priority Mail Express, Legal and Padded envelopes.
+    - **UPS:** Express Envelope, Small, Medium and Large Express Box, Express Tube, Express Pak.
+    - **FedEx:** Envelope, Pak, Small, Medium, Large and Extra Large Box, Tube.
+  - **Carrier packaging fills in its own size**, so the size boxes hide and the customer only types the weight ("The size comes from the packaging: just type the weight").
+  - **Only the right services show:** USPS Flat Rate items by Priority Mail; USPS Express envelopes by Priority Mail Express; UPS Express items by UPS air services; FedEx items by FedEx Express services.
+  - **The carrier is told the packaging**, when pricing and on the label (USPS rate indicator, UPS packaging code, FedEx packaging type).
+  - **Tube or irregular** ticks "Irregular package" and opens Extra services so the customer sees it.
+  - **Clear messages:** USPS packaging over 70 lb is refused; a combination nothing can carry (for example hazardous materials in a flat rate box, which must go by Ground Advantage) says so instead of showing an empty list.
+  - Each carrier item says **"Ask for one at our counter"**, to bring people in for the free carrier packaging.
+  - The **counter page** shows the packaging; **saved packages** remember it.
+  - Sizes now accept decimals (12.5 in), for flat rate sizes and for customers' own boxes.
+  - Demo rates gained UPS 2nd Day Air, FedEx 2Day and USPS Priority Mail Express, so carrier packaging can be tried before the carrier accounts are connected.
+  - All new text in all 14 languages. Carrier product names stay in English, as printed on the packaging.
+- **Pictures:** the general, USPS and UPS pictures are cropped from the Pirate Ship screenshots Peter supplied, **for now**: they belong to Pirate Ship or the carriers, so they should be replaced before the site goes live (D10 in [FOR-WILLIAM.md](FOR-WILLIAM.md)). The 7 FedEx pictures are drawn by the store in FedEx's colors, without FedEx's logo. All live in `site/public/packaging/` (308 KB), so swapping them is just replacing files.
+- **Why:** Flat rate and carrier packaging can save customers a lot, there's nothing to measure, and the store avoids carrier adjustment charges when packaging is declared correctly.
+- **Files:** [packaging catalog and rules (new)](../site/src/lib/packaging.ts), [tests (new)](../site/tests/packaging.test.ts), [pictures (new)](../site/public/packaging/), [ship page](../site/src/pages/ship/index.astro), [parcel checks](../site/src/lib/validate.ts), [rate engine](../site/src/shipping/engine.ts), [USPS](../site/src/shipping/providers/usps.ts), [UPS](../site/src/shipping/providers/ups.ts), [FedEx](../site/src/shipping/providers/fedex.ts), [demo rates](../site/src/lib/easyship.ts), [shipment types](../site/src/shipping/types.ts), [counter page](../site/src/pages/counter/[code].astro), [text, 14 languages](../site/src/i18n/strings.ts), [staff text](../site/src/i18n/staff3.ts), [styles](../site/src/styles/global.css)
+- **How to check it:** `git pull`, open http://localhost:4321/ship. Under "What is it?", click **Change** next to Packaging and pick **USPS Priority Mail Medium Flat Rate Box**: the size boxes disappear. Fill in the rest and Get rates: only USPS Priority Mail. Try a UPS or FedEx item: only that carrier's express services.
+- **Checks run:** 147 tests pass (11 new, including that every picture file exists), the type check is clean, the site builds. In a real browser: all 25 items listed with pictures, every carrier rule above, the 70 lb limit, the hazmat-plus-flat-rate message, and a flat rate order showing its packaging on the counter page.
+- **Bug caught while testing:** the size boxes only accepted whole inches, so a flat rate box's 8.5 in size blocked Get rates silently. Fixed by allowing decimals.
+
 ## 2026-11-14 12:37 CST · Return labels on the Ship page
 
 - **Asked for:** the Pirate Ship "Return Labels" tick box (screenshot), with its two choices: "Return Labels Only" and "Return Labels Included".

@@ -11,6 +11,7 @@ const order = await getOrder(env, Astro.params.code ?? '');
 if (!order) return new Response('No such order', { status: 404 });
 const notes = await listNotes(env, 'order', order.id);
 const photos = await listPhotos(env, order.id);
+import { packagingById } from '../../lib/packaging';
 ---
 <Base title={`Counter · ${order.id}`}>
   <section class="hero">
@@ -27,6 +28,7 @@ const photos = await listPhotos(env, order.id);
       <p><strong data-i18n="st.o.ringup">Total:</strong> <strong>${orderTotal(order).toFixed(2)}</strong>{order.status === 'reserved' && <span class="muted"> · <span data-i18n="st.o.ringup.pos">ring this up on the POS</span></span>}</p>
       {order.kind === 'return' && <p><strong data-i18n="st.o.return">Return label.</strong> <span data-i18n="st.o.return.from">From</span> {order.origin.contact_name}, {order.origin.city}, {order.origin.state} {order.origin.postal_code}. <span data-i18n="st.o.return.email">Email it to the sender below.</span></p>}
       <p><strong data-i18n="st.o.to">To:</strong> {order.destination.contact_name}<br/>{order.destination.line_1}{order.destination.line_2 ? `, ${order.destination.line_2}` : ''}<br/>{order.destination.city}, {order.destination.state} {order.destination.postal_code} {order.destination.country_alpha2}</p>
+      {order.parcel.packaging && order.parcel.packaging !== 'box' && <p><strong data-i18n="st.o.pkg">Packaging:</strong> {packagingById(order.parcel.packaging)?.name ?? order.parcel.packaging}</p>}
       <p><strong data-i18n="st.o.parcel">Parcel:</strong> {order.parcel.weight_lb} lb · {order.parcel.length_in}×{order.parcel.width_in}×{order.parcel.height_in} in · {order.parcel.description ? order.parcel.description : <span data-i18n="st.o.nodesc">no description</span>} · ${order.parcel.value_usd}</p>
       <p><strong data-i18n="st.o.customer">Customer:</strong> {order.email}</p>
     </div>

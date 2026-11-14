@@ -5,6 +5,7 @@ import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, oauthToken, money } from '../http';
 import { billableWeightLb } from '../dim';
 import { upsPackageOptions } from '../../lib/labelExtras';
+import { upsPackagingCode } from '../../lib/packaging';
 
 const base = (env: Env) => (env.UPS_SANDBOX ? 'https://wwwcie.ups.com' : 'https://onlinetools.ups.com');
 const V = 'v2403';
@@ -21,7 +22,7 @@ const addr = (a: Address) => ({
   Address: { AddressLine: [a.line_1, a.line_2].filter(Boolean), City: a.city, StateProvinceCode: a.state, PostalCode: a.postal_code, CountryCode: a.country_alpha2, ResidentialAddressIndicator: a.residential ? '' : undefined },
 });
 const pkg = (p: Parcel) => ({
-  PackagingType: { Code: '02' },
+  PackagingType: { Code: upsPackagingCode(p.packaging) }, // UPS Express packaging: lib/packaging.ts
   Dimensions: { UnitOfMeasurement: { Code: 'IN' }, Length: String(p.length_in), Width: String(p.width_in), Height: String(p.height_in) },
   PackageWeight: { UnitOfMeasurement: { Code: 'LBS' }, Weight: String(p.weight_lb) },
 });

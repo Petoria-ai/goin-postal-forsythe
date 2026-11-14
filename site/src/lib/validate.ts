@@ -1,5 +1,6 @@
 import type { Address, Parcel } from '../shipping/types';
 import { parseOptions } from './options';
+import { packagingById } from './packaging';
 
 const US_STATES = /^[A-Z]{2}$/;
 // Domestic only (Nov 7, 2026): international shipping is out of PeterShip. Territories and military
@@ -35,14 +36,22 @@ export function parseParcel(v: any): Parcel {
     if (!Number.isFinite(n) || n < min || n > max) throw new Error(`${k.replace(/_/g, ' ')} must be between ${min} and ${max}`);
     return n;
   };
+  // Packaging (Peter, Nov 14 2026): carrier packaging has a known size, so it replaces whatever was typed;
+  // a tube or irregular package is priced as irregular; USPS packaging holds up to 70 lb.
+  const pk = packagingById(String(v?.packaging ?? ''));
+  const weight_lb = num('weight_lb', 0.1, 150);
+  if (pk?.maxLb && weight_lb > pk.maxLb) throw new Error(`The ${pk.name} holds up to ${pk.maxLb} lb`);
+  const options = parseOptions(v?.options);
+  if (pk?.id === 'tube') options.irregular = true;
   return {
-    weight_lb: num('weight_lb', 0.1, 150),
-    length_in: num('length_in', 1, 108),
-    width_in: num('width_in', 1, 108),
-    height_in: num('height_in', 1, 108),
+    weight_lb,
+    length_in: pk?.dims ? pk.dims[0] : num('length_in', 1, 108),
+    width_in: pk?.dims ? pk.dims[1] : num('width_in', 1, 108),
+    height_in: pk?.dims ? pk.dims[2] : num('height_in', 1, 108),
     description: String(v?.description ?? '').trim().slice(0, 80),
     value_usd: Number(v?.value_usd) > 0 ? Number(v.value_usd) : 1,
-    options: parseOptions(v?.options),
+    options,
+    ...(pk ? { packaging: pk.id } : {}),
   };
 }
 
