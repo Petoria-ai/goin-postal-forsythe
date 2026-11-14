@@ -9,7 +9,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P3 | [Insurance terms: do's and don'ts, limits, what can't be insured](#p3-insurance-terms-dos-and-donts-limits-what-cant-be-insured) | ⏸ Later | Research each carrier's rules first |
 | P4 | [Find a texting (SMS) platform for messages and marketing](#p4-find-a-texting-sms-platform-for-messages-and-marketing) | ⏳ Next to research | Pick the platform, then register the store's texting |
 | P5 | ["Sign in with Google"](#p5-sign-in-with-google) | ⏸ Later | The site's real web address, a privacy policy page, and Peter's Google setup |
-| P6 | [A fresher website theme](#p6-a-fresher-website-theme) | ⏳ Next | Peter picks a direction (A, B, C or a mix) |
+| P6 | [A fresher website theme](#p6-a-fresher-website-theme) | ✅ Done Nov 14: Theme B | A larger logo file from franchise support would be sharper |
 
 ---
 
@@ -184,7 +184,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 
 ## P6. A fresher website theme
 
-**Added:** 2026-11-14 15:19 CST. **Status:** next, waiting on Peter's pick.
+**Added:** 2026-11-14 15:19 CST. **Status:** ✅ done 2026-11-14 15:28 CST: Peter picked **B. Friendly & warm** (see EDIT-LOG.md).
 
 **What it is:** Replace the site's 2000s look (glossy blue and tan gradients, bevelled tabs, Trebuchet) with a modern, easier-on-the-eyes theme in the logo's own colors: navy **#29276E**, flag red **#CB3833** and white. The Goin' Postal logo goes at the top left.
 

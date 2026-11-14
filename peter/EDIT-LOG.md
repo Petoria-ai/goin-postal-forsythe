@@ -4,6 +4,24 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 15:28 CST · New look: Theme B, Friendly & warm, with the Goin' Postal logo
+
+- **Asked for:** "Let's do B" (from the three theme ideas), with the company logo at the top left. The logo is the file the franchise supplies.
+- **What changed (every page, staff pages included):**
+  - **Colors from the logo:** navy #29276E and flag red #CB3833 on a warm off-white page, instead of the glossy blue and tan.
+  - **Font:** Nunito, a rounded, friendly face, served from the store's own site (not Google's servers). Lao, Khmer, Thai, Korean, Chinese and Japanese keep the fonts that carry their letters.
+  - **Header:** white, with the **Goin' Postal logo** top left and "Forsythe" beside it, the menu in navy ("Ship a package" as a red pill, the current page underlined in red), the Tracking dropdown as a soft card, and the red **Log in** pill on the right.
+  - **A slim bar above the header** holds the language picker, text size and High contrast, like ups.com. It stays small whatever text size is picked.
+  - **Buttons** are flat pill shapes: red for the main action, navy for the other. **Cards, boxes and fields** are white with soft shadows and rounded corners. Headings are navy.
+  - **On a phone:** the menu scrolls sideways on one line and the top bar stays on one line, so the tracking box now starts on the first screen (192 px down an 844 px screen). That settles D13.
+  - **High contrast** still turns everything flat black and white with bold outlines.
+- **The logo:** `site/public/brand/goin-postal-logo.png`, the franchise's file used as is (never redrawn or recolored). It's in the public GitHub repo because the site has to serve it; the footer already says Goin' Postal's name and logo belong to GP Brands. A larger PNG or an SVG from franchise support would look sharper.
+- **New package:** the Nunito font (`@fontsource-variable/nunito`). After `git pull`, run `npm install` once.
+- **Files:** [layout and header](../site/src/layouts/Base.astro), [styles](../site/src/styles/global.css) (a Theme B section at the end), [logo](../site/public/brand/goin-postal-logo.png), [package list](../site/package.json)
+- **How to check it:** `git pull`, then `npm install`, then `npm run dev`, and open http://localhost:4321. Try the Ship page, Tracking, Business cards, Account, a phone-sized window, another language and High contrast.
+- **Checks run:** 166 tests pass, the type check is clean, the site builds. Screenshots of the home, Ship, Tracking, Business cards, Account and staff Queue pages on a computer, the home and Ship pages on a phone, the Tracking menu, High contrast, Lao and Chinese; no page scrolls sideways; the font loads. The sign-up and sign-in journey from the Ship page ran again on the new theme.
+- **Fixed while checking:** "Ship a package" lost its pill (and went white on white on the Ship page) because an older rule won; the "PeterShip" title kept a faint mirror reflection from the old look; the top bar grew to three rows on a phone at larger text sizes.
+
 ## 2026-11-14 15:19 CST · Theme ideas and to-do P6
 
 - **Asked for:** help getting started on "a better website theme, something more friendly to the eyes and not so old styling", with the company logo at the top left. The logo is the file the franchise supplies.

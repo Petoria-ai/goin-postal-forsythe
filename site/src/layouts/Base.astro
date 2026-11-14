@@ -1,4 +1,5 @@
 ---
+import '@fontsource-variable/nunito'; // Theme B's rounded font, served from this site (Peter, Nov 14 2026)
 import '../styles/global.css';
 import { LANGS } from '../i18n/strings';
 // The picker's order: English, then Vietnamese, Afrikaans, Spanish, French, Portuguese and Dutch at the top (the owners' ask), the rest as listed.
@@ -24,14 +25,39 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
   </head>
   <body>
     <a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
+    <!-- Theme B (Peter, Nov 14 2026): language, text size and contrast sit in a slim bar above the header, like ups.com. -->
+    <div class="utility">
+      <div class="wrap utility-in">
+          {Astro.url.pathname.startsWith('/counter') && store.siblings && store.siblings.length > 0 && (
+          <select id="storeSwitch" aria-label="Store" title="Store">
+            <option value="">{store.name}</option>
+            {store.siblings.map((s) => <option value={s.url}>{s.name}</option>)}
+          </select>
+        )}
+        <label class="lang-label" for="lang"><span lang="en">Language</span> / <span lang="vi">Ngôn ngữ</span></label>
+        <select id="lang" aria-label="Language / Ngôn ngữ" title="Language / Ngôn ngữ">
+          {[...LANGS].sort((a, b) => LANG_MENU_ORDER.indexOf(a.code) - LANG_MENU_ORDER.indexOf(b.code)).map((l) => <option value={l.code}>{l.name}</option>)}
+        </select>
+        <span class="a11y" role="group" aria-label="Text size">
+          <span class="a11y-label" data-i18n="a11y.text">Text size</span>
+          <button type="button" class="size" data-size="0" aria-label="Smaller text">A&minus;</button>
+          <button type="button" class="size" data-size="1" aria-label="Normal text">A</button>
+          <button type="button" class="size" data-size="2" aria-label="Larger text">A+</button>
+          <button type="button" class="size" data-size="3" aria-label="Even larger text">A++</button>
+          <button type="button" class="size" data-size="4" aria-label="Largest text">A+++</button>
+          <button type="button" class="size contrast" id="contrast" aria-pressed="false"><span data-i18n="a11y.contrast">High contrast</span></button>
+        </span>
+      </div>
+    </div>
     <header class="top">
       <div class="wrap">
         <div class="top-row">
-          <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
+          <!-- The franchise's own logo file, used as supplied: never redrawn or recolored. -->
+          <a class="brand" href="/"><img src="/brand/goin-postal-logo.png" alt="Goin' Postal" width="170" height="35" /><span class="brand-store">{brandRest}</span></a>
           <!-- Log in, top right of every page (Peter, Nov 14 2026). Signed in, it greets the customer and opens their account. -->
           <a class="login-btn" id="loginBtn" href="/account" data-i18n="acct.login">Log in</a>
         </div>
-        <nav>
+        <nav aria-label="Main">
           <a href="/ship" class="ps-tab" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
           <!-- Tracking menu (Peter, Nov 14 2026, like ups.com): opens on hover or keyboard focus; the arrow opens it on a phone. -->
           <div class="nav-drop" id="trackDrop">
@@ -48,25 +74,6 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
           <a href="/contact" aria-current={cur('/contact')} data-i18n="nav.contact">Contact</a>
           <a href="/account" aria-current={cur('/account')} data-i18n="nav.account">Account</a>
           <a href="/petership" aria-current={cur('/petership')} data-i18n="nav.about">About PeterShip</a>
-          {Astro.url.pathname.startsWith('/counter') && store.siblings && store.siblings.length > 0 && (
-            <select id="storeSwitch" aria-label="Store" title="Store">
-              <option value="">{store.name}</option>
-              {store.siblings.map((s) => <option value={s.url}>{s.name}</option>)}
-            </select>
-          )}
-          <label class="lang-label" for="lang"><span lang="en">Language</span> / <span lang="vi">Ngôn ngữ</span></label>
-          <select id="lang" aria-label="Language / Ngôn ngữ" title="Language / Ngôn ngữ">
-            {[...LANGS].sort((a, b) => LANG_MENU_ORDER.indexOf(a.code) - LANG_MENU_ORDER.indexOf(b.code)).map((l) => <option value={l.code}>{l.name}</option>)}
-          </select>
-          <span class="a11y" role="group" aria-label="Text size">
-            <span class="a11y-label" data-i18n="a11y.text">Text size</span>
-            <button type="button" class="size" data-size="0" aria-label="Smaller text">A&minus;</button>
-            <button type="button" class="size" data-size="1" aria-label="Normal text">A</button>
-            <button type="button" class="size" data-size="2" aria-label="Larger text">A+</button>
-            <button type="button" class="size" data-size="3" aria-label="Even larger text">A++</button>
-            <button type="button" class="size" data-size="4" aria-label="Largest text">A+++</button>
-            <button type="button" class="size contrast" id="contrast" aria-pressed="false"><span data-i18n="a11y.contrast">High contrast</span></button>
-          </span>
         </nav>
       </div>
     </header>
