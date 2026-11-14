@@ -75,6 +75,13 @@ const insTerms = addonCfg.insurance;
       <details class="extras">
         <summary data-i18n="ship.x.h">Extra services</summary>
         <label class="check"><input name="opt_signature" type="checkbox" /> <span><strong data-i18n="ship.x.sig">Signature confirmation</strong>{sigPrice != null && <span class="muted"> (+${sigPrice.toFixed(2)})</span>} <span class="muted" data-i18n="ship.x.sig.d">Someone must sign for it when it is delivered.</span></span></label>
+        <!-- Return labels (Peter, Nov 14 2026, like Pirate Ship): "only" swaps the addresses; "included" adds a return label to the outgoing one. -->
+        <label class="check"><input name="opt_return" type="checkbox" /> <span><strong data-i18n="ship.x.ret">Return label</strong> <span class="muted" data-i18n="ship.x.ret.d">A prepaid label to send the package back.</span></span></label>
+        <div id="retModes" class="ret-modes" hidden>
+          <label class="ret-mode"><input type="radio" name="opt_return_mode" value="only" checked /> <span><strong data-i18n="ship.x.ret.only">Return label only</strong> <span class="muted" data-i18n="ship.x.ret.only.d">Swaps the addresses: one label from the “Where is it going?” address back to the return address.</span></span></label>
+          <label class="ret-mode"><input type="radio" name="opt_return_mode" value="included" /> <span><strong data-i18n="ship.x.ret.inc">Return label included</strong> <span class="muted" data-i18n="ship.x.ret.inc.d">The outgoing label plus a return label, so the receiver can send it back.</span></span></label>
+          <p class="muted" data-i18n="ship.x.ret.now">Return labels are charged now, at the price shown.</p>
+        </div>
         <label class="check"><input name="opt_media_mail" type="checkbox" /> <span><strong data-i18n="ship.x.media">Qualifies for Media Mail</strong> <span class="muted" data-i18n="ship.x.media.d">Books, printed music, recordings and films only, with no ads and no other products. A cheaper, slower USPS service; USPS may open it to check.</span></span></label>
         <label class="check"><input name="opt_irregular" type="checkbox" /> <span><strong data-i18n="ship.x.irr">Irregular package</strong> <span class="muted" data-i18n="ship.x.irr.d">Not a regular box: tubes, rolls, odd shapes, or anything a sorting machine can't handle.</span></span></label>
       </details>
@@ -208,6 +215,7 @@ const insTerms = addonCfg.insurance;
     let payload: any = null;
     let picked: string | null = null;
     let pickedPrice = 0;
+    let pickedReturn = 0; // the return label's price with "Return label included"
     let extras: any = null;
     const insBox = f.querySelector('[name=insure]') as HTMLInputElement;
     const INS_TERMS = JSON.parse(document.getElementById('insTermsJson')?.textContent || 'null');
@@ -219,7 +227,7 @@ const insTerms = addonCfg.insurance;
       // Signature confirmation is charged at the catalog price when ticked (the server adds the same add-on).
       const sigOn = (document.querySelector('#quote [name=opt_signature]') as HTMLInputElement | null)?.checked;
       const sig = sigOn ? (extras?.addons?.find((x: any) => x.code === 'signature')?.price ?? 0) : 0;
-      const subtotal = pickedPrice + ins + text + sig;
+      const subtotal = pickedPrice + ins + text + sig + pickedReturn;
       const f = extras?.online_fee && (extras.online_fee.percent || extras.online_fee.flat) ? Math.round((subtotal * extras.online_fee.percent / 100 + extras.online_fee.flat) * 100) / 100 : 0;
       const feeRow = document.getElementById('feeRow')!;
       feeRow.hidden = !f;
@@ -245,7 +253,11 @@ const insTerms = addonCfg.insurance;
     // Extra services (Peter, Nov 14 2026): the ticked boxes travel on the parcel as options.
     const OPTS = ['signature', 'media_mail', 'irregular', 'hazmat'] as const;
     const optBox = (k: string) => f.querySelector(`[name=opt_${k}]`) as HTMLInputElement;
-    const readOptions = () => Object.fromEntries(OPTS.filter((k) => optBox(k).checked).map((k) => [k, true]));
+    const retBox = f.querySelector('[name=opt_return]') as HTMLInputElement, retModes = document.getElementById('retModes') as HTMLElement;
+    const retMode = () => (f.querySelector('[name=opt_return_mode]:checked') as HTMLInputElement | null)?.value ?? 'only';
+    const readOptions = (): Record<string, unknown> => ({ ...Object.fromEntries(OPTS.filter((k) => optBox(k).checked).map((k) => [k, true])), ...(retBox.checked ? { return_label: retMode() } : {}) });
+    const retPaint = () => { retModes.hidden = !retBox.checked; };
+    retBox.addEventListener('change', retPaint);
     const hzNote = document.getElementById('hzNote') as HTMLElement, hzDialog = document.getElementById('hzDialog') as HTMLDialogElement;
     const hzPaint = () => { hzNote.hidden = !optBox('hazmat').checked; };
     optBox('hazmat').addEventListener('change', hzPaint);
@@ -255,7 +267,7 @@ const insTerms = addonCfg.insurance;
     // Saved packages: size, weight, contents and options, kept on this device only (localStorage), up to 5.
     const PKG_KEY = 'gp-saved-packages';
     const PKG_FIELDS = ['weight_lb', 'length_in', 'width_in', 'height_in', 'description'] as const;
-    type SavedPkg = { label: string; fields: Record<string, string>; options: Record<string, boolean> };
+    type SavedPkg = { label: string; fields: Record<string, string>; options: Record<string, any> };
     const loadPkgs = (): SavedPkg[] => { try { return JSON.parse(localStorage.getItem(PKG_KEY) || '[]'); } catch { return []; } };
     const storePkgs = (list: SavedPkg[]) => { try { localStorage.setItem(PKG_KEY, JSON.stringify(list)); } catch {} };
     const pkgRow = document.getElementById('savedPkgRow') as HTMLElement, pkgSel = document.getElementById('savedPkg') as HTMLSelectElement;
@@ -275,7 +287,10 @@ const insTerms = addonCfg.insurance;
       if (!pkgSel.value || !p) return;
       for (const k of PKG_FIELDS) (f.querySelector(`[name=${k}]`) as HTMLInputElement).value = p.fields[k] ?? '';
       for (const k of OPTS) optBox(k).checked = !!p.options?.[k];
-      hzPaint();
+      retBox.checked = !!p.options?.return_label;
+      const mode = f.querySelector(`[name=opt_return_mode][value="${p.options?.return_label ?? 'only'}"]`) as HTMLInputElement | null;
+      if (mode) mode.checked = true;
+      retPaint(); hzPaint();
     });
     document.getElementById('forgetPkg')!.addEventListener('click', () => { storePkgs([]); paintPkgs(); });
     paintPkgs();
@@ -327,8 +342,8 @@ const insTerms = addonCfg.insurance;
           <span class="carrier">${r.carrier}</span>
           <span class="service">${r.service}</span>
           <span class="days">${r.min_days ?? '?'}–${r.max_days ?? '?'} ${t('ship.days')}</span>
-          <span class="price">$${r.total_charge.toFixed(2)}</span>`;
-        el.querySelector('input')!.addEventListener('change', () => { picked = r.id; pickedPrice = r.total_charge; buy.hidden = false; total(); });
+          <span class="price">$${r.total_charge.toFixed(2)}${r.return_charge != null ? `<small class="ret-plus">${t('ship.x.ret.plus').replace('{price}', r.return_charge.toFixed(2))}</small>` : ''}</span>`;
+        el.querySelector('input')!.addEventListener('change', () => { picked = r.id; pickedPrice = r.total_charge; pickedReturn = r.return_charge ?? 0; buy.hidden = false; total(); });
         ratesEl.appendChild(el);
       }
       const bench = document.getElementById('bench')!;

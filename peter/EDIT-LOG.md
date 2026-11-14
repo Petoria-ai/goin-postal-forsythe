@@ -4,6 +4,27 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 12:37 CST · Return labels on the Ship page
+
+- **Asked for:** the Pirate Ship "Return Labels" tick box (screenshot), with its two choices: "Return Labels Only" and "Return Labels Included".
+- **What changed** (in **Extra services**, under Signature confirmation):
+  - A **Return label** checkbox. Ticking it opens two choices:
+    - **Return label only** (picked by default): swaps the addresses, so the one label runs from the "Where is it going?" address back to the return address. The order is marked as a return.
+    - **Return label included**: the outgoing label plus a return label. Each rate shows the return label's price under it ("+ $9.65 return label"), and the total includes it.
+  - The return label uses **the same service back** when that carrier offers it, otherwise the same carrier's cheapest, otherwise the cheapest of all. It has no signature and no insurance.
+  - Both labels are bought when the order is paid. The **done page** shows the return label line and a "Download return label" button; the **counter page** shows it with its tracking number and "Open return label to print". It's recorded as its own shipment (pickup code + "-R") for reports and tracking.
+  - If the return label can't be bought after the outgoing one was, the outgoing label still stands, and the counter page shows a red note to buy the return label by hand.
+  - A business account's discount applies to the return label too. On the card payment page it's its own line.
+  - Saved packages remember the return label choice.
+  - All new text in all 14 languages.
+- **Why:** Sellers who expect returns can send a return label with every package, and anyone can buy just a return label.
+- **How it's charged, for now:** the return label is **charged now, at the price shown** (the page says so). Pirate Ship's "charges postage only if used" needs the postal service's pay-on-use returns on the store's own account, plus a way to bill the customer later. That's a decision for the prices meeting (D9 in [FOR-WILLIAM.md](FOR-WILLIAM.md)).
+- **Files:** [ship page](../site/src/pages/ship/index.astro), [return label rules](../site/src/lib/options.ts), [tests](../site/tests/options.test.ts), [rates](../site/src/pages/api/rates.ts), [orders](../site/src/pages/api/orders.ts), [order record](../site/src/lib/orders.ts), [card payment](../site/src/lib/stripe.ts), [label step](../site/src/lib/fulfil.ts), [done page](../site/src/pages/ship/done.astro), [counter page](../site/src/pages/counter/[code].astro), [text, 14 languages](../site/src/i18n/strings.ts), [staff text](../site/src/i18n/staff3.ts), [styles](../site/src/styles/global.css)
+- **How to check it:** `git pull`, open http://localhost:4321/ship, fill in the form, open **Extra services**, tick **Return label**.
+  - Leave **Return label only**, Get rates, pay: the done page says the label goes *to* your return address.
+  - Pick **Return label included**, Get rates: each rate shows "+ $X return label"; pick one and the total includes it. Pay: the done page has both download buttons.
+- **Checks run:** 136 tests pass (4 new), the type check is clean, the site builds. Both choices bought in a real browser: "only" sent the label to the sender's address; "included" charged $19.98 on the page and the order alike, and both labels showed on the done and counter pages.
+
 ## 2026-11-14 12:25 CST · Meeting notes for Peter and William
 
 - **Asked for:** "Let's make sure we are documenting all these hiccups so when me and William meet again we can pick up what we are talking about."

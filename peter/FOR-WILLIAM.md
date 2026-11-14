@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 14, 2026, 12:25 CST.
+**Last updated:** November 14, 2026, 12:37 CST.
 
 ## How Peter is working
 
@@ -31,6 +31,7 @@ All on the `peter` branch, all with tests passing and the site building. Details
 | Item value only asked when insurance is ticked; insurance box moved above Extra services | `pages/ship/index.astro`, new `lib/insurance.ts`, `lib/addons.ts` | The fee formula moved to its own file (re-exported from `addons.ts`, so other callers are unchanged) |
 | Extra services: signature, Media Mail, irregular, hazardous materials, saved packages | new `lib/options.ts`, `shipping/engine.ts`, all carrier adapters, `api/orders.ts`, `lib/validate.ts`, `shipping/types.ts`, i18n files | `Parcel` gained `options`; the rate cache key includes them; `applyOptions` filters rates in `getQuotes` |
 | Insurance bought from the carrier with the label | new `lib/labelExtras.ts`, `lib/fulfil.ts`, all carrier adapters, `lib/easyship.ts` | `Parcel` gained `insured_usd`, set only at label time |
+| Return labels: "only" (addresses swapped, `kind: 'return'`) and "included" (a second label) | `lib/options.ts`, `api/rates.ts`, `api/orders.ts`, `lib/orders.ts`, `lib/stripe.ts`, `lib/fulfil.ts`, done and counter pages | `Order` gained `return_rate` and `return_label`; `fulfil` buys the second label and records it as shipment `<code>-R`; a failed return purchase doesn't undo the paid outgoing label |
 
 ## 3. To check once the carrier accounts are connected
 
@@ -42,6 +43,7 @@ The site runs on demo rates, so these follow each carrier's published format but
 - [ ] **USPS Media Mail** appears in USPS's live rates when ticked.
 - [ ] **Irregular package** changes the USPS price.
 - [ ] Easyship doesn't receive signature or hazmat yet (only insurance). Decide whether that matters while Easyship is the bridge.
+- [ ] **Return labels** on a real account: the "included" return label is bought from the receiver's address back to the sender, and shows in the carrier's records.
 
 ## 4. Decisions waiting
 
@@ -51,10 +53,11 @@ The site runs on demo rates, so these follow each carrier's published format but
 | D2 | Does the $3.50 signature fee cover what the carriers charge? | Rin | Same place |
 | D3 | International shipping online: William removed it Nov 7 for risk. Peter wants to revisit later, the Pirate Ship way (sender certifies the customs form, screening, $2,500 cap, USPS first). | Peter, William, Rin | Full plan: [TODO P1](TODO.md#p1-international-shipping-online) |
 | D4 | Hazardous materials online only within the lower 48 and DC; Alaska, Hawaii, territories and military go to the counter. Is that the rule you want? | Peter, William | Conservative on purpose, to avoid USPS fines |
-| D5 | Return labels on the Ship page: charge up front or only if used? Same service or cheapest? Email to sender or receiver? | Peter | [TODO P2](TODO.md#p2-return-labels-on-the-ship-page), next to build |
+| D5 | ✅ **Decided Nov 14:** return labels are charged up front for now; the same service back where offered, else the cheapest; both labels go to the customer who bought them. | Peter | Built, see [TODO P2](TODO.md#p2-return-labels-on-the-ship-page). Pay-on-use is D9 |
 | D6 | Google Places key for letter-by-letter address suggestions (costs money past a free allowance) | Peter, Rin | Already issue 18 in William's repo |
 | D7 | **Idea:** "We handle your claim" as a selling point for insurance, on the site and at the counter. The site already has a claims tracker (/counter/claims). Free with insurance, or a fee? | Peter, William | Only promise what's delivered; check with Goin' Postal, which has its own insurance arrangement |
 | D8 | Which insurance does the counter (Rate Pro) use today, carrier or a third-party insurer? Could the website use the same one? | William, Goin' Postal | Peter's understanding: the franchise has customers file claims with each carrier themselves |
+| D9 | Return labels "charged only if used", like Pirate Ship? Needs the postal service's pay-on-use returns on the store's account, and a way to bill the customer later. Business accounts could be billed on their monthly statement; walk-in website customers would need a saved card. | Peter, William, Rin | For the prices meeting. Today: charged up front, and the page says so |
 
 ## 5. Not changed on purpose
 

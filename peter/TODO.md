@@ -5,7 +5,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | # | Item | Status | Waiting on |
 |---|---|---|---|
 | P1 | [International shipping online](#p1-international-shipping-online) | ⏸ Later | The US-only site going live, then a talk with William and Rin |
-| P2 | [Return labels on the Ship page](#p2-return-labels-on-the-ship-page) | ⏳ Next | Nothing: next edit |
+| P2 | [Return labels on the Ship page](#p2-return-labels-on-the-ship-page) | ✅ Done Nov 14 | Pay-only-if-used is D9 in FOR-WILLIAM.md |
 
 ---
 
@@ -59,7 +59,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 
 ## P2. Return labels on the Ship page
 
-**Added:** November 14, 2026. **Status:** next.
+**Added:** November 14, 2026. **Status:** ✅ done November 14, 2026, 12:37 CST (see EDIT-LOG.md). Answers used: charged up front for now; the same service back where offered, else the cheapest; both labels on the done page and in the receipt, for the customer to pass on.
 
 **What it is:** A "Return label" checkbox on the Ship page, like Pirate Ship's, so a seller can buy the outgoing label and a prepaid label back to themselves in one checkout.
 

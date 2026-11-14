@@ -38,6 +38,9 @@ const photos = await listPhotos(env, order.id);
       {order.status === 'reserved' && !order.account_id && <p><button class="btn" data-action="paid" data-i18n="st.buy.long">Rung up on the POS. Buy label</button></p>}
       {order.label?.counter_note && <p class="err">{order.label.counter_note}</p>}
       {order.label?.label_url && <p><a class="btn" href={order.label.label_url} target="_blank" rel="noopener" data-i18n="st.openlabel">Open label to print</a></p>}
+      {order.return_rate && <p><strong data-i18n="st.o.ret">Return label:</strong> {order.return_rate.service} · ${order.return_rate.total_charge.toFixed(2)}{order.return_label?.tracking_number ? ` · ${order.return_label.tracking_number}` : ''}</p>}
+      {order.return_label?.label_url && <p><a class="btn" href={order.return_label.label_url} target="_blank" rel="noopener" data-i18n="st.o.retopen">Open return label to print</a></p>}
+      {order.label && order.return_rate && !order.return_label && <p class="err" data-i18n="st.o.ret.missing">Return label paid for but not bought yet. Buy it by hand and email it to the customer.</p>}
       {order.label && <p><button class="btn" data-print="counter" data-i18n="st.print">Print at the counter</button> <span class="muted" data-i18n="st.sendsprinter">sends it to the label printer</span></p>}
       {order.label && <p><label><span data-i18n="st.emailto">Email the label to</span> <input id="email" type="email" value={order.email} placeholder="name@example.com" /></label> <button class="btn kraft" data-email data-i18n="st.emaillabel">Email label</button>{order.emailed_at && <span class="muted"> <span data-i18n="st.lastsent">last sent</span> {order.emailed_at}</span>}</p>}
       {order.status === 'labeled' && <p><button class="btn kraft" data-action="printed" data-i18n="st.printed">Mark printed</button></p>}

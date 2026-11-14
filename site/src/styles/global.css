@@ -387,3 +387,12 @@ html[lang="ja"] { --fw-display: "Yu Gothic UI", Meiryo, "Segoe UI", sans-serif; 
 .upsell { display: grid; gap: 10px; border: 2px solid var(--navy); border-radius: 8px; padding: 12px 14px; }
 .upsell .check { margin: 0; }
 .upsell p { margin: 0; }
+
+/* Return labels on the ship page (Peter, Nov 14 2026) */
+.ret-modes { display: grid; gap: 8px; margin: 4px 0 8px 34px; }
+.ret-mode { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--hair); border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+.ret-mode input { width: 20px; height: 20px; min-height: 0; margin: 2px 0 0; flex: none; }
+.ret-mode:has(input:checked) { border-color: var(--navy); border-width: 2px; }
+.ret-modes p { margin: 0; }
+.ret-plus { display: block; font-size: .8rem; font-weight: 500; }
+.ret-mode .muted { font-weight: 400; }

@@ -13,6 +13,10 @@ export interface ShipOptions {
   irregular?: boolean;
   /** Limited-quantity hazardous materials: USPS Ground Advantage only, declared on the label. */
   hazmat?: boolean;
+  /** Return labels (Peter, Nov 14 2026, like Pirate Ship). "only": one label with the addresses swapped,
+   *  from the receiver back to the sender. "included": the outgoing label plus a return label. Charged
+   *  now, at the price shown; pay-only-if-used is a later decision (peter/FOR-WILLIAM.md). */
+  return_label?: 'only' | 'included';
 }
 
 export const MEDIA_MAIL_ID = 'usps:MEDIA_MAIL';
@@ -22,12 +26,13 @@ export function parseOptions(v: any): ShipOptions {
   const on = (k: keyof ShipOptions) => v?.[k] === true || v?.[k] === 'on';
   const o: ShipOptions = {};
   for (const k of ['signature', 'media_mail', 'irregular', 'hazmat'] as const) if (on(k)) o[k] = true;
+  if (v?.return_label === 'only' || v?.return_label === 'included') o.return_label = v.return_label;
   return o;
 }
 
 /** A short code for the rate cache key, so a quote with options never reuses one without. */
 export function optionsKey(o: ShipOptions | undefined): string {
-  return o ? ['signature', 'media_mail', 'irregular', 'hazmat'].filter((k) => o[k as keyof ShipOptions]).map((k) => k[0]).join('') : '';
+  return o ? ['signature', 'media_mail', 'irregular', 'hazmat'].filter((k) => o[k as keyof ShipOptions]).map((k) => k[0]).join('') + (o.return_label ? `r${o.return_label[0]}` : '') : '';
 }
 
 const isMediaMail = (r: Rate) => r.id === MEDIA_MAIL_ID || (r.carrier === 'USPS' && /media mail/i.test(r.service));
@@ -48,4 +53,23 @@ export const HAZMAT_AREA = 'Hazardous materials can be bought online only betwee
 
 export function hazmatAllowed(origin: Address, destination: Address): boolean {
   return !NOT_BY_GROUND.has(origin.state.toUpperCase()) && !NOT_BY_GROUND.has(destination.state.toUpperCase());
+}
+
+/** "Return label only" swaps the two addresses: the label runs from the receiver back to the sender. */
+export function directed<A>(origin: A, destination: A, o: ShipOptions | undefined): { origin: A; destination: A; kind: 'ship' | 'return' } {
+  return o?.return_label === 'only' ? { origin: destination, destination: origin, kind: 'return' } : { origin, destination, kind: 'ship' };
+}
+
+/** The return label to go with an outgoing rate ("Return label included"): the same service the other
+ *  way if it is offered, else the same carrier's cheapest, else the cheapest of all. */
+export function pickReturnRate(outbound: Rate, reverse: Rate[]): Rate | undefined {
+  const cheapest = (list: Rate[]) => [...list].sort((a, b) => a.total_charge - b.total_charge)[0];
+  return reverse.find((r) => r.id === outbound.id) ?? cheapest(reverse.filter((r) => r.carrier === outbound.carrier)) ?? cheapest(reverse);
+}
+
+/** A parcel for the return label: same box, without the outgoing extras (no signature, no insurance, no return of its own). */
+export function returnParcel<P extends { options?: ShipOptions; insured_usd?: number }>(p: P): P {
+  const { signature, return_label, ...keep } = p.options ?? {};
+  const { insured_usd, ...rest } = p;
+  return { ...rest, options: keep } as P;
 }

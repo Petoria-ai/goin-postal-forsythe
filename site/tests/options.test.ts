@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyOptions, hazmatAllowed, optionsKey, parseOptions } from '../src/lib/options';
+import { applyOptions, directed, hazmatAllowed, optionsKey, parseOptions, pickReturnRate, returnParcel } from '../src/lib/options';
 import type { Address, Rate } from '../src/shipping/types';
 
 const rate = (id: string, carrier: Rate['carrier'], service: string): Rate => ({ id, carrier, service, cost: 5, total_charge: 6, currency: 'USD', min_days: 2, max_days: 5, billable_weight_lb: 1 });
@@ -46,5 +46,32 @@ describe('hazmatAllowed', () => {
   it('refuses Alaska, Hawaii, territories and military addresses at either end', () => {
     for (const st of ['AK', 'HI', 'PR', 'GU', 'AE']) expect(hazmatAllowed(at('LA'), at(st))).toBe(false);
     expect(hazmatAllowed(at('ak'), at('LA'))).toBe(false);
+  });
+});
+
+describe('return labels', () => {
+  it('reads the two modes and nothing else', () => {
+    expect(parseOptions({ return_label: 'only' })).toEqual({ return_label: 'only' });
+    expect(parseOptions({ return_label: 'included' })).toEqual({ return_label: 'included' });
+    expect(parseOptions({ return_label: 'sometimes' })).toEqual({});
+    expect(optionsKey({ return_label: 'only' })).not.toBe(optionsKey({ return_label: 'included' }));
+  });
+  it('"only" swaps the addresses and makes it a return; otherwise nothing moves', () => {
+    expect(directed('A', 'B', { return_label: 'only' })).toEqual({ origin: 'B', destination: 'A', kind: 'return' });
+    expect(directed('A', 'B', { return_label: 'included' })).toEqual({ origin: 'A', destination: 'B', kind: 'ship' });
+    expect(directed('A', 'B', {})).toEqual({ origin: 'A', destination: 'B', kind: 'ship' });
+  });
+  it('picks the same service back, else the same carrier, else the cheapest', () => {
+    const out = rate('ups:03', 'UPS', 'UPS Ground');
+    const back = [rate('usps:USPS_GROUND_ADVANTAGE', 'USPS', 'USPS Ground Advantage'), { ...rate('ups:02', 'UPS', 'UPS 2nd Day Air'), total_charge: 20 }, { ...rate('ups:03', 'UPS', 'UPS Ground'), total_charge: 11 }];
+    expect(pickReturnRate(out, back)?.id).toBe('ups:03');
+    expect(pickReturnRate(out, back.filter((r) => r.id !== 'ups:03'))?.id).toBe('ups:02');
+    expect(pickReturnRate(rate('fedex:X', 'FedEx', 'FedEx Ground'), back)?.carrier).toBeDefined();
+    expect(pickReturnRate(out, [])).toBeUndefined();
+  });
+  it('the return parcel drops signature, insurance and the return choice, and keeps hazmat', () => {
+    const p = returnParcel({ weight_lb: 3, options: { signature: true, hazmat: true, return_label: 'included' as const }, insured_usd: 450 } as any);
+    expect(p.options).toEqual({ hazmat: true });
+    expect((p as any).insured_usd).toBeUndefined();
   });
 });

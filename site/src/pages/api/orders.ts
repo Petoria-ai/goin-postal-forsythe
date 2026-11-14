@@ -11,16 +11,17 @@ import { store } from '../../data/store';
 import { effectiveAddons, priceExtras, onlineFee, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES } from '../../lib/addons';
 import { accountForContact } from '../../shipping/store';
 import { checkAddress } from '../../lib/address';
+import { directed, pickReturnRate, returnParcel } from '../../lib/options';
 
 // Customer picked a rate: start Stripe Checkout. Domestic only since Nov 7, 2026 (parseAddress refuses the rest).
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json();
-    const origin = b.origin ? parseAddress(b.origin) : store.origin;
-    const destination = parseAddress(b.destination);
+    const parcel = parseParcel(b.parcel);
+    // "Return label only" swaps the addresses (the label runs from the receiver back to the sender) and makes it a return.
+    const { origin, destination, kind } = directed(b.origin ? parseAddress(b.origin) : store.origin, parseAddress(b.destination), parcel.options);
     const check = checkAddress(destination);
     if (check.errors.length) throw new Error(check.errors[0]);
-    const parcel = parseParcel(b.parcel);
     const email = String(b.email ?? '').trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('A valid email is needed for the receipt and label');
     const sms = b.sms === true || b.sms === 'on';
@@ -42,14 +43,22 @@ export const POST: APIRoute = async ({ request }) => {
     // Signature confirmation ticked on the ship page: the catalog's signature add-on is charged, once.
     if (parcel.options?.signature && !picks.some((p) => p.code === 'signature')) picks.push({ code: 'signature', qty: 1 });
     const extras = priceExtras(cfg, picks, parcel.value_usd, b.insure === true || b.insure === 'on');
-    const subtotal = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
+    // "Return label included": re-quote the way back on the server and charge the return label now, at the price shown.
+    let return_rate: Order['return_rate'];
+    if (parcel.options?.return_label === 'included') {
+      const back = await quote(env, destination, origin, returnParcel(parcel));
+      const r = pickReturnRate(found, back.rates);
+      if (!r) throw new Error('No return label is available for this address. Untick Return label or quote again.');
+      return_rate = account && account.discount_percent ? { ...r, total_charge: Math.round(r.total_charge * (1 - account.discount_percent / 100) * 100) / 100 } : r;
+    }
+    const subtotal = Math.round((rate.total_charge + extras.extras_total + (return_rate?.total_charge ?? 0)) * 100) / 100;
     const tax = salesTax(cfg, taxableExtras(extras));
     const fee = onlineFee(cfg, subtotal);
     const order: Order = {
       id: newOrderId(),
       status: 'awaiting_payment',
       created_at: new Date().toISOString(),
-      email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international: false,
+      email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international: false, kind, return_rate,
       addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, tax, fee, total: Math.round((subtotal + (tax?.amount ?? 0) + (fee?.amount ?? 0)) * 100) / 100,
       account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
     };
