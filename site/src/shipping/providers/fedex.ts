@@ -4,6 +4,7 @@
 import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, oauthToken, money } from '../http';
 import { billableWeightLb } from '../dim';
+import { fedexPackageExtras } from '../../lib/labelExtras';
 
 const base = (env: Env) => (env.FEDEX_SANDBOX ? 'https://apis-sandbox.fedex.com' : 'https://apis.fedex.com');
 
@@ -54,7 +55,7 @@ export const fedex: Provider = {
         serviceType: serviceCode, packagingType: 'YOUR_PACKAGING', pickupType: 'DROPOFF_AT_FEDEX_LOCATION',
         shippingChargesPayment: { paymentType: 'SENDER' },
         labelSpecification: { imageType: opts.zpl ? 'ZPL' : 'PDF', labelStockType: opts.zpl ? 'STOCK_4X6' : 'PAPER_4X6' },
-        requestedPackageLineItems: [{ ...pkg(parcel), itemDescription: parcel.description || 'Merchandise', ...(parcel.options?.signature ? { packageSpecialServices: { specialServiceTypes: ['SIGNATURE_OPTION'], signatureOptionType: 'DIRECT' } } : {}) }],
+        requestedPackageLineItems: [{ ...pkg(parcel), itemDescription: parcel.description || 'Merchandise', ...fedexPackageExtras(parcel) }], // declared value and signature: lib/labelExtras.ts
       },
     };
     const json = await callJson<any>('fedex', `${base(env)}/ship/v1/shipments`, { method: 'POST', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

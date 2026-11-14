@@ -26,6 +26,8 @@ export interface Parcel {
   value_usd: number;
   /** Extra services the customer ticked: signature, Media Mail, irregular, hazardous materials (lib/options.ts). */
   options?: import('../lib/options').ShipOptions;
+  /** Insurance the customer bought, in dollars: added to the label as the carrier's own insurance (lib/labelExtras.ts). Set at label time from the order. */
+  insured_usd?: number;
 }
 
 /** One service a customer can pick. `id` is "<carrier>:<service code>" and is the only thing the browser sends back. */

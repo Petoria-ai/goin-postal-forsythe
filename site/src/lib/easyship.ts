@@ -1,6 +1,7 @@
 // Easyship public API, version 2024-09. https://developers.easyship.com/reference
 // The store's own Easyship account is used, so its linked USPS, UPS, FedEx and DHL
 // accounts and negotiated rates apply. Without a token every call returns mock data.
+import { easyshipInsurance } from './labelExtras';
 
 const BASE = 'https://public-api.easyship.com/2024-09';
 const CARRIERS = ['USPS', 'UPS', 'FedEx', 'DHL'];
@@ -25,6 +26,8 @@ export interface Parcel {
   height_in: number;
   description: string;
   value_usd: number;
+  /** Insurance the customer bought; sent as Easyship's insurance option on the label. */
+  insured_usd?: number;
 }
 
 export interface Rate {
@@ -105,6 +108,7 @@ export async function buyLabel(token: string | undefined, origin: Address, desti
   if (!token) return mockLabel();
   const payload = {
     ...body(origin, destination, parcel),
+    ...easyshipInsurance(parcel), // insurance the customer bought (lib/labelExtras.ts)
     courier_settings: { courier_service_id },
     shipping_settings: {
       units: { weight: 'lb', dimensions: 'in' },

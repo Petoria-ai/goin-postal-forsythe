@@ -4,6 +4,7 @@
 import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, oauthToken, money } from '../http';
 import { billableWeightLb } from '../dim';
+import { upsPackageOptions } from '../../lib/labelExtras';
 
 const base = (env: Env) => (env.UPS_SANDBOX ? 'https://wwwcie.ups.com' : 'https://onlinetools.ups.com');
 const V = 'v2403';
@@ -60,7 +61,7 @@ export const ups: Provider = {
         ShipTo: addr(destination), ShipFrom: addr(origin),
         PaymentInformation: { ShipmentCharge: { Type: '01', BillShipper: { AccountNumber: env.UPS_ACCOUNT_NUMBER } } },
         Service: { Code: serviceCode },
-        Package: { ...pkg(parcel), Description: parcel.description || 'Merchandise', ...(parcel.options?.signature ? { PackageServiceOptions: { DeliveryConfirmation: { DCISType: '2' } } } : {}) }, // DCISType 2: signature required
+        Package: { ...pkg(parcel), Description: parcel.description || 'Merchandise', ...upsPackageOptions(parcel) }, // signature and declared value: lib/labelExtras.ts
         ShipmentRatingOptions: { NegotiatedRatesIndicator: '' },
       },
       LabelSpecification: { LabelImageFormat: { Code: opts.zpl ? 'ZPL' : 'PDF' }, LabelStockSize: { Height: '6', Width: '4' } },

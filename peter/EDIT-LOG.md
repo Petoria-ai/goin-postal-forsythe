@@ -4,6 +4,23 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 12:23 CST · Insurance is now bought from the carrier with the label
+
+- **Asked for:** "Yes, let's make that fix." (Insurance should be added with each carrier when we buy the label.)
+- **The problem found:** the website charged customers the insurance fee, but when it bought the label it never told USPS, UPS or FedEx about the declared value. The label only had the carrier's free built-in cover (usually $100). A lost $450 package would have left the store owing the difference. Nothing went wrong in practice: the site isn't live yet.
+- **What changed:** when an insured order's label is bought, the carrier's own insurance is added to that label for the amount the customer insured:
+  - **USPS:** USPS insurance (up to $500, or over $500) for the insured amount.
+  - **UPS:** declared value for the insured amount.
+  - **FedEx:** declared value for the insured amount.
+  - **Easyship** (the stand-in until the carrier accounts are connected): its insurance option.
+  - Orders without insurance send nothing extra, even if a value was typed.
+  - This covers every way a label is bought: the website, the counter queue and business accounts all go through the same step.
+- **Why:** So insurance the customer pays for is real, and a claim goes through the carrier on an insured label, the same way it works at the counter.
+- **To check when carriers are connected:** the field names follow each carrier's published format, but the site still runs on demo rates. On the first real insured label from each carrier, check the carrier's receipt shows the insurance.
+- **For Rin:** the carrier charges the store its own fee for this insurance. The store charges customers $1.25 per $100 above $100 ($2.75 minimum). Confirm that covers the carrier's cost; change it at /counter/rules.
+- **Files:** [carrier label extras (new)](../site/src/lib/labelExtras.ts), [label step](../site/src/lib/fulfil.ts), [USPS](../site/src/shipping/providers/usps.ts), [UPS](../site/src/shipping/providers/ups.ts), [FedEx](../site/src/shipping/providers/fedex.ts), [Easyship](../site/src/lib/easyship.ts), [shipment types](../site/src/shipping/types.ts), [tests (new)](../site/tests/label-extras.test.ts), [tests (new)](../site/tests/fulfil-insurance.test.ts)
+- **Checks run:** 132 automated tests pass (8 new: each carrier's insurance fields, insurance plus signature together, and the label step passing the amount only when insurance was bought), the type check is clean, the site builds.
+
 ## 2026-11-14 12:13 CST · Insurance offer moved above Extra services
 
 - **Asked for:** "Let's add an insurance tick box above extra services because I want to try to sell them the service."

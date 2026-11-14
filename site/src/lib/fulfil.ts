@@ -8,7 +8,9 @@ import { saveOrder, type Order } from './orders';
 
 export async function fulfil(env: Env, order: Order, paidVia: 'stripe' | 'pos' | 'mock' | 'account' = order.international ? 'pos' : env.STRIPE_SECRET_KEY ? 'stripe' : 'mock'): Promise<Order> {
   if (order.status === 'labeled' || order.status === 'printed') return order; // idempotent
-  const label = await buyLabel(env, order.origin, order.destination, order.parcel, order.rate.id, { qr: true, zpl: true });
+  // Insurance the customer paid for goes on the label as the carrier's own insurance (Peter, Nov 14 2026).
+  const parcel = order.insurance?.declared_usd ? { ...order.parcel, insured_usd: order.insurance.declared_usd } : order.parcel;
+  const label = await buyLabel(env, order.origin, order.destination, parcel, order.rate.id, { qr: true, zpl: true });
   const next: Order = { ...order, status: 'labeled', paid_at: order.paid_at ?? new Date().toISOString(), label };
   await saveOrder(env, next);
   await recordShipment(env, next, label, paidVia).catch((e) => console.error('shipment record failed', e));

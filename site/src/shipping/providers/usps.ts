@@ -6,6 +6,7 @@
 import type { Provider, Address, Parcel, Rate, Label } from '../types';
 import { callJson, oauthToken, money } from '../http';
 import { billableWeightLb } from '../dim';
+import { uspsExtras } from '../../lib/labelExtras';
 
 const base = (env: Env) => (env.USPS_SANDBOX ? 'https://apis-tem.usps.com' : 'https://apis.usps.com');
 
@@ -79,7 +80,7 @@ export const usps: Provider = {
     const body = {
       imageInfo: { imageType: opts.zpl ? 'ZPL' : 'PDF', labelType: '4X6LABEL', receiptOption: 'NONE' },
       toAddress: addr(destination), fromAddress: addr(origin),
-      packageDescription: { mailClass: serviceCode, ...pkg(parcel), destinationEntryFacilityType: 'NONE', packageOptions: { containsHazmat: !!parcel.options?.hazmat }, ...(parcel.options?.signature ? { extraServices: [921] } : {}) }, // 921: Signature Confirmation
+      packageDescription: { mailClass: serviceCode, ...pkg(parcel), destinationEntryFacilityType: 'NONE', packageOptions: { containsHazmat: !!parcel.options?.hazmat }, ...uspsExtras(parcel) }, // signature and insurance: lib/labelExtras.ts
     };
     const json = await callJson<any>('usps', `${base(env)}/labels/v3/label`, {
       method: 'POST', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json', 'X-Payment-Authorization-Token': pay.paymentAuthorizationToken },
