@@ -13,7 +13,10 @@ const me = meId ? await getCustomer(env, meId) : null;
 const saved = me ? (await listCustomerAddresses(env, me.id)).map((a) => ({ id: a.id, label: a.label, to: JSON.parse(a.address_json) })) : [];
 const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
 // The signature confirmation price shown beside its checkbox, from the add-on catalog (/counter/rules).
-const sigPrice = (await effectiveAddons(env)).items.find((i) => i.active && i.code === 'signature')?.price ?? null;
+const addonCfg = await effectiveAddons(env);
+const sigPrice = addonCfg.items.find((i) => i.active && i.code === 'signature')?.price ?? null;
+// Insurance terms for the page, so the fee shows as soon as a value is typed, before rates (Peter, Nov 14 2026).
+const insTerms = addonCfg.insurance;
 ---
 <Base title={`Ship a package · ${store.name}`} description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
   <section class="hero">
@@ -61,6 +64,14 @@ const sigPrice = (await effectiveAddons(env)).items.find((i) => i.active && i.co
       </div>
       <label><span data-i18n="ship.desc">What's inside</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
       <!-- Extra services (Peter, Nov 14 2026, modelled on Pirate Ship). They change which rates are offered, so they sit before Get rates. -->
+      <!-- Insurance sits above Extra services, highlighted, so every customer sees the offer before rates (Peter, Nov 14 2026).
+           Ticking it opens the declared value, like Pirate Ship; the fee updates as the value is typed. -->
+      <div class="upsell">
+        <label class="check" id="insRow"><input name="insure" type="checkbox" /> <span><strong data-i18n="ship.insure">Insure it for the full value</strong> <span id="insFee" class="muted"></span></span></label>
+        <label id="insValueRow" hidden><span data-i18n="ship.value">Value in USD</span> <input name="declared_usd" type="number" min="1" step="0.01" inputmode="decimal" placeholder="250" /></label>
+        <p id="insCovered" class="muted" hidden></p>
+      </div>
+      <script type="application/json" id="insTermsJson" set:html={JSON.stringify(insTerms)} />
       <details class="extras">
         <summary data-i18n="ship.x.h">Extra services</summary>
         <label class="check"><input name="opt_signature" type="checkbox" /> <span><strong data-i18n="ship.x.sig">Signature confirmation</strong>{sigPrice != null && <span class="muted"> (+${sigPrice.toFixed(2)})</span>} <span class="muted" data-i18n="ship.x.sig.d">Someone must sign for it when it is delivered.</span></span></label>
@@ -89,10 +100,6 @@ const sigPrice = (await effectiveAddons(env)).items.find((i) => i.active && i.co
     <form id="buy" class="buy" hidden>
       <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required autocomplete="email" value={me?.email ?? ''} /></label>
       {me && <label class="check"><input name="save_address" type="checkbox" /> <span data-i18n="acct.savethis">Save this address to my account</span></label>}
-      <!-- Insurance (Peter, Nov 14 2026): the declared value is asked only when the customer ticks insurance, like Pirate Ship. -->
-      <label class="check" id="insRow"><input name="insure" type="checkbox" /> <span data-i18n="ship.insure">Insure it for the full value</span> <span id="insFee" class="muted"></span></label>
-      <label id="insValueRow" hidden><span data-i18n="ship.value">Value in USD</span> <input name="declared_usd" type="number" min="1" step="0.01" inputmode="decimal" placeholder="250" /></label>
-      <p id="insCovered" class="muted" hidden></p>
       <p id="feeRow" class="muted" hidden></p>
       <p id="totalRow" class="price"><span data-i18n="ship.total">Total</span>: <strong id="totalAmt"></strong></p>
       <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="ship.sms">Text me when it ships and when it is delivered</span> <span id="smsFee" class="muted"></span></label>
@@ -202,9 +209,11 @@ const sigPrice = (await effectiveAddons(env)).items.find((i) => i.active && i.co
     let picked: string | null = null;
     let pickedPrice = 0;
     let extras: any = null;
-    const insBox = buy.querySelector('[name=insure]') as HTMLInputElement;
+    const insBox = f.querySelector('[name=insure]') as HTMLInputElement;
+    const INS_TERMS = JSON.parse(document.getElementById('insTermsJson')?.textContent || 'null');
+    const insTerms = () => extras?.insurance ?? INS_TERMS;
     function total() {
-      const ins = insBox.checked && extras ? insuranceFee(extras.insurance, declared()).fee : 0;
+      const ins = insBox.checked && insTerms() ? insuranceFee(insTerms(), declared()).fee : 0;
       const smsOn = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
       const text = smsOn && extras?.text_updates_price ? extras.text_updates_price : 0;
       // Signature confirmation is charged at the catalog price when ticked (the server adds the same add-on).
@@ -218,16 +227,16 @@ const sigPrice = (await effectiveAddons(env)).items.find((i) => i.active && i.co
       document.getElementById('totalAmt')!.textContent = `$${(subtotal + f).toFixed(2)}`;
     }
     // Insurance: ticking the box opens the declared value; the fee updates as it is typed.
-    const insValueRow = document.getElementById('insValueRow') as HTMLElement, declEl = buy.querySelector('[name=declared_usd]') as HTMLInputElement;
+    const insValueRow = document.getElementById('insValueRow') as HTMLElement, declEl = f.querySelector('[name=declared_usd]') as HTMLInputElement;
     const insCovered = document.getElementById('insCovered') as HTMLElement, insFeeEl = document.getElementById('insFee') as HTMLElement;
     const declared = () => Math.max(0, Number(declEl.value) || 0);
     function insPaint() {
       insValueRow.hidden = !insBox.checked;
       declEl.required = insBox.checked;
-      const q = extras && insBox.checked && declared() > 0 ? insuranceFee(extras.insurance, declared()) : null;
+      const q = insTerms() && insBox.checked && declared() > 0 ? insuranceFee(insTerms(), declared()) : null;
       insFeeEl.textContent = q && !q.covered ? t('ship.insfee').replace('{fee}', q.fee.toFixed(2)).replace('{value}', String(q.declared_usd)) : '';
       insCovered.hidden = !(q && q.covered);
-      if (q && q.covered) insCovered.textContent = t('ship.inscovered').replace('{n}', String(extras.insurance.included_usd));
+      if (q && q.covered) insCovered.textContent = t('ship.inscovered').replace('{n}', String(insTerms().included_usd));
       total();
     }
     insBox.addEventListener('change', () => { insPaint(); if (insBox.checked) declEl.focus(); });

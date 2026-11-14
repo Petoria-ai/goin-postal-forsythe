@@ -382,3 +382,8 @@ html[lang="ja"] { --fw-display: "Yu Gothic UI", Meiryo, "Segoe UI", sans-serif; 
 
 .ship-form .check { align-items: flex-start; }
 .ship-form .check input { margin-top: 2px; flex: none; }
+
+/* Insurance offer above Extra services on the ship page (Peter, Nov 14 2026) */
+.upsell { display: grid; gap: 10px; border: 2px solid var(--navy); border-radius: 8px; padding: 12px 14px; }
+.upsell .check { margin: 0; }
+.upsell p { margin: 0; }

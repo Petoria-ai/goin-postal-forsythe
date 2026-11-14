@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 12:13 CST · Insurance offer moved above Extra services
+
+- **Asked for:** "Let's add an insurance tick box above extra services because I want to try to sell them the service."
+- **What changed:**
+  - The **Insure it for the full value** checkbox moved from the payment section (after rates) up into "What is it?", **right above Extra services**, in a box with a dark border so it stands out.
+  - Ticking it still opens **Value in USD** below it, and the fee now shows **as soon as the value is typed**, before Get rates ("+ $5.00 to cover $450"). At $100 or less it says the carrier covers it for free.
+  - If insurance is ticked but no value is typed, Get rates asks for the value first.
+  - The insurance fee is still added to the total after a rate is picked, and the order is charged the same amount. It no longer appears a second time in the payment section.
+- **Why:** Every customer sees the insurance offer early, before they've picked a rate, which should sell more of it.
+- **Files:** [ship page](../site/src/pages/ship/index.astro), [styles](../site/src/styles/global.css)
+- **How to check it:** `git pull`, open http://localhost:4321/ship. The insurance box sits above "Extra services". Tick it, type 450: the fee shows at once. Get rates and pick one: the total includes the $5.00.
+- **Checks run:** 124 tests pass, the site builds. In a real browser: the box is above Extra services, Get rates is blocked until a value is typed, the fee shows before rates, the total includes it, and the order was sent with the $450 value.
+
 ## 2026-11-14 11:35 CST · Extra services checkboxes on the Ship page, with a hazardous materials guide
 
 - **Asked for:** "I want tickbox features to populate whatever the customer may want" (from the Pirate Ship screenshot), "let's disregard the international/customs box for now", and a pop-up guide like Pirate Ship's "Learn how to ship Hazardous Materials" link.
