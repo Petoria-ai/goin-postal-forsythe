@@ -4,6 +4,15 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 14:22 CST · Sample address removed from the street boxes
+
+- **Asked for:** "Remove the address in the address box."
+- **What changed:** Both **Street address** boxes on the Ship page (return address and "Where is it going?") no longer show the grey sample "1800 Forsythe Ave, Monroe". They start empty. The address dropdown still works the same.
+- **Why:** The store's own address as a sample could confuse customers into thinking it was already filled in.
+- **Files:** [ship page](../site/src/pages/ship/index.astro)
+- **How to check it:** `git pull`, open http://localhost:4321/ship: both street boxes are blank.
+- **Checks run:** the site builds.
+
 ## 2026-11-14 14:13 CST · Tracking menu, recently tracked, accounts to buy, marketing consent
 
 - **Asked for:** change the tab "Track" to "Tracking" with a dropdown like UPS's ("Track a shipment", "View all shipments"); a "recently tracked / save your tracking here" box that asks people to log in or sign up; "they can only create shipments when they have an account, so I can start email and SMS marketing once I collect their phone number and email"; and "add to the to-do list: find an SMS platform".
