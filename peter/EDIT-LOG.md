@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 15:19 CST · Theme ideas and to-do P6
+
+- **Asked for:** help getting started on "a better website theme, something more friendly to the eyes and not so old styling", with the company logo at the top left. The logo is the file the franchise supplies.
+- **What changed:** Nothing on the website yet. Claude made a preview with three directions (A. Clean & bright, B. Friendly & warm, C. Bold & proud), each a mini home page with the logo, in the logo's navy and red, plus a comparison and the steps. Added **P6** to the to-do list and **D18** to the meeting notes. The preview file isn't in the repo because it contains the franchise logo (the repo is public).
+- **Why:** So Peter can pick a look before the whole site is restyled in one change.
+- **Files:** [TODO.md](TODO.md) (P6), [FOR-WILLIAM.md](FOR-WILLIAM.md) (D18)
+
 ## 2026-11-14 14:54 CST · Passwords for customer accounts, with the email link kept as a backup
 
 - **Asked for:** "Why is it 'email me a sign-in link'? They can't just put a password?" Peter picked: add passwords, keep the link for "forgot password". Also asked about "Sign in with Google" (added as P5 on the to-do list).

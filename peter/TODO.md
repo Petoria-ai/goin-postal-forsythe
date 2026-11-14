@@ -9,6 +9,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P3 | [Insurance terms: do's and don'ts, limits, what can't be insured](#p3-insurance-terms-dos-and-donts-limits-what-cant-be-insured) | ⏸ Later | Research each carrier's rules first |
 | P4 | [Find a texting (SMS) platform for messages and marketing](#p4-find-a-texting-sms-platform-for-messages-and-marketing) | ⏳ Next to research | Pick the platform, then register the store's texting |
 | P5 | ["Sign in with Google"](#p5-sign-in-with-google) | ⏸ Later | The site's real web address, a privacy policy page, and Peter's Google setup |
+| P6 | [A fresher website theme](#p6-a-fresher-website-theme) | ⏳ Next | Peter picks a direction (A, B, C or a mix) |
 
 ---
 
@@ -178,3 +179,26 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] The button on the Account page, the Ship page's sign-in prompt and the card review page.
 - [ ] The sign-in flow with Google's security checks (state and nonce), matching the Google email to an existing customer, so counter customers keep their history.
 - [ ] Tests, and a note in the edit log and meeting notes.
+
+---
+
+## P6. A fresher website theme
+
+**Added:** 2026-11-14 15:19 CST. **Status:** next, waiting on Peter's pick.
+
+**What it is:** Replace the site's 2000s look (glossy blue and tan gradients, bevelled tabs, Trebuchet) with a modern, easier-on-the-eyes theme in the logo's own colors: navy **#29276E**, flag red **#CB3833** and white. The Goin' Postal logo goes at the top left.
+
+**The three directions** (Claude made a preview file with each as a mini home page; it's kept off GitHub because it contains the franchise logo):
+- **A. Clean & bright:** white header, airy, Inter font, one red button per screen. Modern and trustworthy, like UPS or FedEx.
+- **B. Friendly & warm:** rounded Nunito font, warm off-white, pill buttons, round icons. Welcoming, local.
+- **C. Bold & proud:** a navy hero under a red-white-navy stripe, tall Barlow Condensed headlines like the store's print ads.
+
+**The logo:** the file the franchise supplies (341 × 71 px), used as is, never redrawn or recolored. If franchise support has a bigger PNG or an SVG, it would look sharper on phones and laptops. It sits on a white header in every direction because its navy lettering needs a light background.
+
+### Steps
+
+- [ ] Peter picks A, B, C or a mix.
+- [ ] (Optional) Ask franchise support for a larger logo file, and whether they have website brand rules.
+- [ ] Claude applies the theme site-wide in one change (the colors, fonts, corners and shadows are tokens in `site/src/styles/global.css`), with the logo in the header.
+- [ ] Tidy the header: language and text size into a small top bar or menu, so the tracking box is on the first screen on phones (D13 in FOR-WILLIAM.md).
+- [ ] Check every page on phone and computer, in all 14 languages, in High contrast mode and at the larger text sizes. Keep the staff counter pages readable.

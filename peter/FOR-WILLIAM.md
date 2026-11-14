@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 14, 2026, 14:54 CST.
+**Last updated:** November 14, 2026, 15:19 CST.
 
 ## How Peter is working
 
@@ -77,6 +77,7 @@ The site runs on demo rates, so these follow each carrier's published format but
 | D15 | **Texting platform:** Twilio (already in the code for shipping texts) or a marketing platform, number type and registration, the consent wording's "up to 4 a month". | Peter, William, Rin | [TODO P4](TODO.md#p4-find-a-texting-sms-platform-for-messages-and-marketing) |
 | D16 | The header now has both a **Log in** button and an **Account** tab. Keep both, or drop the Account tab? | Peter, William | Kept both for now |
 | D17 | **"Sign in with Google"** (and maybe Apple): needs the real web address, a privacy policy page, and Peter's Google Cloud setup. | Peter | [TODO P5](TODO.md#p5-sign-in-with-google) |
+| D18 | **New website theme** in the logo's navy (#29276E) and red (#CB3833), with the franchise logo at the top left: A. Clean & bright, B. Friendly & warm, or C. Bold & proud. Replaces the glossy look and the bevelled tabs. | Peter, William | [TODO P6](TODO.md#p6-a-fresher-website-theme). Ties in with D13 (phone header) |
 | D11 | The packaging list says "Ask for one at our counter". Does the store keep USPS, UPS and FedEx packaging on hand to give out? | Peter | Change the wording if not |
 | D9 | Return labels "charged only if used", like Pirate Ship? Needs the postal service's pay-on-use returns on the store's account, and a way to bill the customer later. Business accounts could be billed on their monthly statement; walk-in website customers would need a saved card. | Peter, William, Rin | For the prices meeting. Today: charged up front, and the page says so |
 
