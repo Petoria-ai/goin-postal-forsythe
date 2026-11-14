@@ -457,3 +457,10 @@ html:root[data-contrast="high"] nav .nav-menu a { color: #fff; }
 .mkt { display: grid; gap: 10px; }
 .mkt .check { align-items: flex-start; font-weight: 400; }
 .mkt .check input { margin-top: 2px; flex: none; }
+
+/* The tracking page's search, laid out like the home page's box (Peter, Nov 14 2026) */
+.track-page h1 { margin: 0 0 8px; font-size: 2.2rem; }
+.track-page .lead { margin: 0 auto 16px; max-width: 40rem; }
+.track-page #msg, .track-page #elsewhere { max-width: 40rem; margin: 14px auto 0; }
+.track-page #elsewhere .btnrow { justify-content: center; }
+@media (max-width: 600px) { .track-page h1 { font-size: 1.6rem; } }

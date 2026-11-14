@@ -15,20 +15,21 @@ const me = meId ? await getCustomer(env, meId) : null;
 const tracked = me ? await listTracked(env, me.id, 10) : [];
 ---
 <Base title={`Track a package · ${store.name}`} description={`Track a package shipped from ${store.name} with your pickup code or tracking number.`}>
-  <section class="hero">
-    <h1 data-i18n="track.title">Track a package</h1>
+  <!-- The search, laid out like the home page's tracking box: centered, wide, Track beside it (Peter, Nov 14 2026). -->
+  <section class="track-hero track-page" aria-labelledby="track-h1">
+    <h1 id="track-h1" data-i18n="track.title">Track a package</h1>
     <p class="lead" data-i18n="track.lead">Type the pickup code from your order page, or the carrier tracking number from your label.</p>
-  </section>
-
-  <form id="track" class="card" autocomplete="off">
-    <label><span data-i18n="track.field">Pickup code or tracking number</span> <input name="q" value={q} placeholder="GP-7K3M9Q" required minlength="4" maxlength="40" inputmode="text" autocapitalize="characters" /></label>
-    <p class="btnrow"><button class="btn" type="submit" data-i18n="track.button">Track</button></p>
+    <form id="track" class="track-form" autocomplete="off">
+      <label class="sr-only" for="track-q" data-i18n="track.field">Pickup code or tracking number</label>
+      <input id="track-q" name="q" value={q} placeholder="Pickup code or tracking number" data-i18n-ph="track.field" required minlength="4" maxlength="40" inputmode="text" autocapitalize="characters" />
+      <button class="btn kraft" type="submit" data-i18n="track.button">Track</button>
+    </form>
     <p id="msg" class="err" role="alert"></p>
     <div id="elsewhere" hidden>
       <p data-i18n="track.elsewhere">We didn't ship that one here, but it looks like a tracking number from the carrier below. Follow it on their site:</p>
       <p class="btnrow" id="elsewhere-links"></p>
     </div>
-  </form>
+  </section>
 
   <div id="result" class="grid hidden">
     <div class="card">

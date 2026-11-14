@@ -4,6 +4,15 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 14:26 CST · Tracking page search made bigger and centered, like the home page
+
+- **Asked for:** "In the tracking tab, can you make the track a code box bigger and centered like the front page of the website."
+- **What changed:** The top of the tracking page now looks like the home page's tracking box: a centered white card with "Track a package", the short instructions, a wide search box, and the gold **Track** button beside it. The search box hint reads "Pickup code or tracking number" (instead of the sample code GP-7K3M9Q). The "not found" message and the "Track on UPS" style buttons appear centered under it. On a phone, the button sits under the box.
+- **Why:** The same look on both pages, and a bigger box that's easier to use.
+- **Files:** [tracking page](../site/src/pages/track/index.astro), [styles](../site/src/styles/global.css)
+- **How to check it:** `git pull`, open http://localhost:4321/track.
+- **Checks run:** the site builds. In a real browser: the box is centered on the page; a UPS number still offers "Track on UPS"; nonsense still says not found; no sideways scrolling on a phone.
+
 ## 2026-11-14 14:23 CST · State boxes say "State" instead of "LA"
 
 - **Asked for:** "Instead of LA, I want 'State'."
