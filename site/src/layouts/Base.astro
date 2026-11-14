@@ -29,7 +29,15 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
         <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
         <nav>
           <a href="/ship" class="ps-tab" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
-          <a href="/track" aria-current={cur('/track')} data-i18n="nav.track">Track</a>
+          <!-- Tracking menu (Peter, Nov 14 2026, like ups.com): opens on hover or keyboard focus; the arrow opens it on a phone. -->
+          <div class="nav-drop" id="trackDrop">
+            <a href="/track" aria-current={cur('/track')} data-i18n="nav.track">Tracking</a>
+            <button type="button" class="nav-caret" aria-expanded="false" aria-controls="trackMenu" aria-label="Tracking menu">▾</button>
+            <div class="nav-menu" id="trackMenu">
+              <a href="/track" data-i18n="nav.trackone">Track a shipment</a>
+              <a href="/account#orders" data-i18n="nav.allships">View all shipments</a>
+            </div>
+          </div>
           <a href="/cards" aria-current={cur('/cards')} data-i18n="nav.cards">Business cards</a>
           <a href="/#services" data-i18n="nav.services">Services</a>
           <a href="/#hours" data-i18n="nav.hours">Hours</a>
@@ -86,6 +94,14 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
       contrast(get('gp-contrast') === '1'); // off unless the visitor turned it on (v1.70.0: the glossy look is the default; High contrast is one click away)
       document.querySelectorAll<HTMLElement>('.size[data-size]').forEach((b) => b.addEventListener('click', () => size(b.dataset.size!)));
       document.getElementById('contrast')!.addEventListener('click', () => contrast(root.dataset.contrast !== 'high'));
+      // Tracking menu: the arrow button opens and closes it (hover and keyboard focus open it through CSS); Escape or a click elsewhere closes it.
+      const drop = document.getElementById('trackDrop'), caret = drop?.querySelector<HTMLButtonElement>('.nav-caret');
+      const openDrop = (on: boolean) => { drop?.classList.toggle('open', on); caret?.setAttribute('aria-expanded', String(on)); };
+      caret?.addEventListener('click', (e) => { e.stopPropagation(); openDrop(!drop!.classList.contains('open')); });
+      document.addEventListener('click', (e) => { if (drop && !drop.contains(e.target as Node)) openDrop(false); });
+      drop?.addEventListener('keydown', (e) => { if (e.key === 'Escape') { openDrop(false); caret?.focus(); } });
+      const caretLabel = () => caret?.setAttribute('aria-label', t('nav.trackmenu'));
+      caretLabel(); document.addEventListener('langchange', caretLabel);
       document.getElementById('lang')!.addEventListener('change', (e) => { const el = e.target as HTMLSelectElement; setLang(el.value as Lang); el.blur(); });
     </script>
       <script>

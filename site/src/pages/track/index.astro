@@ -2,10 +2,17 @@
 import { store } from '../../data/store';
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
+import { env } from '../../lib/env';
+import { readSession } from '../../lib/session';
+import { getCustomer, listTracked } from '../../shipping/store';
 
 // Public tracking page. Same look as the done page, no login. Takes the pickup code (GP-XXXXXX) or
 // the carrier tracking number; /track?q=... fills it in so the done page and emails can link straight here.
 const q = Astro.url.searchParams.get('q') ?? '';
+// Recently tracked (Peter, Nov 14 2026): signed-in customers see what they looked up; everyone else is asked to sign in or sign up.
+const meId = await readSession(env, Astro.request.headers.get('cookie')).catch(() => null);
+const me = meId ? await getCustomer(env, meId) : null;
+const tracked = me ? await listTracked(env, me.id, 10) : [];
 ---
 <Base title={`Track a package · ${store.name}`} description={`Track a package shipped from ${store.name} with your pickup code or tracking number.`}>
   <section class="hero">
@@ -35,6 +42,26 @@ const q = Astro.url.searchParams.get('q') ?? '';
       <ol class="timeline" id="r-events"></ol>
     </div>
   </div>
+
+  <section class="recent" aria-labelledby="recent-h">
+    <h2 id="recent-h" data-i18n="track.recent">Recently tracked</h2>
+    {me ? (
+      <div class="card">
+        <ul class="recent-list" id="recentList">
+          {tracked.map((r) => <li><a href={`/track?q=${encodeURIComponent(r.query)}`} class="code">{r.query}</a> <span class="muted">{r.label ?? r.carrier ?? ''}</span></li>)}
+        </ul>
+        {!tracked.length && <p class="muted" id="recentNone" data-i18n="track.recent.none">Packages you track will show up here.</p>}
+        <p><a href="/account#orders" data-i18n="nav.allships">View all shipments</a></p>
+      </div>
+    ) : (
+      <div class="card recent-cta">
+        <svg class="recent-icon" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><path d="M32 6 56 18v28L32 58 8 46V18Z" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/><path d="M8 18l24 12 24-12M32 30v28M20 12l24 12" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"/></svg>
+        <h3 data-i18n="track.save.h">Save your tracking here</h3>
+        <p data-i18n="track.save.p">Sign in or create a free account to see every package you've tracked and shipped, in one place.</p>
+        <p class="btnrow"><a class="btn" href="/account?next=/track" data-i18n="acct.signin">Sign in</a> <a class="btn kraft" href="/account?next=/track" data-i18n="acct.create">Create an account</a></p>
+      </div>
+    )}
+  </section>
 
   <script>
     import { t } from '../../i18n';
@@ -87,6 +114,12 @@ const q = Astro.url.searchParams.get('q') ?? '';
         ol.appendChild(li);
       }
       result.classList.remove('hidden');
+      const list = document.getElementById('recentList');
+      if (list && ![...list.querySelectorAll('a')].some((a) => a.textContent === q.toUpperCase())) {
+        const li = document.createElement('li'); const a = document.createElement('a'); const sp = document.createElement('span');
+        a.href = `/track?q=${encodeURIComponent(q)}`; a.className = 'code'; a.textContent = q.toUpperCase(); sp.className = 'muted'; sp.textContent = ` ${j.service} · ${j.to}`;
+        li.append(a, sp); list.prepend(li); document.getElementById('recentNone')?.remove();
+      }
       history.replaceState(null, '', `/track?q=${encodeURIComponent(q)}`);
     }
 

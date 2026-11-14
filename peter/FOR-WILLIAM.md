@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 14, 2026, 13:51 CST.
+**Last updated:** November 14, 2026, 14:13 CST.
 
 ## How Peter is working
 
@@ -19,6 +19,8 @@ Everything Peter's work turned up that William should know about: problems found
 | H2 | Nov 14, setup on Peter's Windows PC | On Windows, `npm` is blocked until `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` is run once. The README doesn't say so. | Peter ran it by hand | ⏳ **William:** add it to the root README's Windows steps |
 | H3 | Nov 14, [insurance fix](EDIT-LOG.md) | **The website charged the insurance fee but never bought insurance.** No declared value or insurance was sent to USPS, UPS or FedEx with the label, so only the carrier's free cover (usually $100) applied. A lost $450 package would have cost the store the difference. | Fixed on `peter`: `lib/labelExtras.ts` adds each carrier's insurance to the label; `lib/fulfil.ts` passes the insured amount. Applies to the website, counter queue and business accounts. | ✅ Fixed on `peter`. ⏳ Check on the first real insured label per carrier |
 | H4 | Nov 14, [extra services](EDIT-LOG.md) | Bug in Peter's own new work, caught in testing: the page total left out the $3.50 signature fee while the order still charged it. | Fixed before upload | ✅ Fixed |
+| H9 | Nov 14, [accounts to buy](EDIT-LOG.md) | **Online orders renamed the customer after the recipient.** `upsertQuote` names the customer from `order.name`, and online orders had none, so it fell back to `destination.contact_name`; every online order overwrote the customer's name with whoever the package went to. | Fixed on `peter`: online orders carry the signed-in customer's name | ✅ Fixed |
+| H8 | Nov 14, [accounts to buy](EDIT-LOG.md) | `customers.consent_email` is set to 1 for every customer with an email, and `consent_sms` when they tick shipping texts. They mean receipts and tracking messages, **not marketing**; a marketing list built from them would include people who never agreed. | Not changed. Marketing consent is a separate log, `marketing_consents` | ⚠️ Don't use those flags for marketing |
 | H7 | Nov 14, [tracking box](EDIT-LOG.md) | The tracking page showed an empty red error box all the time, even with no error. | Fixed on `peter`: `.err:empty` is hidden site-wide | ✅ Fixed |
 | H6 | Nov 14, [packaging picker](EDIT-LOG.md) | The Ship page's size boxes only accepted whole inches, so a size like 12.5 in quietly blocked Get rates. | Fixed on `peter`: sizes accept decimals | ✅ Fixed |
 | H5 | Nov 14, [address dropdown](EDIT-LOG.md) | The street typeahead (Census lookup) shows nothing until a city is typed too, so it looked broken. The return-address box had no typeahead at all. | Fixed on `peter`: typeahead on both boxes; a bare street is also tried in the store's city | ✅ Fixed. Full letter-by-letter suggestions still need the Google Places key (issue 18) |
@@ -34,6 +36,7 @@ All on the `peter` branch, all with tests passing and the site building. Details
 | Extra services: signature, Media Mail, irregular, hazardous materials, saved packages | new `lib/options.ts`, `shipping/engine.ts`, all carrier adapters, `api/orders.ts`, `lib/validate.ts`, `shipping/types.ts`, i18n files | `Parcel` gained `options`; the rate cache key includes them; `applyOptions` filters rates in `getQuotes` |
 | Insurance bought from the carrier with the label | new `lib/labelExtras.ts`, `lib/fulfil.ts`, all carrier adapters, `lib/easyship.ts` | `Parcel` gained `insured_usd`, set only at label time |
 | Packaging picker: own packaging or a carrier's (USPS flat rate, UPS Express, FedEx Express), with pictures | new `lib/packaging.ts`, `lib/validate.ts`, `shipping/engine.ts`, all carrier adapters, `lib/easyship.ts` (3 new demo rates), `public/packaging/` | `Parcel` gained `packaging`; carrier packaging overrides the typed size; `forPackaging` in `getQuotes` filters rates and explains when nothing fits |
+| Tracking menu; recently tracked; **buying online needs an account**; phone on first purchase; marketing consent | `layouts/Base.astro`, `pages/track/index.astro`, `api/track.ts`, `pages/ship/index.astro`, `api/orders.ts`, `pages/account/index.astro`, `api/account.ts`, `lib/session.ts` (`safeNext`), new `lib/consent.ts`, `shipping/store.ts`, `db/schema.sql` (2 new tables) | `/api/orders` now returns 401 without a session (counter, API and batch paths unchanged); new tables `customer_tracked` and `marketing_consents`, in `EXPORT_TABLES` with memory branches; the sign-in link carries `next` |
 | Home page "Track a package" box; carrier links on /track for numbers the store didn't ship | `pages/index.astro`, `pages/track/index.astro`, new `lib/carrierTrack.ts`, `styles/global.css` | The box is a plain GET form to `/track?q=`; carrier detection is by number shape only, client side |
 | Return labels: "only" (addresses swapped, `kind: 'return'`) and "included" (a second label) | `lib/options.ts`, `api/rates.ts`, `api/orders.ts`, `lib/orders.ts`, `lib/stripe.ts`, `lib/fulfil.ts`, done and counter pages | `Order` gained `return_rate` and `return_label`; `fulfil` buys the second label and records it as shipment `<code>-R`; a failed return purchase doesn't undo the paid outgoing label |
 
@@ -47,6 +50,8 @@ The site runs on demo rates, so these follow each carrier's published format but
 - [ ] **USPS Media Mail** appears in USPS's live rates when ticked.
 - [ ] **Irregular package** changes the USPS price.
 - [ ] Easyship doesn't receive signature or hazmat yet (only insurance). Decide whether that matters while Easyship is the bridge.
+- [ ] **Email (Resend) connected before going live.** Buying online now needs the sign-in email, so without email nobody can buy online.
+- [ ] **Re-run the database setup** for the two new tables: `npm run db:local` on each computer, `npm run db:remote` on the live site.
 - [ ] **Packaging codes** on real accounts: USPS rate indicators (FS, FB, PL, FE, FA, FP, E4, E6, PA), UPS packaging codes (01, 2a, 2b, 2c, 03, 04), FedEx packaging types; flat rate prices come back as flat rate. The sizes in `lib/packaging.ts` are approximate.
 - [ ] **Return labels** on a real account: the "included" return label is bought from the receiver's address back to the sender, and shows in the carrier's records.
 
@@ -65,6 +70,8 @@ The site runs on demo rates, so these follow each carrier's published format but
 | D10 | **Packaging pictures:** the general, USPS and UPS ones are cropped from Pirate Ship's site (Peter's call, for now). Replace them before going live: official carrier photos through the store's carrier or Goin' Postal accounts, or store-drawn ones like the FedEx set. | Peter, William | Files in `site/public/packaging/`; swapping is replacing files |
 | D12 | **Insurance terms on the website:** a disclaimer with do's and don'ts, each carrier's limits, and what can't be insured. Needs each carrier's rules researched first. | Peter, William | [TODO P3](TODO.md#p3-insurance-terms-dos-and-donts-limits-what-cant-be-insured). Ties in with D1, D7, D8 |
 | D13 | **Phone header:** on a phone, the header (menu tabs, language picker, text size, high contrast) fills the whole first screen, so the home page's tracking box starts below it. A smaller phone header (a menu button) would put tracking on the first screen. | Peter, William | William's design; not changed |
+| D14 | **Accounts to buy online:** Peter's call, for email and text marketing. Fewer quick one-off buyers may finish checkout; rates stay open to everyone so they see prices first. Revisit if online sales drop. | Peter, William | Counter walk-ups don't need an account |
+| D15 | **Texting platform:** Twilio (already in the code for shipping texts) or a marketing platform, number type and registration, the consent wording's "up to 4 a month". | Peter, William, Rin | [TODO P4](TODO.md#p4-find-a-texting-sms-platform-for-messages-and-marketing) |
 | D11 | The packaging list says "Ask for one at our counter". Does the store keep USPS, UPS and FedEx packaging on hand to give out? | Peter | Change the wording if not |
 | D9 | Return labels "charged only if used", like Pirate Ship? Needs the postal service's pay-on-use returns on the store's account, and a way to bill the customer later. Business accounts could be billed on their monthly statement; walk-in website customers would need a saved card. | Peter, William, Rin | For the prices meeting. Today: charged up front, and the page says so |
 

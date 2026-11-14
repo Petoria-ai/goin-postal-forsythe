@@ -11,21 +11,31 @@ import { store } from '../../data/store';
 import { effectiveAddons, priceExtras, onlineFee, salesTax, taxableExtras, textUpdatesPrice, TEXT_UPDATES } from '../../lib/addons';
 import { accountForContact } from '../../shipping/store';
 import { checkAddress } from '../../lib/address';
+import { getCustomer, setCustomerName, normalizePhone, recordConsent } from '../../shipping/store';
+import { loggedWording } from '../../lib/consent';
 import { directed, pickReturnRate, returnParcel } from '../../lib/options';
 
 // Customer picked a rate: start Stripe Checkout. Domestic only since Nov 7, 2026 (parseAddress refuses the rest).
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json();
+    // Buying a label online needs a free account (Peter, Nov 14 2026). Quotes stay open to everyone.
+    const meId = await readSession(env, request.headers.get('cookie'));
+    const me = meId ? await getCustomer(env, meId) : null;
+    if (!me || !me.email) return json({ error: 'Sign in to buy your label.', signin: true }, 401);
     const parcel = parseParcel(b.parcel);
     // "Return label only" swaps the addresses (the label runs from the receiver back to the sender) and makes it a return.
     const { origin, destination, kind } = directed(b.origin ? parseAddress(b.origin) : store.origin, parseAddress(b.destination), parcel.options);
     const check = checkAddress(destination);
     if (check.errors.length) throw new Error(check.errors[0]);
-    const email = String(b.email ?? '').trim();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('A valid email is needed for the receipt and label');
+    const email = me.email;
+    // First purchase: the account gets a mobile number (for problems with a shipment) and a real name.
+    const acctPhone = normalizePhone(String(b.acct_phone ?? ''));
+    if (!me.phone && !acctPhone) throw new Error('Enter your mobile number');
+    const name = me.name && me.name !== 'Customer' ? me.name : (String(b.origin?.contact_name ?? '').trim().slice(0, 60) || me.name);
+    if (!me.phone || name !== me.name) await setCustomerName(env, me.id, name, me.phone ? null : acctPhone);
     const sms = b.sms === true || b.sms === 'on';
-    const phone = String(b.phone ?? '').replace(/[^\d+]/g, '').slice(0, 16);
+    const phone = String(b.phone ?? '').replace(/[^\d+]/g, '').slice(0, 16) || (me.phone ?? acctPhone ?? '');
     if (sms && phone.replace(/\D/g, '').length < 10) throw new Error('Enter a phone number for text updates, or untick the box');
 
     // Re-quote server side so the price cannot be edited in the browser.
@@ -59,10 +69,15 @@ export const POST: APIRoute = async ({ request }) => {
       status: 'awaiting_payment',
       created_at: new Date().toISOString(),
       email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international: false, kind, return_rate,
+      name, // the customer's own name: without it the saved quote fell back to the recipient's name and renamed the customer (H9)
       addons: extras.addons.length ? extras.addons : undefined, insurance: extras.insurance, tax, fee, total: Math.round((subtotal + (tax?.amount ?? 0) + (fee?.amount ?? 0)) * 100) / 100,
       account_name: account?.business_name, discount_percent: account?.discount_percent || undefined,
     };
     await saveOrder(env, order);
+    // Marketing: only a box the customer ticked is a yes, logged with the exact wording as proof. Unticked changes nothing.
+    if (b.mkt_email === true) await recordConsent(env, { customer_id: me.id, channel: 'email', granted: true, contact: email, wording: loggedWording('email', b.lang), source: 'ship_page' });
+    const mktPhone = me.phone ?? acctPhone;
+    if (b.mkt_sms === true && mktPhone) await recordConsent(env, { customer_id: me.id, channel: 'sms', granted: true, contact: mktPhone, wording: loggedWording('sms', b.lang), source: 'ship_page' });
     // A signed-in customer (T20) can keep the address for next time; duplicates are skipped.
     if (b.save_address === true) {
       const cid = await readSession(env, request.headers.get('cookie'));

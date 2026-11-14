@@ -3,7 +3,9 @@ export const prerender = false;
 import Base from '../../layouts/Base.astro';
 import { store } from '../../data/store';
 import { env } from '../../lib/env';
-import { consumeLoginToken, readSession, signSession, sessionCookie } from '../../lib/session';
+import { consumeLoginToken, readSession, signSession, sessionCookie, safeNext } from '../../lib/session';
+import { marketingConsent } from '../../shipping/store';
+import { CONSENT_WORDING } from '../../lib/consent';
 import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
 
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
@@ -13,7 +15,7 @@ if (token) {
   const c = email ? await findCustomer(env, email, null) : null;
   if (c) {
     Astro.cookies; // Astro needs the cookies API touched before set-cookie on a redirect in some adapters
-    return new Response(null, { status: 302, headers: { Location: '/account', 'Set-Cookie': sessionCookie(await signSession(env, c.id), Astro.url.protocol === 'https:') } });
+    return new Response(null, { status: 302, headers: { Location: safeNext(Astro.url.searchParams.get('next')), 'Set-Cookie': sessionCookie(await signSession(env, c.id), Astro.url.protocol === 'https:') } });
   }
   return Astro.redirect('/account?expired=1');
 }
@@ -33,6 +35,7 @@ const stock = biz ? await listProducts(env, biz.id) : [];
 const fulfil = biz ? (await listFulfillmentOrders(env, biz.id, true)).slice(0, 20) : [];
 const keys = biz ? (await listApiKeys(env, biz.id)).filter((k) => k.active) : [];
 const fmt = (iso: string) => iso.slice(0, 10);
+const consent = me ? await marketingConsent(env, me.id) : null;
 ---
 <Base title={`Your account · ${store.name}`} description="Sign in with your email, keep your addresses, see your orders, ship again in two clicks.">
   <section class="hero">
@@ -45,6 +48,7 @@ const fmt = (iso: string) => iso.slice(0, 10);
       <form id="login" class="card">
         <label><span data-i18n="f.email">Email</span> <input name="email" type="email" required autocomplete="email" /></label>
         <button class="btn" type="submit" data-i18n="acct.send">Email me a sign-in link</button>
+        <p class="muted" data-i18n="acct.newhere">New here? The same link creates your free account.</p>
         <p id="msg" role="alert"></p>
       </form>
       <div class="card">
@@ -66,6 +70,12 @@ const fmt = (iso: string) => iso.slice(0, 10);
           <label><span data-i18n="f.phone">Phone</span> <input name="phone" type="tel" value={me.phone ?? ''} maxlength="20" /></label>
           <p class="btnrow"><button class="btn small" type="submit" data-i18n="acct.save">Save</button> <button class="btn small kraft" type="button" id="logout" data-i18n="acct.logout">Sign out</button></p>
         </form>
+        <!-- Marketing choices (Peter, Nov 14 2026): change them anytime; each change is logged with its wording. -->
+        <fieldset class="mkt" id="mktf">
+          <legend data-i18n="mkt.h">Deals and news (optional)</legend>
+          <label class="check"><input type="checkbox" data-channel="email" checked={consent?.email} /> <span data-i18n="mkt.email">{CONSENT_WORDING.email}</span></label>
+          <label class="check"><input type="checkbox" data-channel="sms" checked={consent?.sms} /> <span data-i18n="mkt.sms">{CONSENT_WORDING.sms}</span></label>
+        </fieldset>
         <h3 data-i18n="acct.addresses">Saved addresses</h3>
         <ul id="addrs">{saved.map((a) => { const d = JSON.parse(a.address_json); return <li data-id={a.id}><strong>{a.label}</strong>: {d.contact_name}, {d.line_1}{d.line_2 ? ` ${d.line_2}` : ''}, {d.city} {d.state} {d.postal_code} · <a href={`/ship?to=${a.id}`} data-i18n="acct.shipto">Ship to this address</a> · <button type="button" class="btn small" data-del={a.id}>×</button></li>; })}</ul>
         {!saved.length && <p class="muted" data-i18n="acct.noaddr">None yet. Tick "save this address" when you ship, or add one here.</p>}
@@ -102,7 +112,7 @@ const fmt = (iso: string) => iso.slice(0, 10);
         {keys.length ? <p>{keys.map((k) => <span><code>{k.prefix}…</code> {k.label}{k.webhook_url ? ' · webhook' : ''} </span>)} · <a href="/developers" data-i18n="acct.biz.docs">API docs</a></p> : <p class="muted"><span data-i18n="acct.biz.nokeys">No keys yet. Ask the counter for one to connect your shop.</span> <a href="/developers" data-i18n="acct.biz.docs">API docs</a></p>}
       </div>}
       <div class="card">
-        <h3 data-i18n="acct.orders">Your orders</h3>
+        <h3 id="orders" data-i18n="acct.orders">Your orders</h3>
         {!quotes.length && <p class="muted" data-i18n="acct.noorders">No orders yet under this email.</p>}
         <table class="list">{quotes.map((q) => <tr><td>{fmt(q.created_at)}</td><td><a href={q.shipment_status ? `/track?q=${q.id}` : `/ship/done?order=${q.id}`}>{q.id}</a></td><td>{q.carrier} {q.service}</td><td>{q.destination}</td><td>${Number(q.price).toFixed(2)}</td><td>{q.shipment_status ?? q.status}</td><td>{q.shipment_status && q.shipment_status !== 'voided' ? <button type="button" class="btn small kraft" data-resend={q.id} data-i18n="acct.resend">Email me the label again</button> : null}</td></tr>)}</table>
       </div>
@@ -118,9 +128,13 @@ const fmt = (iso: string) => iso.slice(0, 10);
     $('login')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const email = (document.querySelector('#login [name=email]') as HTMLInputElement).value;
-      try { const j = await api({ action: 'login', email }); msg().className = ''; msg().textContent = 'Check your email for the link.'; if (j.mock_link) { const a = document.createElement('a'); a.href = j.mock_link; a.textContent = ' (dev: open it)'; msg().appendChild(a); } }
+      try { const j = await api({ action: 'login', email, next: new URLSearchParams(location.search).get('next') ?? undefined }); msg().className = ''; msg().textContent = 'Check your email for the link.'; if (j.mock_link) { const a = document.createElement('a'); a.href = j.mock_link; a.textContent = ' (dev: open it)'; msg().appendChild(a); } }
       catch (e: any) { msg().className = 'err'; msg().textContent = e.message; }
     });
+    document.querySelectorAll<HTMLInputElement>('#mktf input[data-channel]').forEach((box) => box.addEventListener('change', async () => {
+      try { await api({ action: 'consent', channel: box.dataset.channel, granted: box.checked, lang: document.documentElement.lang }); msg().className = ''; msg().textContent = '✓'; }
+      catch (e: any) { box.checked = !box.checked; msg().className = 'err'; msg().textContent = e.message; }
+    }));
     $('logout')?.addEventListener('click', async () => { await api({ action: 'logout' }); location.href = '/account'; });
     $('namef')?.addEventListener('submit', async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target as HTMLFormElement).entries()); try { await api({ action: 'name', ...d }); msg().className = ''; msg().textContent = 'Saved.'; } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } });
     $('addf')?.addEventListener('submit', async (ev) => { ev.preventDefault(); const d = Object.fromEntries(new FormData(ev.target as HTMLFormElement).entries()) as Record<string, string>; try { await api({ action: 'save_address', label: d.label, address: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code } }); location.reload(); } catch (e: any) { msg().className = 'err'; msg().textContent = e.message; } });

@@ -50,3 +50,10 @@ export async function readSession(env: Env, cookieHeader: string | null, now = D
 }
 export const sessionCookie = (value: string, secure: boolean) => `${COOKIE}=${encodeURIComponent(value)}; Path=/; Max-Age=${DAYS * 86_400}; HttpOnly; SameSite=Lax${secure ? '; Secure' : ''}`;
 export const clearCookie = () => `${COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax`;
+
+/** Where to send a customer after the sign-in link: a path on this site only (Peter, Nov 14 2026).
+ *  Anything else (another site, "//evil.com", a backslash trick) falls back to the account page. */
+export function safeNext(next: unknown): string {
+  const n = String(next ?? '');
+  return /^\/(?![\/\\])[^\s]*$/.test(n) && n.length <= 200 ? n : '/account';
+}

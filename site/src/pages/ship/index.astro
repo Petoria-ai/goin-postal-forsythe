@@ -4,7 +4,8 @@ import { store } from '../../data/store';
 import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
 import { readSession } from '../../lib/session';
-import { getCustomer, listCustomerAddresses } from '../../shipping/store';
+import { getCustomer, listCustomerAddresses, marketingConsent } from '../../shipping/store';
+import { CONSENT_WORDING } from '../../lib/consent';
 import { effectiveAddons } from '../../lib/addons';
 import { PACKAGING, DEFAULT_PACKAGING } from '../../lib/packaging';
 const cancelled = Astro.url.searchParams.get('cancelled');
@@ -13,6 +14,8 @@ const meId = await readSession(env, Astro.request.headers.get('cookie'));
 const me = meId ? await getCustomer(env, meId) : null;
 const saved = me ? (await listCustomerAddresses(env, me.id)).map((a) => ({ id: a.id, label: a.label, to: JSON.parse(a.address_json) })) : [];
 const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
+// Buying needs an account (Peter, Nov 14 2026): their current marketing choices decide which boxes to offer.
+const consent = me ? await marketingConsent(env, me.id) : null;
 // The signature confirmation price shown beside its checkbox, from the add-on catalog (/counter/rules).
 const addonCfg = await effectiveAddons(env);
 const sigPrice = addonCfg.items.find((i) => i.active && i.code === 'signature')?.price ?? null;
@@ -136,13 +139,32 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
     <div id="rates" class="rates"></div>
     <p id="bench" class="muted" hidden></p>
     <form id="buy" class="buy" hidden>
-      <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required autocomplete="email" value={me?.email ?? ''} /></label>
+      {me ? (
+        <label><span data-i18n="ship.email">Your email (for the receipt and label)</span> <input name="email" type="email" required autocomplete="email" value={me.email ?? ''} readonly /></label>
+      ) : (
+        <div id="signinGate" class="card gate" data-note="Buying needs a free account (Peter, Nov 14 2026). Rates are open to all; the form and rates are kept while the customer opens the sign-in link.">
+          <h3 data-i18n="ship.gate.h">Sign in to buy your label</h3>
+          <p data-i18n="ship.gate.p">Labels are bought with a free account, so your shipments and tracking stay in one place. We keep this form and your rates while you open the link in your email.</p>
+          <label><span data-i18n="f.email">Email</span> <input name="gate_email" type="email" autocomplete="email" /></label>
+          <p class="btnrow"><button type="button" class="btn" id="gateBtn" data-i18n="acct.send">Email me a sign-in link</button></p>
+          <p class="muted" data-i18n="acct.newhere">New here? The same link creates your free account.</p>
+          <p id="gateMsg" role="status"></p>
+        </div>
+      )}
+      {me && !me.phone && <label><span data-i18n="ship.acctphone">Your mobile number (for problems with this shipment)</span> <input name="acct_phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="318 555 0100" /></label>}
       {me && <label class="check"><input name="save_address" type="checkbox" /> <span data-i18n="acct.savethis">Save this address to my account</span></label>}
       <p id="feeRow" class="muted" hidden></p>
       <p id="totalRow" class="price"><span data-i18n="ship.total">Total</span>: <strong id="totalAmt"></strong></p>
       <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="ship.sms">Text me when it ships and when it is delivered</span> <span id="smsFee" class="muted"></span></label>
       <label id="phoneRow" hidden><span data-i18n="ship.phone">Your mobile number</span> <input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="318 555 0100" /></label>
-      <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue">Continue</button>
+      {me && consent && (!consent.email || !consent.sms) && (
+        <fieldset class="mkt">
+          <legend data-i18n="mkt.h">Deals and news (optional)</legend>
+          {!consent.email && <label class="check"><input name="mkt_email" type="checkbox" /> <span data-i18n="mkt.email">{CONSENT_WORDING.email}</span></label>}
+          {!consent.sms && <label class="check"><input name="mkt_sms" type="checkbox" /> <span data-i18n="mkt.sms">{CONSENT_WORDING.sms}</span></label>}
+        </fieldset>
+      )}
+      <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue" hidden={!me}>Continue</button>
     </form>
   </section>
 
@@ -417,17 +439,60 @@ const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
     const smsBox = buy.querySelector('[name=sms]') as HTMLInputElement;
     const phoneRow = document.getElementById('phoneRow') as HTMLElement;
     smsBox.addEventListener('change', () => { phoneRow.hidden = !smsBox.checked; if (smsBox.checked) (buy.querySelector('[name=phone]') as HTMLInputElement).focus(); total(); });
+    // Sign in to buy (Peter, Nov 14 2026): keep the whole form on this device, email the link with next=/ship?resume=1,
+    // and when the customer comes back signed in, fill everything in again and show the rates.
+    const DRAFT = 'gp-ship-draft';
+    function saveDraft() {
+      const fields: Record<string, string | boolean> = {};
+      f.querySelectorAll<HTMLInputElement>('input[name], select[name]').forEach((el) => {
+        if (el.type === 'radio') { if (el.checked) fields[el.name] = el.value; }
+        else if (el.type === 'checkbox') fields[el.name] = el.checked;
+        else fields[el.name] = el.value;
+      });
+      try { localStorage.setItem(DRAFT, JSON.stringify({ at: Date.now(), fields })); } catch {}
+    }
+    function restoreDraft() {
+      let d: any = null;
+      try { d = JSON.parse(localStorage.getItem(DRAFT) || 'null'); localStorage.removeItem(DRAFT); } catch {}
+      if (!d || Date.now() - d.at > 24 * 3600_000) return false;
+      for (const [name, v] of Object.entries(d.fields)) {
+        f.querySelectorAll<HTMLInputElement>(`[name="${name}"]`).forEach((el) => {
+          if (el.type === 'radio') el.checked = el.value === v;
+          else if (el.type === 'checkbox') el.checked = v === true;
+          else el.value = String(v);
+        });
+      }
+      pkgPaint(); retPaint(); hzPaint(); insPaint();
+      return true;
+    }
+    document.getElementById('gateBtn')?.addEventListener('click', async () => {
+      const emailEl = buy.querySelector('[name=gate_email]') as HTMLInputElement, gm = document.getElementById('gateMsg')!;
+      const email = emailEl.value.trim();
+      if (!emailEl.checkValidity() || !email) { emailEl.reportValidity(); return; }
+      saveDraft();
+      const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', email, next: '/ship?resume=1' }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) { gm.className = 'err'; gm.textContent = j.error ?? 'Try again'; return; }
+      gm.className = 'card'; gm.textContent = t('ship.gate.sent');
+      if (j.mock_link) { const a = document.createElement('a'); a.href = j.mock_link; a.textContent = ' (dev: open it)'; gm.append(a); }
+    });
+    if (new URLSearchParams(location.search).has('resume') && restoreDraft()) f.requestSubmit();
+
     buy.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!picked) return;
       buyBtn.setAttribute('disabled', '');
       const email = (buy.querySelector('[name=email]') as HTMLInputElement).value;
       const sms = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
-      const phone = (buy.querySelector('[name=phone]') as HTMLInputElement).value;
+      const acctPhone = (buy.querySelector('[name=acct_phone]') as HTMLInputElement | null)?.value ?? '';
+      const phone = (buy.querySelector('[name=phone]') as HTMLInputElement).value || acctPhone;
+      const mkt_email = (buy.querySelector('[name=mkt_email]') as HTMLInputElement | null)?.checked === true;
+      const mkt_sms = (buy.querySelector('[name=mkt_sms]') as HTMLInputElement | null)?.checked === true;
+      const lang = document.documentElement.lang;
       const insure = insBox.checked;
       // The declared value travels with the parcel only when insured; the server prices the insurance from it.
       const parcel = { ...payload.parcel, ...(insure ? { value_usd: declared() } : {}) };
-      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, parcel, email, sms, phone, rate_id: picked, insure, save_address: (buy.querySelector('[name=save_address]') as HTMLInputElement | null)?.checked === true }) });
+      const res = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...payload, parcel, email, sms, phone, acct_phone: acctPhone, mkt_email, mkt_sms, lang, rate_id: picked, insure, save_address: (buy.querySelector('[name=save_address]') as HTMLInputElement | null)?.checked === true }) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; buyBtn.removeAttribute('disabled'); return; }
       location.href = j.next;

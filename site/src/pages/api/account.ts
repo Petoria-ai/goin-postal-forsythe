@@ -2,11 +2,13 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json, parseAddress } from '../../lib/validate';
-import { createLoginToken, readSession, clearCookie } from '../../lib/session';
+import { createLoginToken, readSession, clearCookie, safeNext } from '../../lib/session';
 import { sendEmail } from '../../shipping/notify';
 import { store } from '../../data/store';
 import { upsertCustomer, getCustomer, findCustomer, saveCustomerAddress, deleteCustomerAddress, setCustomerName, normalizePhone, logAudit } from '../../shipping/store';
 import { getOrder, saveOrder } from '../../lib/orders';
+import { recordConsent } from '../../shipping/store';
+import { isChannel, loggedWording } from '../../lib/consent';
 
 // Customer accounts (T20). login { email } emails a magic link; the rest need the session cookie:
 // name { name }, save_address { label, address }, delete_address { id }, logout.
@@ -20,7 +22,9 @@ export const POST: APIRoute = async ({ request }) => {
       const existing = await findCustomer(env, email, null);
       if (!existing) await upsertCustomer(env, { name: String(b.name ?? '').trim().slice(0, 60) || 'Customer', email });
       const token = await createLoginToken(env, email);
-      const link = `${env.SITE_URL}/account?token=${token}`;
+      // next: the page to come back to after the link is clicked (the ship page keeps the customer's form meanwhile).
+      const next = safeNext(b.next);
+      const link = `${env.SITE_URL}/account?token=${token}${next !== '/account' ? `&next=${encodeURIComponent(next)}` : ''}`;
       const mock = await sendEmail(env, email, `Sign in to ${store.name}`, `Click to sign in to your ${store.name} account (the link works once, for fifteen minutes):\n\n${link}\n\nIf you did not ask for this, ignore it.`);
       return json({ ok: true, sent: true, ...(mock ? { mock_link: link } : {}) });
     }
@@ -33,6 +37,15 @@ export const POST: APIRoute = async ({ request }) => {
       if (!name) return json({ error: 'A name is needed' }, 400);
       const phone = String(b.phone ?? '').trim().slice(0, 20);
       await setCustomerName(env, c.id, name, phone ? normalizePhone(phone) : null);
+      return json({ ok: true });
+    }
+    // Marketing choices on the account page (Peter, Nov 14 2026): a yes or a no, each logged with the wording shown.
+    if (b.action === 'consent') {
+      if (!isChannel(b.channel)) return json({ error: 'Unknown choice' }, 400);
+      const granted = b.granted === true;
+      const contact = b.channel === 'email' ? c.email : c.phone;
+      if (granted && !contact) return json({ error: b.channel === 'sms' ? 'Add your mobile number first' : 'Add your email first' }, 400);
+      await recordConsent(env, { customer_id: c.id, channel: b.channel, granted, contact, wording: loggedWording(b.channel, b.lang), source: 'account_page' });
       return json({ ok: true });
     }
     if (b.action === 'save_address') {

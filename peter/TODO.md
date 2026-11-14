@@ -7,6 +7,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P1 | [International shipping online](#p1-international-shipping-online) | ⏸ Later | The US-only site going live, then a talk with William and Rin |
 | P2 | [Return labels on the Ship page](#p2-return-labels-on-the-ship-page) | ✅ Done Nov 14 | Pay-only-if-used is D9 in FOR-WILLIAM.md |
 | P3 | [Insurance terms: do's and don'ts, limits, what can't be insured](#p3-insurance-terms-dos-and-donts-limits-what-cant-be-insured) | ⏸ Later | Research each carrier's rules first |
+| P4 | [Find a texting (SMS) platform for messages and marketing](#p4-find-a-texting-sms-platform-for-messages-and-marketing) | ⏳ Next to research | Pick the platform, then register the store's texting |
 
 ---
 
@@ -112,3 +113,42 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 3. Whether the customer ticks **"I've read the insurance terms"** before paying.
 4. How it fits with the open insurance questions in [FOR-WILLIAM.md](FOR-WILLIAM.md): D1 (the fee covers the carrier's cost?), D7 ("we handle your claim" as a selling point), D8 (which insurance the counter uses today).
 5. A lawyer or the franchise reviews the final wording.
+
+---
+
+## P4. Find a texting (SMS) platform for messages and marketing
+
+**Added:** 2026-11-14 14:13 CST. **Status:** to research.
+
+**What it is:** A service to send the store's texts: shipping updates (already built) and, with the customer's yes, deals and news. Customers now give their mobile number when they buy online, and can tick "Text me deals" (logged as proof in the `marketing_consents` table).
+
+**What's already in place:**
+- The site sends "Text me when it ships" messages through **Twilio** (set up in `site/.dev.vars`: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`), but no Twilio account is connected yet, so texts are only logged.
+- Email goes through **Resend**, also not connected yet.
+- Marketing consent is collected and logged with the exact wording, time and source. Nothing sends marketing yet.
+
+### Questions to answer
+
+- [ ] **One platform or two?** Twilio can send both shipping updates and marketing, but marketing campaigns are easier on a platform built for them (lists, scheduling, opt-out handling, reports). Compare a sending service (Twilio, Telnyx, and similar) with marketing tools (SimpleTexting, EZ Texting, Textedly, and similar). Check prices on their own sites, since they change.
+- [ ] Does it **import our consent list** (or connect to the site) and send **opt-outs back**, so a STOP reply also turns off "Text me deals" on the customer's account?
+- [ ] **Number type:** a regular local number (needs "10DLC" registration), a toll-free number (needs toll-free verification), or a short code (costly, slow). The store's Monroe area code is a nice touch.
+- [ ] Monthly cost at the store's volume, per-message cost, and registration fees.
+- [ ] Whether the franchise (GP Brands) has a preferred or required platform.
+
+### Rules any platform must follow (to check in detail before sending a single marketing text)
+
+- [ ] **Register the business** with the carriers before texting (A2P 10DLC brand and campaign, or toll-free verification). Unregistered business texts get blocked.
+- [ ] **Express written consent** for marketing texts (TCPA): an unticked box, the store named, frequency, "message and data rates may apply", STOP and HELP, not a condition of buying. The site's box already says all of that; the wording is in `site/src/lib/consent.ts`.
+- [ ] **STOP, HELP and the other opt-out words** answered automatically, and honored right away.
+- [ ] **Quiet hours:** no marketing texts at night (federal rule is 8 a.m. to 9 p.m. in the customer's time zone; some states are stricter).
+- [ ] **Louisiana's own rules** on telephone solicitation, and any state where many customers live.
+- [ ] **What may not be texted** (carriers block some content).
+- [ ] Keep the consent records for as long as the law requires (the site keeps them indefinitely).
+- [ ] "Up to 4 messages a month" is in the consent wording: keep to it, or change the wording before sending more.
+
+### Then
+
+1. Pick the platform and open the account.
+2. Register the store's texting (10DLC or toll-free).
+3. Connect it: shipping texts through the site; marketing lists from customers who said yes (`marketing_consents`, newest choice per customer).
+4. Write the first message and a calendar (ties in with the year-round shipping calendar, agenda item 19).

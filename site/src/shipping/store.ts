@@ -119,6 +119,8 @@ const mem = {
   pickups: [] as PickupRow[],
   photos: [] as PhotoRow[],
   customerAddresses: [] as CustomerAddress[],
+  tracked: [] as TrackedRow[],
+  consents: [] as ConsentRow[],
   returnLinks: [] as ReturnLink[],
   products: [] as ProductRow[],
   stockMoves: [] as StockMove[],
@@ -148,7 +150,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -180,6 +182,8 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'pickups': return mem.pickups;
     case 'shipment_photos': return mem.photos;
     case 'customer_addresses': return mem.customerAddresses;
+    case 'customer_tracked': return mem.tracked;
+    case 'marketing_consents': return mem.consents;
     case 'return_links': return mem.returnLinks;
     case 'benchmark_log': return mem.benchmarks;
     case 'products': return mem.products;
@@ -1278,6 +1282,54 @@ export async function getCustomerAddress(env: Env, customerId: string, id: numbe
 export async function deleteCustomerAddress(env: Env, customerId: string, id: number): Promise<boolean> {
   if (env.DB) return ((await env.DB.prepare('DELETE FROM customer_addresses WHERE id = ?1 AND customer_id = ?2').bind(id, customerId).run()).meta.changes ?? 0) > 0;
   const n = mem.customerAddresses.length; mem.customerAddresses = mem.customerAddresses.filter((a) => !(a.id === id && a.customer_id === customerId)); return mem.customerAddresses.length < n;
+}
+
+// ---- recently tracked (Peter, Nov 14 2026) ------------------------------------------------------------
+export interface TrackedRow { id: number; customer_id: string; query: string; carrier: string | null; label: string | null; tracked_at: string }
+/** Remember a lookup for a signed-in customer; tracking the same thing again moves it to the top. */
+export async function recordTracked(env: Env, t: { customer_id: string; query: string; carrier?: string | null; label?: string | null }): Promise<void> {
+  const query = t.query.trim().toUpperCase().slice(0, 40), at = now();
+  if (!query) return;
+  if (env.DB) {
+    await env.DB.prepare(`INSERT INTO customer_tracked (customer_id, query, carrier, label, tracked_at) VALUES (?1, ?2, ?3, ?4, ?5)
+      ON CONFLICT (customer_id, query) DO UPDATE SET carrier = COALESCE(excluded.carrier, carrier), label = COALESCE(excluded.label, label), tracked_at = excluded.tracked_at`)
+      .bind(t.customer_id, query, t.carrier ?? null, t.label ?? null, at).run();
+    return;
+  }
+  const hit = mem.tracked.find((r) => r.customer_id === t.customer_id && r.query === query);
+  if (hit) { hit.tracked_at = at; hit.carrier = t.carrier ?? hit.carrier; hit.label = t.label ?? hit.label; return; }
+  mem.tracked.push({ id: mem.seq++, customer_id: t.customer_id, query, carrier: t.carrier ?? null, label: t.label ?? null, tracked_at: at });
+}
+export async function listTracked(env: Env, customerId: string, limit = 10): Promise<TrackedRow[]> {
+  if (env.DB) return (await env.DB.prepare(`SELECT * FROM customer_tracked WHERE customer_id = ?1 ORDER BY tracked_at DESC LIMIT ${Math.min(50, limit)}`).bind(customerId).all<TrackedRow>()).results;
+  return mem.tracked.filter((r) => r.customer_id === customerId).sort((a, b) => b.tracked_at.localeCompare(a.tracked_at)).slice(0, limit);
+}
+export async function removeTracked(env: Env, customerId: string, query: string): Promise<void> {
+  const q = query.trim().toUpperCase();
+  if (env.DB) { await env.DB.prepare('DELETE FROM customer_tracked WHERE customer_id = ?1 AND query = ?2').bind(customerId, q).run(); return; }
+  mem.tracked = mem.tracked.filter((r) => !(r.customer_id === customerId && r.query === q));
+}
+
+// ---- marketing consent (Peter, Nov 14 2026) -----------------------------------------------------------
+// Separate from customers.consent_email / consent_sms, which mean receipts and tracking messages.
+export interface ConsentRow { id: number; customer_id: string; channel: 'email' | 'sms'; granted: number; contact: string | null; wording: string; source: string; at: string }
+/** Log a yes or a no, with the wording the customer saw. Nothing is ever inferred or pre-ticked. */
+export async function recordConsent(env: Env, c: { customer_id: string; channel: 'email' | 'sms'; granted: boolean; contact: string | null; wording: string; source: string }): Promise<void> {
+  const row = { customer_id: c.customer_id, channel: c.channel, granted: c.granted ? 1 : 0, contact: c.contact, wording: c.wording, source: c.source, at: now() };
+  if (env.DB) {
+    await env.DB.prepare('INSERT INTO marketing_consents (customer_id, channel, granted, contact, wording, source, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)')
+      .bind(row.customer_id, row.channel, row.granted, row.contact, row.wording, row.source, row.at).run();
+    return;
+  }
+  mem.consents.push({ id: mem.seq++, ...row });
+}
+/** A customer's current marketing choices: the newest row per channel. Never asked means no. */
+export async function marketingConsent(env: Env, customerId: string): Promise<{ email: boolean; sms: boolean }> {
+  const rows: ConsentRow[] = env.DB
+    ? (await env.DB.prepare('SELECT * FROM marketing_consents WHERE customer_id = ?1 ORDER BY at DESC, id DESC').bind(customerId).all<ConsentRow>()).results
+    : mem.consents.filter((r) => r.customer_id === customerId).sort((a, b) => b.at.localeCompare(a.at) || b.id - a.id);
+  const latest = (ch: string) => rows.find((r) => r.channel === ch);
+  return { email: latest('email')?.granted === 1, sms: latest('sms')?.granted === 1 };
 }
 
 // ---- intake photos (to-do T17): the rows; the bytes are in lib/photos.ts -----------------------------

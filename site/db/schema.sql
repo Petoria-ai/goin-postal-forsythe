@@ -414,6 +414,35 @@ CREATE TABLE IF NOT EXISTS customer_addresses (
 );
 CREATE INDEX IF NOT EXISTS customer_addresses_customer ON customer_addresses(customer_id);
 
+-- Recently tracked (Peter, Nov 14 2026): what a signed-in customer looked up on /track, newest first.
+-- One row per customer and code or tracking number; tracking it again moves it to the top.
+CREATE TABLE IF NOT EXISTS customer_tracked (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  query TEXT NOT NULL,                 -- the pickup code or tracking number as typed, upper case
+  carrier TEXT,                        -- USPS, UPS, FedEx, DHL when known
+  label TEXT,                          -- what the list shows: "USPS Ground Advantage to Dallas, TX"
+  tracked_at TEXT NOT NULL,
+  UNIQUE (customer_id, query)
+);
+CREATE INDEX IF NOT EXISTS customer_tracked_customer ON customer_tracked(customer_id, tracked_at);
+
+-- Marketing consent (Peter, Nov 14 2026): every yes or no a customer gives to marketing email or texts,
+-- with the exact wording they saw, where, and when. Kept as proof (texts need express written consent
+-- under the TCPA). Never inferred: customers.consent_email and consent_sms mean receipts and tracking
+-- messages, not marketing. A customer's current choice is their newest row per channel.
+CREATE TABLE IF NOT EXISTS marketing_consents (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  channel TEXT NOT NULL,               -- email | sms
+  granted INTEGER NOT NULL,            -- 1 yes, 0 no or withdrawn
+  contact TEXT,                        -- the email address or phone number it applies to
+  wording TEXT NOT NULL,               -- the exact sentence next to the box
+  source TEXT NOT NULL,                -- where: ship_page, account_page, counter, stop_reply
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS marketing_consents_customer ON marketing_consents(customer_id, channel, at);
+
 -- Merchant returns portal (to-do T22): a public link per business account; its customers make prepaid return labels billed to the account.
 CREATE TABLE IF NOT EXISTS return_links (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

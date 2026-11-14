@@ -4,6 +4,34 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 14:13 CST · Tracking menu, recently tracked, accounts to buy, marketing consent
+
+- **Asked for:** change the tab "Track" to "Tracking" with a dropdown like UPS's ("Track a shipment", "View all shipments"); a "recently tracked / save your tracking here" box that asks people to log in or sign up; "they can only create shipments when they have an account, so I can start email and SMS marketing once I collect their phone number and email"; and "add to the to-do list: find an SMS platform".
+- **What changed:**
+  - **"Track" is now "Tracking"** in the header (14 languages), with a dropdown: **Track a shipment** (the tracking page) and **View all shipments** (the orders on the customer's account). It opens on hover, with the keyboard, or with the ▾ arrow on a phone.
+  - **Recently tracked** on the tracking page:
+    - Signed out: "Save your tracking here", with **Sign in** and **Create an account**.
+    - Signed in: the last 10 things they tracked (the store's codes and other carriers' numbers), newest first, plus a link to all their shipments.
+  - **Buying a label online needs a free account.** Anyone can still get rates. At the pay step, a signed-out customer sees "Sign in to buy your label", types their email and gets a sign-in link. The whole form is kept on their device; the link brings them back to the Ship page with everything filled in and the rates showing. Sign-in and sign-up are the same link (no password).
+  - **First purchase asks for a mobile number** ("for problems with this shipment"). The account takes its name from the return address.
+  - **Marketing consent, done the legal way:** two **unticked** boxes, "Email me Goin' Postal deals and news" and "Text me Goin' Postal deals and news ... Up to 4 messages a month ... Reply STOP to stop, HELP for help. Agreeing is not a condition of buying." Each yes is logged with the exact wording, the language, the email or phone, where, and when. Customers can change either choice anytime on the **Account** page; that's logged too.
+  - The staff counter and business accounts are unchanged: walk-ups don't need an account.
+  - **To-do P4:** find a texting platform, with the registration and consent rules.
+- **Problems found and fixed:**
+  - **Every online order renamed the customer after the person receiving the package** (for example "Sam" instead of "Pat"), because online orders didn't carry the customer's own name. Fixed: they do now. (H9 in FOR-WILLIAM.)
+  - The customer record's existing "consent" flags are switched on automatically for anyone with an email; they mean "receipts and tracking", not marketing. Marketing consent is now kept separately so nobody lands on a marketing list without saying yes. (H8.)
+- **Before going live:**
+  - **Email must be connected (Resend).** Buying now needs the sign-in email; without it nobody can buy online.
+  - The two new tables need the database setup re-run: `npm run db:local` on each computer, `npm run db:remote` on the live site.
+- **Files:** [header and menu](../site/src/layouts/Base.astro), [tracking page](../site/src/pages/track/index.astro), [tracking lookup](../site/src/pages/api/track.ts), [ship page](../site/src/pages/ship/index.astro), [orders](../site/src/pages/api/orders.ts), [account page](../site/src/pages/account/index.astro), [account API](../site/src/pages/api/account.ts), [sign-in return path](../site/src/lib/session.ts), [consent wording (new)](../site/src/lib/consent.ts), [store](../site/src/shipping/store.ts), [database tables](../site/db/schema.sql), [tests (new)](../site/tests/accounts-tracked.test.ts), [text, 14 languages](../site/src/i18n/strings.ts), [styles](../site/src/styles/global.css), [TODO.md](TODO.md) (P4)
+- **How to check it:** `git pull`, then `npm run db:local` once (new tables), then `npm run dev`.
+  1. Hover **Tracking** in the header: the two choices appear.
+  2. Open the tracking page signed out: "Save your tracking here".
+  3. On the Ship page, get rates and pick one: "Sign in to buy your label". Type an email and press the button. The terminal window prints the sign-in email; open its link (or the "dev: open it" link on the page). You're back on the Ship page, filled in, with rates.
+  4. Pick a rate, type a mobile number, tick a marketing box if you like, and pay.
+  5. On the Account page, see the choices; on the tracking page, see Recently tracked.
+- **Checks run:** 160 tests pass (8 new: recently tracked, consent, the sign-in return path), the type check is clean, the site builds, and the database setup runs twice cleanly. The whole journey above was run in a real browser, including the order API refusing a signed-out buyer.
+
 ## 2026-11-14 13:51 CST · Links under the tracking box centered
 
 - **Asked for:** "Can you center the words 'Ship a package, Hours and directions, Contact'."
