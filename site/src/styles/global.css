@@ -365,3 +365,20 @@ html[lang="ko"] { --fw-display: "Malgun Gothic", "Segoe UI", sans-serif; --fw-bo
 html[lang="zh-Hans"] { --fw-display: "Microsoft YaHei", "Segoe UI", sans-serif; --fw-body: "Microsoft YaHei", "Segoe UI", sans-serif; }
 html[lang="zh-Hant-HK"] { --fw-display: "Microsoft JhengHei", "Segoe UI", sans-serif; --fw-body: "Microsoft JhengHei", "Segoe UI", sans-serif; }
 html[lang="ja"] { --fw-display: "Yu Gothic UI", Meiryo, "Segoe UI", sans-serif; --fw-body: "Yu Gothic UI", Meiryo, "Segoe UI", sans-serif; }
+
+/* Extra services and the hazardous materials guide on the ship page (Peter, Nov 14 2026) */
+.extras { border: 1px solid var(--hair); border-radius: 8px; padding: 10px 12px; }
+.extras > summary { cursor: pointer; font-weight: 700; }
+.extras[open] > summary { margin-bottom: 10px; }
+.extras .check { margin: 8px 0; }
+.check > span { display: inline; }
+.hz-row { display: grid; gap: 4px; }
+.linkish { background: none; border: 0; padding: 0; color: var(--navy); text-decoration: underline; font: inherit; cursor: pointer; justify-self: start; text-align: left; }
+.hz-note { border-left: 4px solid #b45309; padding: 10px 14px; margin: 0; }
+.saved-pkg { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: end; }
+.hz-dialog { max-width: 40rem; width: calc(100% - 32px); max-height: calc(100% - 48px); border: 1px solid var(--hair); border-radius: 12px; padding: 20px 24px; background: var(--paper); color: inherit; }
+.hz-dialog::backdrop { background: rgb(15 29 58 / .55); }
+.hz-dialog h3 { margin: 16px 0 4px; }
+
+.ship-form .check { align-items: flex-start; }
+.ship-form .check input { margin-top: 2px; flex: none; }

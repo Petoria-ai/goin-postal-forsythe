@@ -5,6 +5,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | # | Item | Status | Waiting on |
 |---|---|---|---|
 | P1 | [International shipping online](#p1-international-shipping-online) | ⏸ Later | The US-only site going live, then a talk with William and Rin |
+| P2 | [Return labels on the Ship page](#p2-return-labels-on-the-ship-page) | ⏳ Next | Nothing: next edit |
 
 ---
 
@@ -53,3 +54,20 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 1. What risk made you remove it, and does the sender-certifies model above cover it?
 2. Which countries would customers actually ship to? (Start with those.)
 3. Is the counter enough for now, or is online international worth the setup?
+
+---
+
+## P2. Return labels on the Ship page
+
+**Added:** November 14, 2026. **Status:** next.
+
+**What it is:** A "Return label" checkbox on the Ship page, like Pirate Ship's, so a seller can buy the outgoing label and a prepaid label back to themselves in one checkout.
+
+**Why it waited:** It's the biggest of the extra services (a second label, its own price, how and when it's charged), so it gets its own edit right after the other checkboxes.
+
+**Already in the project to build on:** the counter can make return labels today (the "This is a return" box on /counter/queue), there's a returns drop-off page, and the add-on list has "Print a return label from a phone or email" and "Box for a return".
+
+**Questions to settle when building it:**
+1. Charge the return label up front, or only if it's used? (Up front is simpler; only-if-used depends on the carrier.)
+2. Same service as the outgoing label, or the cheapest?
+3. Email it to the sender, or to the receiver to keep in the box?

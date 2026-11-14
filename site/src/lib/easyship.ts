@@ -140,6 +140,7 @@ function mockRates(): Rate[] {
   const base = 9;
   return [
     { courier_service_id: 'mock-usps-ground', carrier: 'USPS', service: 'USPS Ground Advantage', total_charge: base + 0.65, currency: 'USD', min_days: 2, max_days: 5 },
+    { courier_service_id: 'mock-usps-media', carrier: 'USPS', service: 'USPS Media Mail', total_charge: base - 3.5, currency: 'USD', min_days: 2, max_days: 8 },
     { courier_service_id: 'mock-ups-ground', carrier: 'UPS', service: 'UPS Ground', total_charge: base + 3.1, currency: 'USD', min_days: 1, max_days: 5 },
     { courier_service_id: 'mock-fedex-home', carrier: 'FedEx', service: 'FedEx Home Delivery', total_charge: base + 3.4, currency: 'USD', min_days: 1, max_days: 5 },
     { courier_service_id: 'mock-usps-priority', carrier: 'USPS', service: 'USPS Priority Mail', total_charge: base + 4.2, currency: 'USD', min_days: 1, max_days: 3 },

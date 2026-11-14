@@ -39,6 +39,8 @@ export const POST: APIRoute = async ({ request }) => {
     // Text updates are a priced add-on when the catalog has one; ticking the box adds it.
     const picks: { code: string; qty: number }[] = Array.isArray(b.addons) ? b.addons.filter((p: any) => p?.code !== TEXT_UPDATES) : [];
     if (sms && textUpdatesPrice(cfg) != null) picks.push({ code: TEXT_UPDATES, qty: 1 });
+    // Signature confirmation ticked on the ship page: the catalog's signature add-on is charged, once.
+    if (parcel.options?.signature && !picks.some((p) => p.code === 'signature')) picks.push({ code: 'signature', qty: 1 });
     const extras = priceExtras(cfg, picks, parcel.value_usd, b.insure === true || b.insure === 'on');
     const subtotal = Math.round((rate.total_charge + extras.extras_total) * 100) / 100;
     const tax = salesTax(cfg, taxableExtras(extras));

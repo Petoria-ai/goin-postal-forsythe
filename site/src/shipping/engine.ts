@@ -9,6 +9,7 @@ import { dhl } from './providers/dhl';
 import { easyship } from './providers/easyship';
 import { retail } from '../lib/pricing';
 import { lengthPlusGirth } from './dim';
+import { applyOptions, hazmatAllowed, HAZMAT_AREA, optionsKey } from '../lib/options';
 
 const DIRECT = [usps, ups, fedex, dhl];
 const CACHE_TTL = 300;
@@ -22,20 +23,21 @@ export function activeProviders(env: Env) {
 
 function cacheKey(o: Address, d: Address, p: Parcel) {
   const round = (n: number) => Math.round(n * 10) / 10;
-  return `rates:${o.postal_code}:${d.country_alpha2}:${d.postal_code}:${round(p.weight_lb)}:${round(p.length_in)}x${round(p.width_in)}x${round(p.height_in)}:${d.residential ? 'r' : 'c'}`;
+  return `rates:${o.postal_code}:${d.country_alpha2}:${d.postal_code}:${round(p.weight_lb)}:${round(p.length_in)}x${round(p.width_in)}x${round(p.height_in)}:${d.residential ? 'r' : 'c'}:${optionsKey(p.options)}`;
 }
 
 export interface QuoteResult { rates: Rate[]; demo: boolean; errors: { carrier: string; message: string }[]; oversize: boolean }
 
 export async function getQuotes(env: Env, origin: Address, destination: Address, parcel: Parcel): Promise<QuoteResult> {
   const oversize = lengthPlusGirth(parcel) > 130;
+  if (parcel.options?.hazmat && !hazmatAllowed(origin, destination)) throw new Error(HAZMAT_AREA);
   const key = cacheKey(origin, destination, parcel);
   // The cache holds carrier cost, not price, so a rule change at /counter/rules shows at once.
   if (env.ORDERS) {
     const hit = await env.ORDERS.get(key);
     if (hit) {
       const cached = JSON.parse(hit) as QuoteResult;
-      return { ...cached, rates: (await retail(env, cached.rates)).sort((a, b) => a.total_charge - b.total_charge), oversize };
+      return { ...cached, rates: applyOptions(await retail(env, cached.rates), parcel.options).sort((a, b) => a.total_charge - b.total_charge), oversize };
     }
   }
 
@@ -58,7 +60,8 @@ export async function getQuotes(env: Env, origin: Address, destination: Address,
 
   const demo = direct.length === 0 && !env.EASYSHIP_TOKEN;
   if (env.ORDERS && rates.length) await env.ORDERS.put(key, JSON.stringify({ rates, demo, errors, oversize }), { expirationTtl: CACHE_TTL });
-  const priced = (await retail(env, rates)).sort((a, b) => a.total_charge - b.total_charge);
+  // Extra services decide which rates may be picked: Media Mail only when ticked, hazardous materials by Ground Advantage only.
+  const priced = applyOptions(await retail(env, rates), parcel.options).sort((a, b) => a.total_charge - b.total_charge);
   return { rates: priced, demo, errors, oversize };
 }
 

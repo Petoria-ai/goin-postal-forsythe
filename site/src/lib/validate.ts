@@ -1,4 +1,5 @@
 import type { Address, Parcel } from '../shipping/types';
+import { parseOptions } from './options';
 
 const US_STATES = /^[A-Z]{2}$/;
 // Domestic only (Nov 7, 2026): international shipping is out of PeterShip. Territories and military
@@ -41,6 +42,7 @@ export function parseParcel(v: any): Parcel {
     height_in: num('height_in', 1, 108),
     description: String(v?.description ?? '').trim().slice(0, 80),
     value_usd: Number(v?.value_usd) > 0 ? Number(v.value_usd) : 1,
+    options: parseOptions(v?.options),
   };
 }
 

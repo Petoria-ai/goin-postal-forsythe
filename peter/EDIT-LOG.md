@@ -4,6 +4,30 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 11:35 CST · Extra services checkboxes on the Ship page, with a hazardous materials guide
+
+- **Asked for:** "I want tickbox features to populate whatever the customer may want" (from the Pirate Ship screenshot), "let's disregard the international/customs box for now", and a pop-up guide like Pirate Ship's "Learn how to ship Hazardous Materials" link.
+- **What changed** (all in the "What is it?" section, before Get rates, because they change which rates show):
+  - **Extra services** (a fold-out section):
+    - **Signature confirmation (+$3.50):** adds the store's signature add-on to the order and tells USPS, UPS or FedEx to require a signature on the label. The price comes from the add-on list at /counter/rules.
+    - **Qualifies for Media Mail:** adds the cheap, slow USPS Media Mail rate to the list. Media Mail never shows unless this is ticked.
+    - **Irregular package:** tells USPS it's not a standard box, so it's priced right.
+  - **Hazardous materials:** only USPS Ground Advantage is offered, the label tells USPS it contains hazardous materials, and a reminder about the Limited Quantity mark shows. Online it is allowed only within the lower 48 states and DC; Alaska, Hawaii, territories and military addresses get a message to come to the counter.
+  - **"Learn how to ship hazardous materials":** opens a guide window over the page (common items, packing, service and label, electronics, where it can go, a link to USPS Publication 52). "Got it, back to my shipment", Escape, or a click outside closes it. Written for the store in its own words from the USPS rules, not copied from Pirate Ship.
+  - **Save this package for next time:** keeps the size, weight, contents and ticked boxes on that computer or phone (up to 5). Next visit, a "Saved packages" list fills them in with one pick; "Forget saved packages" clears it.
+  - The **done page** repeats the Limited Quantity reminder, and the **staff counter page** shows a red warning to check the mark before accepting a hazardous package.
+  - All new text is in all 14 of the site's languages.
+- **Why:** Match what customers see on Pirate Ship, and keep hazardous packages legal: USPS fines the sender when hazardous items aren't declared on the label.
+- **Bug caught while testing:** the page total first left out the $3.50 signature fee while the order still charged it. Fixed: the page now shows exactly what is charged.
+- **Limits to know:**
+  - The carrier-side settings (signature, hazmat, irregular, Media Mail) are written to each carrier's published format but can only be fully proven once the real carrier accounts are connected; today the site runs on demo rates.
+  - While labels go through Easyship (the stand-in until the direct carrier accounts are live), signature and hazmat are not passed to Easyship yet.
+  - Irregular package changes USPS pricing only.
+  - Customs (international) is left out on purpose. Return labels are next, as P2 on the to-do list.
+- **Files:** [ship page](../site/src/pages/ship/index.astro), [extra services rules (new)](../site/src/lib/options.ts), [tests (new)](../site/tests/options.test.ts), [rate engine](../site/src/shipping/engine.ts), [USPS](../site/src/shipping/providers/usps.ts), [UPS](../site/src/shipping/providers/ups.ts), [FedEx](../site/src/shipping/providers/fedex.ts), [orders](../site/src/pages/api/orders.ts), [done page](../site/src/pages/ship/done.astro), [counter page](../site/src/pages/counter/[code].astro), [parcel checks](../site/src/lib/validate.ts), [demo rates](../site/src/lib/easyship.ts), [shipment types](../site/src/shipping/types.ts), [text, 14 languages](../site/src/i18n/strings.ts), [staff text](../site/src/i18n/staff3.ts), [styles](../site/src/styles/global.css)
+- **How to check it:** `git pull`, open http://localhost:4321/ship, fill in the form. Open **Extra services** and tick **Media Mail**, press Get rates: "USPS Media Mail" appears. Untick it, tick **Hazardous materials**, Get rates: only USPS Ground Advantage. Click **Learn how to ship hazardous materials** to see the guide. Tick **Signature confirmation**, pick a rate: the total goes up by $3.50 plus the online fee. Tick **Save this package**, get rates, then reload the page: "Saved packages" appears at the top of "What is it?".
+- **Checks run:** 124 automated tests pass (6 new), the type check is clean, the site builds. Every checkbox was tried in a real browser, including buying an order with signature and hazmat and opening it on the counter page.
+
 ## 2026-11-14 11:03 CST · To-do list started, with international shipping as the first item
 
 - **Asked for:** "Let's do that" (put international shipping on the to-do list instead of building it now).

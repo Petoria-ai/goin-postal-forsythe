@@ -23,6 +23,7 @@ const photos = await listPhotos(env, order.id);
       <h3>{order.rate.service} · ${order.rate.total_charge.toFixed(2)}</h3>
       {order.addons?.map((l) => <p>{l.name}{l.qty > 1 ? ` × ${l.qty}` : ''} · ${l.total.toFixed(2)}</p>)}
       {order.insurance && <p><span data-i18n="done.insurance">Insurance</span> ${'to'} ${order.insurance.declared_usd} · ${order.insurance.fee.toFixed(2)}</p>}
+      {order.parcel.options?.hazmat && <p class="err" data-i18n="st.o.hazmat">Hazardous materials declared. Check the box has a Limited Quantity mark before accepting it.</p>}
       <p><strong data-i18n="st.o.ringup">Total:</strong> <strong>${orderTotal(order).toFixed(2)}</strong>{order.status === 'reserved' && <span class="muted"> · <span data-i18n="st.o.ringup.pos">ring this up on the POS</span></span>}</p>
       {order.kind === 'return' && <p><strong data-i18n="st.o.return">Return label.</strong> <span data-i18n="st.o.return.from">From</span> {order.origin.contact_name}, {order.origin.city}, {order.origin.state} {order.origin.postal_code}. <span data-i18n="st.o.return.email">Email it to the sender below.</span></p>}
       <p><strong data-i18n="st.o.to">To:</strong> {order.destination.contact_name}<br/>{order.destination.line_1}{order.destination.line_2 ? `, ${order.destination.line_2}` : ''}<br/>{order.destination.city}, {order.destination.state} {order.destination.postal_code} {order.destination.country_alpha2}</p>

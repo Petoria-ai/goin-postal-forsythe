@@ -5,12 +5,15 @@ import Base from '../../layouts/Base.astro';
 import { env } from '../../lib/env';
 import { readSession } from '../../lib/session';
 import { getCustomer, listCustomerAddresses } from '../../shipping/store';
+import { effectiveAddons } from '../../lib/addons';
 const cancelled = Astro.url.searchParams.get('cancelled');
 // Signed-in customers (T20) get their saved addresses and their email filled in.
 const meId = await readSession(env, Astro.request.headers.get('cookie'));
 const me = meId ? await getCustomer(env, meId) : null;
 const saved = me ? (await listCustomerAddresses(env, me.id)).map((a) => ({ id: a.id, label: a.label, to: JSON.parse(a.address_json) })) : [];
 const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
+// The signature confirmation price shown beside its checkbox, from the add-on catalog (/counter/rules).
+const sigPrice = (await effectiveAddons(env)).items.find((i) => i.active && i.code === 'signature')?.price ?? null;
 ---
 <Base title={`Ship a package · ${store.name}`} description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
   <section class="hero">
@@ -49,6 +52,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
 
     <fieldset>
       <legend data-i18n="ship.what">What is it?</legend>
+      <div id="savedPkgRow" class="saved-pkg" hidden><label><span data-i18n="ship.x.saved">Saved packages</span> <select id="savedPkg"><option value="">…</option></select></label> <button type="button" class="linkish" id="forgetPkg" data-i18n="ship.x.forget">Forget saved packages</button></div>
       <div class="row">
         <label><span data-i18n="ship.weight">Weight (lb)</span> <input name="weight_lb" type="number" step="0.1" min="0.1" max="150" required /></label>
         <label><span data-i18n="ship.length">Length (in)</span> <input name="length_in" type="number" min="1" required /></label>
@@ -56,6 +60,19 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
         <label><span data-i18n="ship.height">Height (in)</span> <input name="height_in" type="number" min="1" required /></label>
       </div>
       <label><span data-i18n="ship.desc">What's inside</span> <input name="description" maxlength="80" placeholder="Clothing" /></label>
+      <!-- Extra services (Peter, Nov 14 2026, modelled on Pirate Ship). They change which rates are offered, so they sit before Get rates. -->
+      <details class="extras">
+        <summary data-i18n="ship.x.h">Extra services</summary>
+        <label class="check"><input name="opt_signature" type="checkbox" /> <span><strong data-i18n="ship.x.sig">Signature confirmation</strong>{sigPrice != null && <span class="muted"> (+${sigPrice.toFixed(2)})</span>} <span class="muted" data-i18n="ship.x.sig.d">Someone must sign for it when it is delivered.</span></span></label>
+        <label class="check"><input name="opt_media_mail" type="checkbox" /> <span><strong data-i18n="ship.x.media">Qualifies for Media Mail</strong> <span class="muted" data-i18n="ship.x.media.d">Books, printed music, recordings and films only, with no ads and no other products. A cheaper, slower USPS service; USPS may open it to check.</span></span></label>
+        <label class="check"><input name="opt_irregular" type="checkbox" /> <span><strong data-i18n="ship.x.irr">Irregular package</strong> <span class="muted" data-i18n="ship.x.irr.d">Not a regular box: tubes, rolls, odd shapes, or anything a sorting machine can't handle.</span></span></label>
+      </details>
+      <div class="hz-row">
+        <label class="check"><input name="opt_hazmat" type="checkbox" /> <span><strong data-i18n="ship.x.hz">Hazardous materials</strong> <span class="muted" data-i18n="ship.x.hz.d">Perfume, nail polish, hair spray, aerosols, lithium batteries, paint, lighter fluid and similar.</span></span></label>
+        <button type="button" class="linkish" id="hzLink" aria-haspopup="dialog" data-i18n="ship.x.hz.link">Learn how to ship hazardous materials</button>
+      </div>
+      <p id="hzNote" class="card hz-note" hidden data-i18n="ship.x.hz.on">Only USPS Ground Advantage can carry this. Put a Limited Quantity mark on the label side of the box.</p>
+      <label class="check"><input name="opt_save" type="checkbox" /> <span><strong data-i18n="ship.x.save">Save this package for next time</strong> <span class="muted" data-i18n="ship.x.save.d">Keeps the size, weight and choices on this device.</span></span></label>
     </fieldset>
 
     <button class="btn" type="submit" data-i18n="ship.getrates">Get rates</button>
@@ -83,6 +100,25 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       <button class="btn" type="submit" id="buyBtn" data-i18n="ship.continue">Continue</button>
     </form>
   </section>
+
+  <!-- The hazardous materials guide: a window over the page, closed with the button or Escape. Written for the store from USPS Publication 52. -->
+  <dialog id="hzDialog" class="hz-dialog" aria-labelledby="hzTitle">
+    <h2 id="hzTitle" data-i18n="ship.hz.title">Shipping hazardous materials</h2>
+    <p data-i18n="ship.hz.intro">Everyday things like perfume, nail polish, hair spray and used phones count as hazardous materials. Most can still be mailed in the US, with the right box, the right service and the Hazardous materials box ticked.</p>
+    <p class="muted" data-i18n="ship.hz.resp">You, the sender, are responsible for following the USPS rules (Publication 52). This is a short summary, not legal advice. If you are not sure, ask us at the counter.</p>
+    <h3 data-i18n="ship.hz.common.h">Common hazardous items</h3>
+    <p data-i18n="ship.hz.common">Aerosols such as hair spray; cleaners and solvents; lighter fluid and fuels; lithium batteries; inks and paint; matches; nail polish; perfume and cologne; used or damaged electronics with lithium batteries.</p>
+    <h3 data-i18n="ship.hz.pack.h">Packing</h3>
+    <p data-i18n="ship.hz.pack">Use a sturdy cardboard box with cushioning around the item. No envelopes or poly mailers. The one exception: a new device with its battery inside, in its own retail box, may go in a padded envelope by USPS.</p>
+    <h3 data-i18n="ship.hz.svc.h">Service and label</h3>
+    <p data-i18n="ship.hz.svc">Tick Hazardous materials before you buy the label. Only USPS Ground Advantage is offered, because these items cannot fly. USPS can charge the sender a fine when hazardous items are not declared on the label. Put a Limited Quantity mark on the label side of the box, and remove old labels and hazmat marks from reused boxes.</p>
+    <h3 data-i18n="ship.hz.elec.h">Phones, laptops and other electronics</h3>
+    <p data-i18n="ship.hz.elec">New, sealed electronics with the battery inside: don't tick the box; any service works. Used or damaged ones: tick the box, ship them in their own package, and write "Restricted Electronic Device – Surface Transportation Only" on the box.</p>
+    <h3 data-i18n="ship.hz.where.h">Where it can go</h3>
+    <p data-i18n="ship.hz.where">Online, hazardous packages ship only between addresses in the lower 48 states and DC. For Alaska, Hawaii, the US territories and military addresses, bring the package to the counter. Some items cannot be mailed at all; if in doubt, bring it in and we will check.</p>
+    <p><a href="https://pe.usps.com/text/pub52/welcome.htm" target="_blank" rel="noopener">USPS Publication 52</a></p>
+    <form method="dialog"><button class="btn" data-i18n="ship.hz.close">Got it, back to my shipment</button></form>
+  </dialog>
 
   <script type="application/json" id="savedJson" set:html={JSON.stringify(saved)} />
   <script>
@@ -171,7 +207,10 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       const ins = insBox.checked && extras ? insuranceFee(extras.insurance, declared()).fee : 0;
       const smsOn = (buy.querySelector('[name=sms]') as HTMLInputElement).checked;
       const text = smsOn && extras?.text_updates_price ? extras.text_updates_price : 0;
-      const subtotal = pickedPrice + ins + text;
+      // Signature confirmation is charged at the catalog price when ticked (the server adds the same add-on).
+      const sigOn = (document.querySelector('#quote [name=opt_signature]') as HTMLInputElement | null)?.checked;
+      const sig = sigOn ? (extras?.addons?.find((x: any) => x.code === 'signature')?.price ?? 0) : 0;
+      const subtotal = pickedPrice + ins + text + sig;
       const f = extras?.online_fee && (extras.online_fee.percent || extras.online_fee.flat) ? Math.round((subtotal * extras.online_fee.percent / 100 + extras.online_fee.flat) * 100) / 100 : 0;
       const feeRow = document.getElementById('feeRow')!;
       feeRow.hidden = !f;
@@ -194,13 +233,51 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
     insBox.addEventListener('change', () => { insPaint(); if (insBox.checked) declEl.focus(); });
     declEl.addEventListener('input', insPaint);
 
+    // Extra services (Peter, Nov 14 2026): the ticked boxes travel on the parcel as options.
+    const OPTS = ['signature', 'media_mail', 'irregular', 'hazmat'] as const;
+    const optBox = (k: string) => f.querySelector(`[name=opt_${k}]`) as HTMLInputElement;
+    const readOptions = () => Object.fromEntries(OPTS.filter((k) => optBox(k).checked).map((k) => [k, true]));
+    const hzNote = document.getElementById('hzNote') as HTMLElement, hzDialog = document.getElementById('hzDialog') as HTMLDialogElement;
+    const hzPaint = () => { hzNote.hidden = !optBox('hazmat').checked; };
+    optBox('hazmat').addEventListener('change', hzPaint);
+    document.getElementById('hzLink')!.addEventListener('click', () => hzDialog.showModal());
+    hzDialog.addEventListener('click', (e) => { if (e.target === hzDialog) hzDialog.close(); }); // a click on the dimmed backdrop closes it
+
+    // Saved packages: size, weight, contents and options, kept on this device only (localStorage), up to 5.
+    const PKG_KEY = 'gp-saved-packages';
+    const PKG_FIELDS = ['weight_lb', 'length_in', 'width_in', 'height_in', 'description'] as const;
+    type SavedPkg = { label: string; fields: Record<string, string>; options: Record<string, boolean> };
+    const loadPkgs = (): SavedPkg[] => { try { return JSON.parse(localStorage.getItem(PKG_KEY) || '[]'); } catch { return []; } };
+    const storePkgs = (list: SavedPkg[]) => { try { localStorage.setItem(PKG_KEY, JSON.stringify(list)); } catch {} };
+    const pkgRow = document.getElementById('savedPkgRow') as HTMLElement, pkgSel = document.getElementById('savedPkg') as HTMLSelectElement;
+    function paintPkgs() {
+      const list = loadPkgs();
+      pkgRow.hidden = !list.length;
+      pkgSel.innerHTML = '<option value="">…</option>' + list.map((p, i) => `<option value="${i}">${p.label.replace(/</g, '&lt;')}</option>`).join('');
+    }
+    function savePkg() {
+      const fields = Object.fromEntries(PKG_FIELDS.map((k) => [k, (f.querySelector(`[name=${k}]`) as HTMLInputElement).value.trim()]));
+      const label = `${fields.length_in}×${fields.width_in}×${fields.height_in} in · ${fields.weight_lb} lb${fields.description ? ` · ${fields.description}` : ''}`;
+      const list = [{ label, fields, options: readOptions() }, ...loadPkgs().filter((p) => p.label !== label)].slice(0, 5);
+      storePkgs(list); paintPkgs();
+    }
+    pkgSel.addEventListener('change', () => {
+      const p = loadPkgs()[Number(pkgSel.value)];
+      if (!pkgSel.value || !p) return;
+      for (const k of PKG_FIELDS) (f.querySelector(`[name=${k}]`) as HTMLInputElement).value = p.fields[k] ?? '';
+      for (const k of OPTS) optBox(k).checked = !!p.options?.[k];
+      hzPaint();
+    });
+    document.getElementById('forgetPkg')!.addEventListener('click', () => { storePkgs([]); paintPkgs(); });
+    paintPkgs();
+
     function read() {
       const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
       return {
         online: true,
         origin: { contact_name: d.from_contact_name, line_1: d.from_line_1, line_2: d.from_line_2, city: d.from_city, state: d.from_state, postal_code: d.from_postal_code, country_alpha2: 'US' },
         destination: { contact_name: d.contact_name, line_1: d.line_1, line_2: d.line_2, city: d.city, state: d.state, postal_code: d.postal_code, country_alpha2: 'US' },
-        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description },
+        parcel: { weight_lb: d.weight_lb, length_in: d.length_in, width_in: d.width_in, height_in: d.height_in, description: d.description, options: readOptions() },
       };
     }
 
@@ -217,6 +294,7 @@ const wantTo = Number(Astro.url.searchParams.get('to')) || 0;
       e.preventDefault();
       err.hidden = true; results.hidden = true; buy.hidden = true; picked = null;
       payload = read();
+      if ((f.querySelector('[name=opt_save]') as HTMLInputElement).checked) savePkg();
       const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const j = await res.json();
       if (!res.ok) { err.textContent = j.error; err.hidden = false; return; }

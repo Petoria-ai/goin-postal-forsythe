@@ -24,6 +24,8 @@ export interface Parcel {
   height_in: number;
   description: string;
   value_usd: number;
+  /** Extra services the customer ticked: signature, Media Mail, irregular, hazardous materials (lib/options.ts). */
+  options?: import('../lib/options').ShipOptions;
 }
 
 /** One service a customer can pick. `id` is "<carrier>:<service code>" and is the only thing the browser sends back. */

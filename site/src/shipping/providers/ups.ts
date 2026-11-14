@@ -60,7 +60,7 @@ export const ups: Provider = {
         ShipTo: addr(destination), ShipFrom: addr(origin),
         PaymentInformation: { ShipmentCharge: { Type: '01', BillShipper: { AccountNumber: env.UPS_ACCOUNT_NUMBER } } },
         Service: { Code: serviceCode },
-        Package: { ...pkg(parcel), Description: parcel.description || 'Merchandise' },
+        Package: { ...pkg(parcel), Description: parcel.description || 'Merchandise', ...(parcel.options?.signature ? { PackageServiceOptions: { DeliveryConfirmation: { DCISType: '2' } } } : {}) }, // DCISType 2: signature required
         ShipmentRatingOptions: { NegotiatedRatesIndicator: '' },
       },
       LabelSpecification: { LabelImageFormat: { Code: opts.zpl ? 'ZPL' : 'PDF' }, LabelStockSize: { Height: '6', Width: '4' } },
