@@ -4,6 +4,15 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 13:51 CST · Links under the tracking box centered
+
+- **Asked for:** "Can you center the words 'Ship a package, Hours and directions, Contact'."
+- **What changed:** The three links under the home page's tracking box now sit centered under the box on every screen width. They were drifting left on wide screens, because the site keeps every paragraph to a comfortable reading width and that row was a paragraph; that row is now allowed the box's full width.
+- **Why:** So the links line up under the search box, like the title and the box above them.
+- **Files:** [styles](../site/src/styles/global.css)
+- **How to check it:** `git pull`, open http://localhost:4321 on a wide window: the links sit centered under the Track box.
+- **Checks run:** the site builds; measured in a browser at 1000, 1400 and 1920 pixels wide, the links' center matches the box's center each time.
+
 ## 2026-11-14 13:29 CST · "Track a package" box at the top of the home page
 
 - **Asked for:** "The first thing I want customers to see is a 'track my shipment' box on the front page, for ease of use, kind of similar to how UPS does it on ups.com."

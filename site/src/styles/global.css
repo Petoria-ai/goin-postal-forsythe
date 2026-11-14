@@ -423,7 +423,7 @@ label.dim[hidden] { display: none; }
 .track-form { display: flex; gap: 10px; max-width: 40rem; margin: 0 auto; }
 .track-form input { flex: 1; min-width: 0; font-size: 1.1rem; }
 .track-form .btn { flex: none; margin: 0; padding-inline: 28px; }
-.track-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; margin: 14px 0 0; font-weight: 600; }
+.track-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; margin: 14px auto 0; max-width: none; font-weight: 600; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 #elsewhere .btnrow { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 600px) { .track-form { flex-direction: column; } .track-form .btn { width: 100%; } .track-hero h2 { font-size: 1.5rem; } }
