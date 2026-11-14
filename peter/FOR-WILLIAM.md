@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 14, 2026, 13:08 CST.
+**Last updated:** November 14, 2026, 13:29 CST.
 
 ## How Peter is working
 
@@ -19,6 +19,7 @@ Everything Peter's work turned up that William should know about: problems found
 | H2 | Nov 14, setup on Peter's Windows PC | On Windows, `npm` is blocked until `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` is run once. The README doesn't say so. | Peter ran it by hand | ⏳ **William:** add it to the root README's Windows steps |
 | H3 | Nov 14, [insurance fix](EDIT-LOG.md) | **The website charged the insurance fee but never bought insurance.** No declared value or insurance was sent to USPS, UPS or FedEx with the label, so only the carrier's free cover (usually $100) applied. A lost $450 package would have cost the store the difference. | Fixed on `peter`: `lib/labelExtras.ts` adds each carrier's insurance to the label; `lib/fulfil.ts` passes the insured amount. Applies to the website, counter queue and business accounts. | ✅ Fixed on `peter`. ⏳ Check on the first real insured label per carrier |
 | H4 | Nov 14, [extra services](EDIT-LOG.md) | Bug in Peter's own new work, caught in testing: the page total left out the $3.50 signature fee while the order still charged it. | Fixed before upload | ✅ Fixed |
+| H7 | Nov 14, [tracking box](EDIT-LOG.md) | The tracking page showed an empty red error box all the time, even with no error. | Fixed on `peter`: `.err:empty` is hidden site-wide | ✅ Fixed |
 | H6 | Nov 14, [packaging picker](EDIT-LOG.md) | The Ship page's size boxes only accepted whole inches, so a size like 12.5 in quietly blocked Get rates. | Fixed on `peter`: sizes accept decimals | ✅ Fixed |
 | H5 | Nov 14, [address dropdown](EDIT-LOG.md) | The street typeahead (Census lookup) shows nothing until a city is typed too, so it looked broken. The return-address box had no typeahead at all. | Fixed on `peter`: typeahead on both boxes; a bare street is also tried in the store's city | ✅ Fixed. Full letter-by-letter suggestions still need the Google Places key (issue 18) |
 
@@ -33,6 +34,7 @@ All on the `peter` branch, all with tests passing and the site building. Details
 | Extra services: signature, Media Mail, irregular, hazardous materials, saved packages | new `lib/options.ts`, `shipping/engine.ts`, all carrier adapters, `api/orders.ts`, `lib/validate.ts`, `shipping/types.ts`, i18n files | `Parcel` gained `options`; the rate cache key includes them; `applyOptions` filters rates in `getQuotes` |
 | Insurance bought from the carrier with the label | new `lib/labelExtras.ts`, `lib/fulfil.ts`, all carrier adapters, `lib/easyship.ts` | `Parcel` gained `insured_usd`, set only at label time |
 | Packaging picker: own packaging or a carrier's (USPS flat rate, UPS Express, FedEx Express), with pictures | new `lib/packaging.ts`, `lib/validate.ts`, `shipping/engine.ts`, all carrier adapters, `lib/easyship.ts` (3 new demo rates), `public/packaging/` | `Parcel` gained `packaging`; carrier packaging overrides the typed size; `forPackaging` in `getQuotes` filters rates and explains when nothing fits |
+| Home page "Track a package" box; carrier links on /track for numbers the store didn't ship | `pages/index.astro`, `pages/track/index.astro`, new `lib/carrierTrack.ts`, `styles/global.css` | The box is a plain GET form to `/track?q=`; carrier detection is by number shape only, client side |
 | Return labels: "only" (addresses swapped, `kind: 'return'`) and "included" (a second label) | `lib/options.ts`, `api/rates.ts`, `api/orders.ts`, `lib/orders.ts`, `lib/stripe.ts`, `lib/fulfil.ts`, done and counter pages | `Order` gained `return_rate` and `return_label`; `fulfil` buys the second label and records it as shipment `<code>-R`; a failed return purchase doesn't undo the paid outgoing label |
 
 ## 3. To check once the carrier accounts are connected
@@ -62,6 +64,7 @@ The site runs on demo rates, so these follow each carrier's published format but
 | D8 | Which insurance does the counter (Rate Pro) use today, carrier or a third-party insurer? Could the website use the same one? | William, Goin' Postal | Peter's understanding: the franchise has customers file claims with each carrier themselves |
 | D10 | **Packaging pictures:** the general, USPS and UPS ones are cropped from Pirate Ship's site (Peter's call, for now). Replace them before going live: official carrier photos through the store's carrier or Goin' Postal accounts, or store-drawn ones like the FedEx set. | Peter, William | Files in `site/public/packaging/`; swapping is replacing files |
 | D12 | **Insurance terms on the website:** a disclaimer with do's and don'ts, each carrier's limits, and what can't be insured. Needs each carrier's rules researched first. | Peter, William | [TODO P3](TODO.md#p3-insurance-terms-dos-and-donts-limits-what-cant-be-insured). Ties in with D1, D7, D8 |
+| D13 | **Phone header:** on a phone, the header (menu tabs, language picker, text size, high contrast) fills the whole first screen, so the home page's tracking box starts below it. A smaller phone header (a menu button) would put tracking on the first screen. | Peter, William | William's design; not changed |
 | D11 | The packaging list says "Ask for one at our counter". Does the store keep USPS, UPS and FedEx packaging on hand to give out? | Peter | Change the wording if not |
 | D9 | Return labels "charged only if used", like Pirate Ship? Needs the postal service's pay-on-use returns on the store's account, and a way to bill the customer later. Business accounts could be billed on their monthly statement; walk-in website customers would need a saved card. | Peter, William, Rin | For the prices meeting. Today: charged up front, and the page says so |
 

@@ -17,6 +17,10 @@ const q = Astro.url.searchParams.get('q') ?? '';
     <label><span data-i18n="track.field">Pickup code or tracking number</span> <input name="q" value={q} placeholder="GP-7K3M9Q" required minlength="4" maxlength="40" inputmode="text" autocapitalize="characters" /></label>
     <p class="btnrow"><button class="btn" type="submit" data-i18n="track.button">Track</button></p>
     <p id="msg" class="err" role="alert"></p>
+    <div id="elsewhere" hidden>
+      <p data-i18n="track.elsewhere">We didn't ship that one here, but it looks like a tracking number from the carrier below. Follow it on their site:</p>
+      <p class="btnrow" id="elsewhere-links"></p>
+    </div>
   </form>
 
   <div id="result" class="grid hidden">
@@ -34,6 +38,7 @@ const q = Astro.url.searchParams.get('q') ?? '';
 
   <script>
     import { t } from '../../i18n';
+    import { carriersFor } from '../../lib/carrierTrack';
     const form = document.getElementById('track') as HTMLFormElement;
     const msg = document.getElementById('msg')!;
     const result = document.getElementById('result')!;
@@ -47,9 +52,26 @@ const q = Astro.url.searchParams.get('q') ?? '';
     async function lookup(q: string) {
       msg.textContent = '';
       result.classList.add('hidden');
+      const elsewhere = document.getElementById('elsewhere')!; elsewhere.hidden = true;
       const res = await fetch(`/api/track?q=${encodeURIComponent(q)}`);
       const j = await res.json();
-      if (!res.ok) { msg.textContent = res.status === 404 ? t('track.notfound') : j.error; return; }
+      if (!res.ok) {
+        // Not one of ours: if it looks like a carrier's tracking number, link to that carrier's own tracking (Peter, Nov 14 2026).
+        const links = res.status === 404 ? carriersFor(q) : [];
+        if (links.length) {
+          const box = document.getElementById('elsewhere-links')!;
+          box.innerHTML = '';
+          for (const l of links) {
+            const a = document.createElement('a');
+            a.className = 'btn'; a.href = l.url; a.target = '_blank'; a.rel = 'noopener';
+            a.textContent = t('track.oncarrier').replace('{carrier}', l.carrier);
+            box.appendChild(a);
+          }
+          elsewhere.hidden = false;
+          return;
+        }
+        msg.textContent = res.status === 404 ? t('track.notfound') : j.error; return;
+      }
       $('r-status').textContent = t(STATUS[j.status] ?? 'track.s.unknown');
       $('r-service').textContent = `${j.carrier} ${j.service}`.trim();
       $('r-to').textContent = j.to;

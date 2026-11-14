@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 13:29 CST · "Track a package" box at the top of the home page
+
+- **Asked for:** "The first thing I want customers to see is a 'track my shipment' box on the front page, for ease of use, kind of similar to how UPS does it on ups.com."
+- **What changed:**
+  - **A big "Track a package" box** is now the first thing on the home page, full width, above everything else: one box for the pickup code or tracking number, a **Track** button, and quick links under it (**Ship a package**, **Hours and directions**, **Contact**). Pressing Track opens the tracking page with the results already looked up. It works even without JavaScript, and in all 14 languages.
+  - **Packages not shipped here:** before, a UPS or FedEx number from somewhere else just got "We could not find that." Now the tracking page recognizes the carrier from the number's shape and offers a **"Track on UPS"** (or USPS, FedEx, DHL) button that opens the carrier's own tracking page. A number that could belong to two carriers gets both buttons.
+  - **Fixed:** the tracking page always showed an empty red error box, even with no error. Empty error lines are now hidden everywhere.
+- **Why:** Tracking is the most common reason people visit a shipping store's site, so it's one step from the home page, and nobody gets stuck on "not found".
+- **Files:** [home page](../site/src/pages/index.astro), [tracking page](../site/src/pages/track/index.astro), [carrier recognition (new)](../site/src/lib/carrierTrack.ts), [tests (new)](../site/tests/carrier-track.test.ts), [text, 14 languages](../site/src/i18n/strings.ts), [styles](../site/src/styles/global.css)
+- **How to check it:** `git pull`, open http://localhost:4321. Type a pickup code from one of your test orders and press Track. Then try `1Z999AA10123456784`: a "Track on UPS" button appears.
+- **Checks run:** 154 tests pass (7 new), the type check is clean, the site builds. In a real browser: the box is first on the page; a real pickup code shows its status; a UPS number not shipped here offers UPS's tracking; nonsense still says "not found"; on a phone there's no sideways scrolling.
+- **Noticed, not changed:** on a phone, the site's header (menu, language, text size) fills the whole first screen, so the tracking box is just below it. That's William's header design: D13 in [FOR-WILLIAM.md](FOR-WILLIAM.md).
+
 ## 2026-11-14 13:08 CST · To-do: insurance terms, do's and don'ts, limits
 
 - **Asked for:** "Let's add to the to-do list about insurance, like a disclaimer with do's and don'ts, how much we can actually insure, what is not insurable. I don't want to add it yet because we would have to look at all the regulations per carrier."

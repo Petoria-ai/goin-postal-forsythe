@@ -7,6 +7,21 @@ import pkg from '../../package.json';
 const version = 'v' + pkg.version;
 ---
 <Base title={store.name}>
+  <!-- Track a package: the first thing on the home page, like ups.com (Peter, Nov 14 2026). A plain form, so it works
+       without JavaScript: it opens /track?q=..., which looks the code or tracking number up straight away. -->
+  <section class="track-hero" aria-labelledby="track-h">
+    <h2 id="track-h" data-i18n="track.title">Track a package</h2>
+    <form class="track-form" action="/track" method="get" role="search">
+      <label class="sr-only" for="home-q" data-i18n="track.field">Pickup code or tracking number</label>
+      <input id="home-q" name="q" required minlength="4" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Pickup code or tracking number" data-i18n-ph="track.field" />
+      <button class="btn kraft" type="submit" data-i18n="track.button">Track</button>
+    </form>
+    <p class="track-links">
+      <a href="/ship" data-i18n="home.cta">Ship a package</a>
+      <a href="#hours" data-i18n="home.hours">Hours and directions</a>
+      <a href="/contact" data-i18n="nav.contact">Contact</a>
+    </p>
+  </section>
   <div class="home">
     <div class="home-main">
       <section class="ps-hero" aria-labelledby="ps-h1">
@@ -52,7 +67,7 @@ const version = 'v' + pkg.version;
         </nav>
       </div>
       <div>
-        <h2 class="side-title" data-i18n="home.hours">Hours and directions</h2>
+        <h2 class="side-title" id="hours" data-i18n="home.hours">Hours and directions</h2>
         <div class="side-box"><StoreInfo /></div>
       </div>
       <div>
