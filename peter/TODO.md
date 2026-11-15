@@ -10,6 +10,8 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P4 | [Find a texting (SMS) platform for messages and marketing](#p4-find-a-texting-sms-platform-for-messages-and-marketing) | ⏳ Next to research | Pick the platform, then register the store's texting |
 | P5 | ["Sign in with Google"](#p5-sign-in-with-google) | ⏸ Later | The site's real web address, a privacy policy page, and Peter's Google setup |
 | P6 | [A fresher website theme](#p6-a-fresher-website-theme) | ✅ Done Nov 14: Theme B | A larger logo file from franchise support would be sharper |
+| P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ Next | Peter's go-ahead on step 1 |
+| P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 
 ---
 
@@ -202,3 +204,53 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] Claude applies the theme site-wide in one change (the colors, fonts, corners and shadows are tokens in `site/src/styles/global.css`), with the logo in the header.
 - [ ] Tidy the header: language and text size into a small top bar or menu, so the tracking box is on the first screen on phones (D13 in FOR-WILLIAM.md).
 - [ ] Check every page on phone and computer, in all 14 languages, in High contrast mode and at the larger text sizes. Keep the staff counter pages readable.
+
+---
+
+## P7. Print & Promo online: the e-commerce side, first
+
+**Added:** 2026-11-14 18:59 CST. **Status:** next. **Peter's decision:** start with the e-commerce side (business cards, t-shirts, banners, business pens, mailboxes), make money with it, and only later take the smaller, safer step of online shipping labels (P8).
+
+**Why this first:** higher margins than a label; nobody price-shops a custom banner against Pirate Ship; it doesn't compete with the counter; every order is picked up in the store, which is a chance to sell more.
+
+| Product | What exists | How it's ordered online |
+|---|---|---|
+| **Business cards** | ✅ Built: designer, review page, Stripe, pickup | Order and pay now |
+| **Banners and yard signs** | The card designer can draw any size | Design online or upload a file, see the price, pay, pick up |
+| **T-shirts** | Plan with local partner printers in `monetization/screen-printing/` (Atomic Ink, West Monroe, about 4 miles) | **Request a quote**: upload the design, colors, sizes and quantity; staff price it; the customer pays by a link |
+| **Business pens and promo items** | Nothing yet | **Request a quote**: pick the item, upload a logo, quantity; ordered from a promotional-products supplier and resold at a markup |
+| **Mailboxes** | The agenda mentions an online sign-up (v1.47.0), not on the site now: ask William | **Reserve online, finish at the counter** (the USPS form and two IDs have to be done in person) |
+
+### Build order
+
+- [ ] **1. Online labels off with a switch, before the site goes live** (see P8): the Ship page becomes "Get a quote, then pay at the counter", or leaves the menu. Nothing is deleted.
+- [ ] **2. A "Print & Promo" section** in the menu: one page with every product, photos of real work, and a button each.
+- [ ] **3. Request a quote:** the customer's form (product, file upload, details, quantity), a staff page to price it and send a payment link, the order on the customer's account. One build covers t-shirts, pens and any future custom product.
+- [ ] **4. Banners and yard signs** in the designer, priced by size.
+- [ ] **5. Mailbox reservation** online, finished at the counter.
+
+### To find out
+
+- [ ] Does the store print banners in-house (wide-format printer), or send them out? Sizes and prices.
+- [ ] Which promotional-products supplier for pens and promo items, and what markup.
+- [ ] Which t-shirt partner, their minimums, turnaround and prices (see the screen-printing plan).
+- [ ] Does the franchise have preferred print or promo vendors, or rules about them?
+- [ ] Photos of real work for the product pages.
+
+---
+
+## P8. Online shipping labels, later and on purpose
+
+**Added:** 2026-11-14 18:59 CST. **Status:** on the sideline. Everything is built and stays in the code; it's just not offered until the owners decide.
+
+**Peter's thinking:** online labels could pull local, price-sensitive customers (resellers, small businesses) away from the counter. But they also reach customers **nationwide** who would never walk in, which is new money. Start with Print & Promo (P7), then take this on as a safer, smaller risk.
+
+### When it's time, do these first
+
+- [ ] **Keep counter prices online**, and show local (Monroe-area) customers "No online fee at the counter, and we'll pack it": the 3.5% online fee already favors the counter.
+- [ ] **Remove the "at or under Pirate Ship" line** on the rates, so the site doesn't invite price comparison.
+- [ ] **Lead nationwide with business accounts** and the Shopify, eBay, Etsy and Square connectors (monthly billing, account discounts), not one-off retail labels. One-off price shoppers will compare against Pirate Ship's discounted rates.
+- [ ] **Fraud protection:** Stripe's fraud screening on, spending limits for brand-new accounts (labels are a favorite target for stolen cards).
+- [ ] **Weight-adjustment terms:** carriers bill the store's account when a package weighs more than declared; the terms must let the store charge the customer.
+- [ ] **The franchise agreement:** does it allow selling labels online to customers outside the store's area?
+- [ ] **Know the numbers:** the share of counter income from labels versus packing, boxes, printing and mailboxes, and how many customers walk in with prepaid labels.

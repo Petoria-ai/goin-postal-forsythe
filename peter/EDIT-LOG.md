@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 18:59 CST · Decision: e-commerce first, online labels on the sideline
+
+- **Asked for:** Peter's input: online labels might pull price-sensitive local customers away from the counter, though they also reach customers nationwide; "I'd rather do the e-commerce side, make money with that, and then slowly take risks like selling shipping labels."
+- **What changed:** Nothing on the website. Added **P7** (Print & Promo online: business cards, banners and yard signs, t-shirts, business pens and promo items, mailboxes; build order and questions) and **P8** (online labels, later, with the checks to do first) to the to-do list, and **D19** to the meeting notes.
+- **Why:** Higher margins, no price shopping, no competition with the counter, and pickups bring people in. Labels come later, on purpose.
+- **Files:** [TODO.md](TODO.md) (P7, P8), [FOR-WILLIAM.md](FOR-WILLIAM.md) (D19)
+
 ## 2026-11-14 15:39 CST · Store hours and phone number
 
 - **Asked for:** "Change my hours to 9 AM to 6:30 PM Monday to Friday, Saturdays 9 am to 3 pm and Sundays 10 am to 3 pm. And my store phone number is (318) 570-2132."
