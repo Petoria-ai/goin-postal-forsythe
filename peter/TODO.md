@@ -12,6 +12,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P6 | [A fresher website theme](#p6-a-fresher-website-theme) | ✅ Done Nov 14: Theme B | A larger logo file from franchise support would be sharper |
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
+| P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
 
 ---
 
@@ -258,3 +259,34 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Weight-adjustment terms:** carriers bill the store's account when a package weighs more than declared; the terms must let the store charge the customer.
 - [ ] **The franchise agreement:** does it allow selling labels online to customers outside the store's area?
 - [ ] **Know the numbers:** the share of counter income from labels versus packing, boxes, printing and mailboxes, and how many customers walk in with prepaid labels.
+
+---
+
+## P9. Find a business card supplier, and price to compete
+
+**Added:** 2026-11-15 11:28 CST. **Status:** next to research. **Peter's words:** "need to find a business card supplier. and understand their services and features they can provide. and getting prices to make sure we can be competitive."
+
+**Why it matters:** the business card shop page and designer are built, but the prices on them are William's placeholders, and nobody has picked who prints the cards (D20). The supplier decides what the site can honestly offer (papers, finishes, shapes, extras), how fast, at what cost, and the file the designer has to produce.
+
+### Steps
+
+- [ ] **1. Make a short list.** Trade printers that sell only to print shops at wholesale and ship plain boxes with no printer's name (often called "blind" or "white label" shipping), plus a local Monroe or West Monroe printer, plus the option of printing in the store. Ask the franchise first: Goin' Postal may already have a preferred vendor or a negotiated price.
+- [ ] **2. Ask each one the same questions:**
+  - Papers and thicknesses (14 pt, 16 pt, 18 pt or more), linen, uncoated, recycled
+  - Finishes: matte, gloss, soft touch, spot gloss or raised (embossed) gloss, foil
+  - Shapes and extras: rounded corners, square, circle, oval, plastic, painted edges, magnetic cards, card holders
+  - Quantities and price breaks (100, 250, 500, 1,000 and up), and the wholesale price for each paper and finish
+  - Turnaround, a rush option, and the shipping time and cost to Monroe
+  - File requirements: size, **bleed** (usually 1/8 inch), safe area, PDF or image, resolution, color (CMYK); the designer has to match these
+  - How orders are placed (a website, email or an API), minimum order, payment terms, and what happens with a misprint
+  - A free **sample pack** of their papers and finishes, for the counter and for our own sample pack (P7 2d)
+- [ ] **3. Compare with what customers pay elsewhere.** For 100, 250, 500 and 1,000 cards on each paper and finish: Vistaprint (from Peter's screenshots: from about $10 to $19 for 100 standard, $18.99 premium, $27.99 deluxe; rounded corners from $22.99; often with coupon codes), MOO, the office-supply stores' print centers, and local print shops. Write the date next to every price; they change often.
+- [ ] **4. Set our prices.** Supplier cost + shipping + the store's margin, checked against step 3. We don't have to be the cheapest: pickup with no shipping wait, a person checking every card, and local help are worth something. Pick where to be close on price (100 standard cards, the price people compare) and where to earn more (thick, soft touch, rush).
+- [ ] **5. Put it on the site.** Update the prices and options in `site/src/lib/cards.ts` (the shop page and checkout both read from it), add any new papers, finishes or shapes the supplier offers, set the designer's bleed to the supplier's, and mark D20 decided.
+
+### Questions for Peter, William and Rin
+
+1. Print in the store, use a trade printer, or both (in-store for rush, the printer for the fancy options)?
+2. What margin should business cards make?
+3. Does the franchise agreement say anything about which printers the store can use?
+

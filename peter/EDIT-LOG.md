@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 11:28 CST · To-do P9: find a business card supplier and price to compete
+
+- **Asked for:** "add to the to do list. need to find a business card supplier. and understand their services and features they can provide. and getting prices to make sure we can be competitive"
+- **What changed:** Nothing on the website. A new to-do item, **P9**, with the steps: make a short list (trade printers with plain-box shipping, a local printer, printing in the store, and asking the franchise); a list of questions for each supplier (papers, finishes, shapes, price breaks, turnaround, file and bleed requirements, how to order, sample packs); comparing with Vistaprint and others; setting our prices; and putting them on the site. Linked from decision D20 in the meeting notes.
+- **Why:** The card shop is built, but its prices are placeholders and nobody has picked a printer yet.
+- **Files:** [TODO.md](TODO.md) (P9), [FOR-WILLIAM.md](FOR-WILLIAM.md) (D20)
+- **How to check it:** Open `peter/TODO.md` and find P9.
+
 ## 2026-11-15 11:28 CST · Business cards: turn the card in 3D, with Front and Back buttons
 
 - **Asked for:** "after the customer is done with their design that they can drag their card or flip their card around to check how their card looks digitally.. it gives a customer a professional and 'editorial' feel", and "it gives a front and back view option in the 3d card viewer".
