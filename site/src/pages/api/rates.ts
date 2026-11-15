@@ -10,6 +10,7 @@ import { checkAddress } from '../../lib/address';
 import { benchmarkFor } from '../../lib/benchmark';
 import { logBenchmark } from '../../shipping/store';
 import { directed, pickReturnRate, returnParcel } from '../../lib/options';
+import { onlineLabelsOn } from '../../lib/siteSettings';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -37,7 +38,9 @@ export const POST: APIRoute = async ({ request }) => {
     // The Pirate Ship benchmark (T26): shown beside the rates and logged for the weekly share.
     const benchmark = benchmarkFor(destination, parcel, rates);
     if (benchmark) await logBenchmark(env, { source: b.online ? 'online' : 'counter', zone: benchmark.zone, weight_lb: parcel.weight_lb, store_price: benchmark.store, benchmark: benchmark.pirate_ship }).catch(() => {});
-    return json({ rates: offered, demo, oversize, extras, packing, address, benchmark });
+    // Online label buying off (/counter/settings): the page says "reserve, pay at the counter" and drops the online fee.
+    const online_labels = await onlineLabelsOn(env);
+    return json({ rates: offered, demo, oversize, extras: online_labels ? extras : { ...extras, online_fee: null }, packing, address, benchmark, online_labels });
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }

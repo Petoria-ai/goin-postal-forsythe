@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 19:15 CST · Online label buying: an on/off switch for the owners
+
+- **Asked for:** "where or how should we do a online labels with a switch? a admin login to switch it off?" (P7 step 1)
+- **What changed:** A new staff page, **Settings**, in the staff menu on every staff page. It has one switch: **Online label buying, On or Off**. Anyone on staff can see it with their PIN, but only an **owner PIN** can flip it, it asks "are you sure?" first, and every change is written in the staff audit log with the name and time. It starts **Off**.
+  - **When Off** (now): customers still compare USPS, UPS, FedEx and DHL prices on the Ship page, but the button says **"Reserve, pay at the counter"**. They get a pickup code and QR code, there is no online card payment and no online convenience fee, and the order shows up in the **Queue** like a walk-up, where staff press "Rung up. Buy label" after taking payment on the register.
+  - **When On**: everything works as William built it: pay by card through Stripe and print at home.
+  - Business cards are not affected; they are always paid online.
+- **Why:** Peter's decision (D19): e-commerce first, online labels on the sideline. This keeps people coming into the store for labels, while the Ship page still shows prices and brings them in. When the time comes, an owner turns it on with one click, nothing to rebuild.
+- **Files:** [site/src/pages/counter/settings.astro](../site/src/pages/counter/settings.astro) (new page), [site/src/pages/api/settings.ts](../site/src/pages/api/settings.ts) (new), [site/src/lib/siteSettings.ts](../site/src/lib/siteSettings.ts) (new), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/db/schema.sql](../site/db/schema.sql) (new `site_settings` table), [site/src/pages/api/orders.ts](../site/src/pages/api/orders.ts), [site/src/pages/api/rates.ts](../site/src/pages/api/rates.ts), [site/src/pages/ship/index.astro](../site/src/pages/ship/index.astro), [site/src/pages/ship/done.astro](../site/src/pages/ship/done.astro), the staff menu line in every page in [site/src/pages/counter/](../site/src/pages/counter/), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/site-settings.test.ts](../site/tests/site-settings.test.ts) (new, 6 tests), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** First `git pull`, then `npm run db:local` (new table), then `npm run dev`. Open http://localhost:4321/counter/settings, type a PIN and press Show. To flip it locally, put a number after `OWNER_PIN=` in `site/.dev.vars` (for example `OWNER_PIN=9999`) and restart. Then try the Ship page: with the switch Off the last button says "Reserve, pay at the counter" and you land on the pickup-code page; the order is in /counter/queue.
+
 ## 2026-11-14 18:59 CST · Decision: e-commerce first, online labels on the sideline
 
 - **Asked for:** Peter's input: online labels might pull price-sensitive local customers away from the counter, though they also reach customers nationwide; "I'd rather do the e-commerce side, make money with that, and then slowly take risks like selling shipping labels."

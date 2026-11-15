@@ -17,7 +17,9 @@ const paid = order.status === 'labeled' || order.status === 'printed';
 <Base title={`Order ${order.id} · ${store.name}`}>
   <section class="hero">
     <h1 data-i18n={order.status === 'reserved' ? 'done.reserved' : paid ? 'done.paid' : 'done.waiting'}>{order.status === 'reserved' ? 'Reserved. See you at the counter.' : paid ? 'Paid. Your label is ready.' : 'Waiting for payment.'}</h1>
-    <p class="lead"><span data-i18n="done.code">Pickup code</span> <strong class="code">{order.id}</strong>. <span data-i18n="done.save">Save this page or write the code down. Stripe emails the receipt to</span> {order.email}.</p>
+    <p class="lead"><span data-i18n="done.code">Pickup code</span> <strong class="code">{order.id}</strong>. {order.status === 'reserved'
+      ? <span data-i18n="done.save.counter">Save this page or write the code down. Bring it and your package to the counter; you pay there and we print the label.</span>
+      : <><span data-i18n="done.save">Save this page or write the code down. Stripe emails the receipt to</span> {order.email}.</>}</p>
   </section>
 
   <div class="grid">

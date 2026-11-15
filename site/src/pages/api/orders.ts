@@ -14,6 +14,7 @@ import { checkAddress } from '../../lib/address';
 import { getCustomer, setCustomerName, normalizePhone, recordConsent } from '../../shipping/store';
 import { loggedWording } from '../../lib/consent';
 import { directed, pickReturnRate, returnParcel } from '../../lib/options';
+import { onlineLabelsOn } from '../../lib/siteSettings';
 
 // Customer picked a rate: start Stripe Checkout. Domestic only since Nov 7, 2026 (parseAddress refuses the rest).
 export const POST: APIRoute = async ({ request }) => {
@@ -63,10 +64,13 @@ export const POST: APIRoute = async ({ request }) => {
     }
     const subtotal = Math.round((rate.total_charge + extras.extras_total + (return_rate?.total_charge ?? 0)) * 100) / 100;
     const tax = salesTax(cfg, taxableExtras(extras));
-    const fee = onlineFee(cfg, subtotal);
+    // The owners' switch (/counter/settings, Peter Nov 14 2026). Off: no card online. The order is reserved,
+    // like an international one, and staff ring it up at the counter, so there is no online fee either.
+    const online = await onlineLabelsOn(env);
+    const fee = online ? onlineFee(cfg, subtotal) : undefined;
     const order: Order = {
       id: newOrderId(),
-      status: 'awaiting_payment',
+      status: online ? 'awaiting_payment' : 'reserved',
       created_at: new Date().toISOString(),
       email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international: false, kind, return_rate,
       name, // the customer's own name: without it the saved quote fell back to the recipient's name and renamed the customer (H9)
@@ -88,6 +92,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
+    if (!online) return json({ order_id: order.id, next: `/ship/done?order=${order.id}`, reserved: true });
     const url = await createCheckout(env, order);
     return json({ order_id: order.id, next: url });
   } catch (e: any) {

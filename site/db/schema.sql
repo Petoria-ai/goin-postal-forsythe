@@ -541,3 +541,13 @@ CREATE TABLE IF NOT EXISTS fulfillment_fees (
   statement_id INTEGER REFERENCES account_statements(id)
 );
 CREATE INDEX IF NOT EXISTS fulfillment_fees_account ON fulfillment_fees(account_id, statement_id);
+
+-- Site switches the owners flip at /counter/settings (Peter, Nov 14 2026). One row per switch.
+-- online_labels: 'on' = customers pay for labels online; 'off' (the default when no row) = the Ship page
+-- still quotes, but the order is reserved and paid at the counter.
+CREATE TABLE IF NOT EXISTS site_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  updated_by TEXT NOT NULL
+);

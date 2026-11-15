@@ -690,3 +690,8 @@ header.top nav a[aria-current="page"]:not(.ps-tab) { color: var(--red); backgrou
 html:root[data-contrast="high"] header.top nav a.ps-tab, html:root[data-contrast="high"] header.top nav a[aria-current="page"] { background: #ffd166; color: #000; box-shadow: none; border: 2px solid #000; }
 .thumb { border-radius: 16px; border: 1.5px solid var(--hair); background: #fff; box-shadow: 0 4px 12px var(--shadow); }
 .thumb:hover, .thumb[aria-pressed="true"] { border-color: var(--navy); }
+
+/* Settings page on/off pill (Peter, Nov 14 2026) */
+.set-state { display: inline-block; padding: .2rem .7rem; border-radius: 999px; font-weight: 800; }
+.set-state.on { background: #e3f4e6; color: #17602a; }
+.set-state.off { background: #fbe4e3; color: #9b2420; }

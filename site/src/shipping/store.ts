@@ -146,12 +146,13 @@ const mem = {
   heartbeats: new Map<string, AgentHeartbeat>(),
   apiKeys: [] as ApiKeyRow[],
   x402: [] as X402PaymentRow[],
+  settings: new Map<string, SettingRow>(),
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -192,6 +193,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'stock_moves': return mem.stockMoves;
     case 'fulfillment_orders': return mem.fulfillmentOrders;
     case 'fulfillment_fees': return mem.fees;
+    case 'site_settings': return [...mem.settings.values()];
     default: return [];
   }
 };
@@ -663,6 +665,20 @@ export async function listAudit(env: Env, o: { staff_id?: number; limit?: number
     return (await env.DB.prepare(`SELECT * FROM audit_log ORDER BY id DESC LIMIT ${limit}`).all<AuditRow>()).results;
   }
   return mem.audit.filter((a) => !o.staff_id || a.staff_id === o.staff_id).slice(0, limit);
+}
+
+// ---- site switches (Peter, Nov 14 2026) ---------------------------------------------------------
+// Owner switches from /counter/settings, one row per key. A key with no row has never been set.
+export interface SettingRow { key: string; value: string; updated_at: string; updated_by: string }
+export async function getSetting(env: Env, key: string): Promise<SettingRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM site_settings WHERE key = ?1').bind(key).first<SettingRow>()) ?? null;
+  return mem.settings.get(key) ?? null;
+}
+export async function setSetting(env: Env, key: string, value: string, by: string): Promise<SettingRow> {
+  const row: SettingRow = { key, value, updated_at: now(), updated_by: by };
+  if (env.DB) await env.DB.prepare('INSERT INTO site_settings (key, value, updated_at, updated_by) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by').bind(row.key, row.value, row.updated_at, row.updated_by).run();
+  else mem.settings.set(key, row);
+  return row;
 }
 
 // ---- add-ons and insurance ----------------------------------------------------------------------
