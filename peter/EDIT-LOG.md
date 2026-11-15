@@ -4,6 +4,22 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 12:26 CST · Editor tools like Vistaprint (Templates, Graphics, Background, More) and "Design with AI" in demo mode
+
+- **Asked for:** "lets add more functions that is broken up similar to vista print" (Templates that stay in the editor, the Background panel with colors and patterns, the More menu with QR codes), "possibly allow people to use ai to come up a design", then "lets just see it in action first and we can decide later. put that in the to do list to see if its worth spending 2 cents per ai use".
+- **What changed:** The editor's left tool bar now has seven tools:
+  - **Templates:** every layout shown with the customer's own words, in any of the 12 color schemes. Click one and the card changes **without leaving the editor**. Typed words, uploaded logos, added graphics and the background pattern all come along. The font for the whole card is here too, plus "Start over from the full gallery".
+  - **Text** and **Uploads:** as before.
+  - **Graphics (new):** 24 icons (phone, email, website, location, star, heart, house, car, wrench, hammer, leaf, fork and knife, scissors, medical, coffee, camera, paw, music, truck, cart, briefcase, church cross, cake, check) and 8 shapes (circle, square, rounded box, ring, triangle, diamond, line, frame), in any color.
+  - **Background (new look):** 16 curated colors, any custom color, and **10 patterns** (dots, stripes, diagonal, grid, waves, chevron, confetti, leaves, circles, crosshatch) in 6 color pairs, plus Remove pattern. Every icon, shape and pattern was **drawn for the store**, so nothing belongs to anyone else.
+  - **AI design (new):** the customer describes their business and the look they want, and gets **three designs** to pick from, built only from our layouts, colors, patterns and icons. Each one opens as a fully editable card. There's also a "Describe your business and let AI design it" button on the first step.
+  - **More (new):** **QR code**. Type a web address and a scannable QR code goes on the card (it checks that the address looks real).
+  - **Selecting a picture no longer jumps to another panel**, so you can add several icons in a row.
+- **AI: demo mode for now, no cost.** Without an AI key, "Design it for me" picks designs by matching words in the request (business type, colors, a name in quotes), and says plainly that it's a demo. When a key is added, the same button asks Claude (Anthropic's AI), at about 2 cents a request. Either way: **sign-in required, 10 tries per customer per day** (changeable), and the AI can only choose from our own pieces; anything else it says is thrown away.
+- **Why:** More choices make the store feel like the place to go, and the AI is a step Vistaprint's editor doesn't offer this simply. Demo mode lets you try it before deciding to pay.
+- **Files:** [site/src/lib/cardArt.ts](../site/src/lib/cardArt.ts) (new: patterns, icons, shapes), [site/src/lib/cardDesign.ts](../site/src/lib/cardDesign.ts) (new: template switching, AI designs, demo mode), [site/src/pages/api/card-ai.ts](../site/src/pages/api/card-ai.ts) (new), [site/src/pages/cards/design.astro](../site/src/pages/cards/design.astro), [site/src/env.d.ts](../site/src/env.d.ts), [site/.dev.vars.example](../site/.dev.vars.example), [site/package.json](../site/package.json) (the Anthropic library), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/tests/card-tools.test.ts](../site/tests/card-tools.test.ts) (new, 8 tests), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then **`npm install`** (a new library), then `npm run dev`. Sign in, open Business Cards, press **Describe your business and let AI design it**, and type something like *a fun card for my crawfish restaurant "Bayou Boil", red and gold*. Pick a design, then try Templates, Graphics, Background and More.
+
 ## 2026-11-15 12:03 CST · New card editor screen, and "Let us design it for you"
 
 - **Asked for:** "Let us design it for you" from Vistaprint, "may be neat to have when people are customizing their business card as an additional charge ... towards the top of the page"; and "the buttons at the top are starting to look a little convoluting ... like as if its photoshop ... possibly a editor window with the function buttons on the left like how vistaprint does it and then it allows you to hit next at the top right".

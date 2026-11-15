@@ -13,6 +13,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P10 | [Is real AI design worth about 2 cents a try?](#p10-is-real-ai-design-worth-about-2-cents-a-try) | ⏸ Decide later | Peter and Rin try the demo; then the key and a monthly cap (D22) |
 
 ---
 
@@ -291,4 +292,23 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 1. Print in the store, use a trade printer, or both (in-store for rush, the printer for the fancy options)?
 2. What margin should business cards make?
 3. Does the franchise agreement say anything about which printers the store can use?
+
+---
+
+## P10. Is real AI design worth about 2 cents a try?
+
+**Added:** 2026-11-15 12:26 CST. **Status:** decide later. **Peter's words:** "lets just see it in action first and we can decide later. put that in the to do list to see if its worth spending 2 cents per ai use."
+
+**What's built:** "Design with AI" in the card editor (the AI design tool, and a button on the first step). Right now it runs in **demo mode**: no AI and no cost. It matches words in the customer's request (business type, colors, a name in quotes) to pick three of our designs, and tells the customer it's a demo. Adding a key switches the same button to Claude, Anthropic's AI, which reads the request properly and writes the wording. The AI only picks from the store's own layouts, colors, patterns and icons; nothing else it says is used.
+
+**Cost:** about **2 cents a try** with Claude Opus 5.5 (the default; a short request and a short answer). 100 customers trying 3 designs each comes to about $6. A cheaper model is possible if quality holds up. Limits built in: sign-in required, **10 tries per customer per day** (the `AI_DAILY_LIMIT` setting), plus the monthly spending limit set in the Anthropic console.
+
+### Steps
+
+- [ ] **1. Try the demo** with Rin and a few real customers: does "describe it and get designs" help people start?
+- [ ] **2. Decide** whether it's worth about 2 cents a try, and the monthly cap (for example $20).
+- [ ] **3. If yes:** create the store's account at console.anthropic.com, set the monthly spending limit there, and add the key to the live site's settings as `ANTHROPIC_API_KEY` (like the Stripe key; never in the code). Locally it goes in `site/.dev.vars`.
+- [ ] **4. Try real AI** on a dozen sample requests before turning it on for customers, and compare it with demo mode.
+- [ ] **5. Add a line to the privacy policy:** the customer's description is sent to an AI service to make designs.
+- [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 

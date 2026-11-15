@@ -871,3 +871,29 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .ed-tool { overflow-wrap: normal; font-size: .72rem; padding: 10px 2px; }
 @media (max-width: 1100px) { .ed-body { grid-template-columns: 108px 240px minmax(0, 1fr); } }
 @media (max-width: 760px) { .ed-body { grid-template-columns: 1fr; } }
+
+/* Editor tools: Templates, Background, Graphics, More, AI (Peter, Nov 15 2026) */
+.ed-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.ed-swatch { width: 30px; height: 30px; border-radius: 8px; border: 2px solid rgba(0,0,0,.12); cursor: pointer; padding: 0; }
+.ed-swatch.round { border-radius: 50%; }
+.ed-swatch.on, .ed-swatch:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+.ed-tpls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ed-tpl { padding: 4px; border: 2px solid var(--hair); border-radius: 8px; background: #fff; cursor: pointer; }
+.ed-tpl .card-wrap { display: block; margin: 0; box-shadow: none; pointer-events: none; }
+.ed-tpl.on { border-color: var(--navy); }
+.ed-pats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.ed-pat { padding: 0; border: 2px solid var(--hair); border-radius: 10px; overflow: hidden; cursor: pointer; aspect-ratio: 1; background: #fff; }
+.ed-pat img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ed-pat:hover, .ed-icon:hover, .ed-tpl:hover { border-color: var(--navy); }
+.ed-icons { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.ed-icon { padding: 6px; border: 1.5px solid var(--hair); border-radius: 8px; background: #fff; cursor: pointer; aspect-ratio: 1; }
+.ed-icon img { width: 100%; height: 100%; display: block; }
+.ed-tool.ai { color: #7c3aed; }
+.ed-tool.ai.active { background: #7c3aed; color: #fff; }
+.ed-ai-results { display: grid; gap: 12px; }
+.ed-ai-item { border: 1px solid var(--hair); border-radius: 10px; padding: 8px; display: grid; gap: 6px; }
+.ed-ai-item .card-wrap { display: block; margin: 0; }
+.ed-ai-item p { margin: 0; font-size: .9rem; }
+#aiPrompt { width: 100%; }
+.ai-start { margin: 6px 0 14px; }
+.ai-start .btn { border: 2px solid #7c3aed !important; color: #5b21b6 !important; background: #f5f0ff !important; }
