@@ -28,6 +28,19 @@ describe('sign-up asks for a mobile number', () => {
   });
 });
 
+describe('deals and news at sign-up', () => {
+  it('the choices ride in the confirm link until the email is proven', async () => {
+    const r = await signup({ name: 'Pat', email: 'pat-mkt@example.com', phone: '3185550100', password: 'blue truck on forsythe', mkt_email: true, mkt_sms: false, lang: 'es' });
+    const token = String(r.body.mock_link).match(/token=([0-9a-f]+)/)![1];
+    expect((await consumeLoginTokenFull(E, token))?.mkt).toEqual({ email: true, sms: false, lang: 'es' });
+  });
+  it('only a real true counts as a yes', async () => {
+    const r = await signup({ name: 'Pat', email: 'pat-mkt2@example.com', phone: '3185550100', password: 'blue truck on forsythe', mkt_email: 'on', mkt_sms: 1 });
+    const token = String(r.body.mock_link).match(/token=([0-9a-f]+)/)![1];
+    expect((await consumeLoginTokenFull(E, token))?.mkt).toMatchObject({ email: false, sms: false });
+  });
+});
+
 describe('My orders: business card orders', () => {
   const order = (id: string, customer_id: string): CardOrder => ({
     id, created_at: new Date().toISOString(), status: 'paid', customer: { name: 'Pat', email: 'p@example.com', phone: '3185550100' }, customer_id,

@@ -68,7 +68,9 @@ export const POST: APIRoute = async ({ request }) => {
       if (await tooManyFails(env, `su:${ip}`, 20)) return json({ error: 'Too many tries. Wait 15 minutes.', code: 'locked' }, 429);
       await recordFail(env, `su:${ip}`); // counts sign-ups from one address, so the form can't be used to flood inboxes
       const pw = await hashPassword(String(b.password));
-      const token = await createSignupToken(env, email, { pw, name: String(b.name ?? '').trim().slice(0, 60) || undefined, phone });
+      // Deals and news chosen on the sign-up form (Peter, Nov 15 2026). Recorded with their wording once the email is confirmed.
+      const mkt = { email: b.mkt_email === true, sms: b.mkt_sms === true, lang: String(b.lang ?? 'en').slice(0, 5) };
+      const token = await createSignupToken(env, email, { pw, name: String(b.name ?? '').trim().slice(0, 60) || undefined, phone, mkt });
       const next = safeNext(b.next);
       const link = `${env.SITE_URL}/account?token=${token}${next !== '/account' ? `&next=${encodeURIComponent(next)}` : ''}`;
       const mock = await sendEmail(env, email, `Confirm your email for ${store.name}`, `Click to confirm your email and finish setting up your ${store.name} account (the link works once, for thirty minutes):\n\n${link}\n\nIf you did not ask for this, ignore it; nothing changes.`);

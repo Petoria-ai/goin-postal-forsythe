@@ -6,7 +6,8 @@ import { env } from '../../lib/env';
 import { consumeLoginTokenFull, readSession, signSession, sessionCookie, safeNext } from '../../lib/session';
 import { upsertCustomer, setPasswordHash, markEmailVerified, getLogin, setCustomerName } from '../../shipping/store';
 import { marketingConsent } from '../../shipping/store';
-import { CONSENT_WORDING } from '../../lib/consent';
+import { CONSENT_WORDING, loggedWording } from '../../lib/consent';
+import { recordConsent } from '../../shipping/store';
 import { listSavedDesigns } from '../../shipping/store';
 import { renderCard, sanitizeDesign, CARD_OPTIONS } from '../../lib/cards';
 import { listCardOrdersFor, cardTotal } from '../../lib/cardOrders';
@@ -26,6 +27,10 @@ if (token) {
     if (t?.name && (!c.name || c.name === 'Customer')) await setCustomerName(env, c.id, t.name, null);
     // The mobile number given at sign-up (Peter, Nov 15 2026), only if the account has none yet.
     if (t?.phone && !c.phone) await setCustomerName(env, c.id, (t?.name && (!c.name || c.name === 'Customer')) ? t.name : c.name, t.phone);
+    // Deals and news ticked at sign-up, logged with the exact wording now that the email is proven. A box left
+    // unticked records nothing, so it never undoes a yes given before.
+    if (t?.mkt?.email) await recordConsent(env, { customer_id: c.id, channel: 'email', granted: true, contact: c.email ?? email, wording: loggedWording('email', t.mkt.lang), source: 'signup' });
+    if (t?.mkt?.sms && (t.phone || c.phone)) await recordConsent(env, { customer_id: c.id, channel: 'sms', granted: true, contact: c.phone ?? t.phone ?? null, wording: loggedWording('sms', t.mkt.lang), source: 'signup' });
   }
   if (c) {
     Astro.cookies; // Astro needs the cookies API touched before set-cookie on a redirect in some adapters
@@ -87,6 +92,14 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
         <!-- Mobile number at sign-up (Peter, Nov 15 2026): so the store can call or text about an order right away. -->
         <label><span data-i18n="acct.mobile">Mobile number</span> <input name="phone" type="tel" inputmode="tel" required autocomplete="tel" placeholder="318 555 0100" /></label>
         <p class="muted" data-i18n="acct.mobile.p">So we can call or text you about your order. Not for marketing unless you say yes.</p>
+        <!-- Deals and news at sign-up (Peter, Nov 15 2026). Email starts ticked (US law, CAN-SPAM, allows it; every
+             email carries an unsubscribe link). Texts must start unticked: under the TCPA a pre-ticked box is not
+             consent, and the carriers reject texting registrations that pre-tick it. -->
+        <fieldset class="mkt signup-mkt">
+          <legend data-i18n="mkt.h">Deals and news (optional)</legend>
+          <label class="check"><input name="mkt_email" type="checkbox" checked /> <span data-i18n="mkt.email">{CONSENT_WORDING.email}</span></label>
+          <label class="check"><input name="mkt_sms" type="checkbox" /> <span data-i18n="mkt.sms">{CONSENT_WORDING.sms}</span></label>
+        </fieldset>
         <label><span data-i18n="acct.pw">Password</span> <input name="password" type="password" required minlength="8" autocomplete="new-password" /></label>
         <p class="muted" data-i18n="acct.pw.hint">At least 8 characters. A short sentence is easy to remember.</p>
         <button class="btn kraft" type="submit" data-i18n="acct.create">Create an account</button>
@@ -284,7 +297,8 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
       ev.preventDefault();
       const f = ev.target as HTMLFormElement, sm = $('smsg')!;
       const val = (n: string) => (f.querySelector(`[name=${n}]`) as HTMLInputElement).value;
-      try { const j = await apiCoded({ action: 'signup', name: val('name'), email: val('email'), phone: val('phone'), password: val('password'), next: nextParam }); sm.className = 'card'; sm.textContent = t('acct.confirm.sent'); devLink(sm, j.mock_link); f.querySelector('button[type=submit]')!.setAttribute('disabled', ''); }
+      try { const box = (n: string) => (f.querySelector(`[name=${n}]`) as HTMLInputElement | null)?.checked === true;
+      const j = await apiCoded({ action: 'signup', name: val('name'), email: val('email'), phone: val('phone'), password: val('password'), mkt_email: box('mkt_email'), mkt_sms: box('mkt_sms'), lang: document.documentElement.lang, next: nextParam }); sm.className = 'card'; sm.textContent = t('acct.confirm.sent'); devLink(sm, j.mock_link); f.querySelector('button[type=submit]')!.setAttribute('disabled', ''); }
       catch (e: any) { sm.className = 'err'; sm.textContent = codeMsg(e); }
     });
     $('pwf')?.addEventListener('submit', async (ev) => {

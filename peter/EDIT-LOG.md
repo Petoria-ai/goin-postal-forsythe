@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 13:19 CST · Deals and news boxes on the sign-up form (email pre-checked, texts not)
+
+- **Asked for:** "let this be the area they can opt in to get text messages and emails.. and have them prechecked.. that way they'll just mindlessly click create account. and its up to them if they uncheck or leave it checked"
+- **What changed:** The **Create a free account** form now has **Deals and news (optional)** under the mobile number:
+  - **☑ Email me Goin' Postal deals and news** starts **checked**. The customer can untick it.
+  - **☐ Text me Goin' Postal deals and news** starts **unchecked**. The customer ticks it.
+  - Whatever they leave ticked is recorded on their account, with the exact wording they saw, once they confirm their email. It shows on their Profile tab, where they can change it anytime.
+- **Why texts aren't pre-checked:** under the TCPA, a pre-checked box isn't consent for marketing texts, and fines are $500 to $1,500 per text. The phone carriers also reject texting-platform registrations (to-do P4) whose sign-up form pre-checks the text box. US email law (CAN-SPAM) allows a pre-checked email box, as long as every email has an unsubscribe link. To get more text sign-ups legally, offer a reason, for example "$5 off your next order" (Peter to decide).
+- **Files:** [site/src/pages/account/index.astro](../site/src/pages/account/index.astro), [site/src/pages/api/account.ts](../site/src/pages/api/account.ts), [site/src/lib/session.ts](../site/src/lib/session.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/account-signup.test.ts](../site/tests/account-signup.test.ts) (2 more tests), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Sign out, open http://localhost:4321/account, and create a test account. Then look at the **Profile** tab: the email box is ticked and the text box isn't, unless you ticked it.
+
 ## 2026-11-15 13:14 CST · Account page in tabs, mobile number at sign-up, card orders under My orders
 
 - **Asked for:** "can we be more organized on this page ... having buttons at the top.. like having a profile page", "get their number right from the bat at signup", "maybe one of the buttons be 'My orders'", and whether designs should be kept separate by product or in one area.

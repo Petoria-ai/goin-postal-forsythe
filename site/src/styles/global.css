@@ -926,3 +926,7 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
   header.top .brand img { max-width: 100%; height: auto; }
   .login-btn { flex-shrink: 0; max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+/* Deals and news on the sign-up form (Peter, Nov 15 2026) */
+.signup-mkt { margin: 6px 0 4px; padding: 10px 12px 12px; }
+.signup-mkt legend { font-size: .95rem; padding: 0 6px; margin-left: -4px; }
+.signup-mkt .check span { font-size: .92rem; }

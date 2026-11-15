@@ -27,13 +27,13 @@ export async function consumeLoginToken(env: Env, token: string): Promise<string
 
 /** A sign-up or set-password link (Peter, Nov 14 2026): the email, plus the password hash and name to apply only
  *  once the link is opened, so nobody can put a password on an email they don't own. Thirty minutes. */
-export async function createSignupToken(env: Env, email: string, pending: { pw: { hash: string; salt: string; iter: number }; name?: string; phone?: string }): Promise<string> {
+export async function createSignupToken(env: Env, email: string, pending: { pw: { hash: string; salt: string; iter: number }; name?: string; phone?: string; mkt?: { email: boolean; sms: boolean; lang?: string } }): Promise<string> {
   const token = hex(crypto.getRandomValues(new Uint8Array(24)).buffer);
   await kv(env).put(`login:${token}`, JSON.stringify({ email: email.trim().toLowerCase(), ...pending }), { expirationTtl: 30 * 60 });
   return token;
 }
 /** What a link carries: always the email; a pending password and name for sign-up links. Burnt on use. */
-export async function consumeLoginTokenFull(env: Env, token: string): Promise<{ email: string; pw?: { hash: string; salt: string; iter: number }; name?: string; phone?: string } | null> {
+export async function consumeLoginTokenFull(env: Env, token: string): Promise<{ email: string; pw?: { hash: string; salt: string; iter: number }; name?: string; phone?: string; mkt?: { email: boolean; sms: boolean; lang?: string } } | null> {
   if (!/^[0-9a-f]{48}$/.test(token)) return null;
   const v = await kv(env).get(`login:${token}`);
   if (!v) return null;
