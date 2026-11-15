@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 15:42 CST · To-do: virtual mail, and raising mailbox prices
+
+- **Asked for:** "add to my to do list for virtual mail. raise my prices like 2-5 bucks each.. i havent thought about a figure but put it to the list"
+- **What changed:** Two new to-do items. **P13 Virtual mail on the website**: what we have now (Anytime Mailbox), a small first step (a card on the Mailboxes page linking to our Anytime Mailbox sign-up) and the bigger one (running it ourselves). **P14 Raise mailbox prices $2 to $5 each**: today's prices, the questions to decide (the figure, new customers only or at renewal), and the two places to change (the website's `mailboxes.json` and William's register). Prices are **not** changed yet.
+- **Files:** [TODO.md](TODO.md)
+- **How to check it:** open `peter/TODO.md` and look for P13 and P14.
+
 ## 2026-11-15 15:38 CST · Mailboxes on the website
 
 - **Asked for:** "another function i want to add is for mailboxes", then the prices (small $90 / $180, medium $120 / $240, large $180 / $360 for 6 months / a year), the box numbers in the 1000s, "i want the customers who have an account on the website to be able to view their mailbox once i have assigned them their box", and "email and text them to remind them that their mailbox is expiring soon".

@@ -13,6 +13,8 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P14 | [Raise mailbox prices $2 to $5 each](#p14-raise-mailbox-prices-2-to-5-each) | ⏸ Peter to pick the figure | Peter's numbers; then one file on the website and the Prices tab in William's register |
+| P13 | [Virtual mail on the website](#p13-virtual-mail-on-the-website) | ⏸ Later | What virtual mail we sell and at what price; Anytime Mailbox's rules |
 | P12 | [Automatic mailbox reminders](#p12-automatic-mailbox-reminders) | ⏳ Next for mailboxes | A daily scheduled job on Cloudflare; Peter's revision of the mailbox pages |
 | P11 | [Official carrier logos (USPS, UPS, FedEx, DHL)](#p11-official-carrier-logos-usps-ups-fedex-dhl) | ✅ Done Nov 15 | A larger UPS file would be sharper | Goin' Postal corporate or each carrier's retail program |
 | P10 | [Is real AI design worth about 2 cents a try?](#p10-is-real-ai-design-worth-about-2-cents-a-try) | ⏸ Decide later | Peter and Rin try the demo; then the key and a monthly cap (D22) |
@@ -315,6 +317,38 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P14. Raise mailbox prices $2 to $5 each
+
+**Added:** 2026-11-15 15:42 CST. **Status:** Peter hasn't picked the numbers yet. **Peter:** "raise my prices like 2-5 bucks each".
+
+Today's prices, as Peter gave them on Nov 15:
+
+| Size | 6 months | 1 year |
+|---|---|---|
+| Small (#1100–1220) | $90 | $180 |
+| Medium (#1221–1284) | $120 | $240 |
+| Large (#1300–1323) | $180 | $360 |
+
+- [ ] **Pick the new prices** (each up $2 to $5). Worth a look first: what nearby UPS Stores, other shipping stores and the post office charge for a box in Monroe, so the new prices still compete.
+- [ ] Decide **who gets the new price**: new customers only, or everyone at their next renewal (and how much notice to give current holders; the renewal reminder text could say it).
+- [ ] **Change the website:** one file, `site/src/data/mailboxes.json` (`price6` and `price12` per size). The Mailboxes page, reservations and staff page all read it.
+- [ ] **Change William's register** too: the Prices tab in the mailbox register (`physical-mailbox/`), so the counter charges the same as the website.
+- [ ] Update the price sign at the counter and the printed intake packet.
+
+## P13. Virtual mail on the website
+
+**Added:** 2026-11-15 15:42 CST. **Status:** later. **Peter:** "add to my to do list for virtual mail".
+
+What we have today: the store's **virtual mailboxes run on Anytime Mailbox**, separate from the wall boxes (William, Nov 7: "virtual and physical boxes stay separate"; see [physical-mailbox/README.md](../physical-mailbox/README.md#virtual-mailboxes-stay-on-anytime-mailbox)). The website's new Mailboxes page only covers wall boxes.
+
+Virtual mail means the customer gets our street address, we receive their mail, scan the envelope, and they choose online: open and scan, forward, shred, or hold for pickup. It suits people who travel, live out of town, or run a business from home.
+
+- [ ] **Decide the plan:** keep selling it through Anytime Mailbox (they handle the app and scans; we get a share), or run it ourselves on the website later.
+- [ ] **Prices:** what we charge now on Anytime Mailbox, and what a monthly plan should cost next to iPostal1, Anytime Mailbox's other stores and the UPS Store.
+- [ ] **On the website now (small step):** a "Virtual mailbox" card on the Mailboxes page that explains it and links to our Anytime Mailbox sign-up page.
+- [ ] **Later (bigger step), if we run it ourselves:** a "My mail" list on the account with the envelope scans and Open / Forward / Shred / Pick up buttons, a staff page to scan and upload, monthly billing (Stripe), and a text or email when mail arrives. Needs a scanner at the counter and the online USPS Form 1583 with a notary (USPS rules for virtual mail).
+- [ ] Ask William how many virtual customers we have and what they pay.
 
 ## P12. Automatic mailbox reminders
 
