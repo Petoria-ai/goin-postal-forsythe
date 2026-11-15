@@ -11,6 +11,7 @@ export const prerender = false;
 import { env } from '../lib/env';
 import { onlineLabelsOn } from '../lib/siteSettings';
 const online = await onlineLabelsOn(env);
+import CarrierBadges from '../components/CarrierBadges.astro';
 ---
 <Base title={store.name}>
   <!-- Track a package: the first thing on the home page, like ups.com (Peter, Nov 14 2026). A plain form, so it works
@@ -22,6 +23,7 @@ const online = await onlineLabelsOn(env);
       <input id="home-q" name="q" required minlength="4" maxlength="40" autocomplete="off" autocapitalize="characters" placeholder="Pickup code or tracking number" data-i18n-ph="track.field" />
       <button class="btn kraft" type="submit" data-i18n="track.button">Track</button>
     </form>
+    <div class="track-carriers"><span class="muted" data-i18n="carr.track">Tracking numbers from</span><CarrierBadges /></div>
     <p class="track-links">
       <a href="/ship" data-i18n="home.cta">Ship a package</a>
       <a href="#hours" data-i18n="home.hours">Hours and directions</a>

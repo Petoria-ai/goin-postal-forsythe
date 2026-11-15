@@ -27,6 +27,7 @@ const pkgGroups = (['own', 'USPS', 'UPS', 'FedEx'] as const).map((g) => ({ g, it
 const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
 // The owners' switch (/counter/settings, Peter Nov 14 2026): Off means no prices online; the in-store page instead.
 if (!(await onlineLabelsOn(env))) return Astro.rewrite('/ship/in-store');
+import CarrierBadges from '../../components/CarrierBadges.astro';
 ---
 <Base title={`Ship a package · ${store.name}`} description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
   <section class="hero">
@@ -34,6 +35,12 @@ if (!(await onlineLabelsOn(env))) return Astro.rewrite('/ship/in-store');
     <h1 data-i18n="ship.h1">Ship a package</h1>
     <p class="lead" data-i18n="ship.lead">Compare USPS, UPS, FedEx and DHL in one place. Pay online and print at home, or show us the QR code and we print it at the counter.</p>
     {cancelled && <p class="card" data-i18n="ship.cancelled">Payment was cancelled. Your quote is below if you want to try again.</p>}
+  </section>
+
+  <!-- The carriers, big (Peter, Nov 15 2026). -->
+  <section class="carrier-band" aria-labelledby="carrH">
+    <h2 id="carrH" data-i18n="carr.band">Every major carrier, at one counter</h2>
+    <CarrierBadges size="lg" />
   </section>
 
   {me && <p class="card"><span data-i18n="acct.hello">Signed in as</span> <strong>{me.name}</strong> · <a href="/account" data-i18n="acct.h1">Your account</a>{saved.length > 0 && <> · <label><span data-i18n="acct.useaddr">Ship to a saved address</span> <select id="savedSel"><option value="">…</option>{saved.map((a) => <option value={a.id} selected={a.id === wantTo}>{a.label}: {a.to.contact_name}, {a.to.city}</option>)}</select></label></>}</p>}

@@ -11,11 +11,18 @@ import { onlineLabelsOn } from '../../lib/siteSettings';
 // while the switch is On, it sends the customer to the real Ship page.
 if (await onlineLabelsOn(env)) return Astro.redirect('/ship');
 const maps = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(store.address)}`;
+import CarrierBadges from '../../components/CarrierBadges.astro';
 ---
 <Base title={`Ship a package · ${store.name}`} description="Ship USPS, UPS, FedEx and DHL at our counter in Monroe. We weigh, compare, pack and print the label while you wait.">
   <section class="hero">
     <h1 data-i18n="instore.h1">Ship with us in the store</h1>
     <p class="lead" data-i18n="instore.lead">Bring your package to the counter. We weigh it, compare USPS, UPS, FedEx and DHL for you, pack it if you need, and print the label while you wait.</p>
+  </section>
+
+  <!-- The carriers, big (Peter, Nov 15 2026). -->
+  <section class="carrier-band" aria-labelledby="carrH">
+    <h2 id="carrH" data-i18n="carr.band">Every major carrier, at one counter</h2>
+    <CarrierBadges size="lg" />
   </section>
 
   <div class="grid">

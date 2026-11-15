@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 14:42 CST · Carrier branding: USPS, UPS, FedEx, DHL across the site
+
+- **Asked for:** "add more branding for the providers we are partnered with such as ups/fedex/usps/dhl ... at the top of the page lined up at the white blank, maybe the tracking box, at the footnote possibly ... also in the 'Ship a package' tab. we need more branding in there"
+- **What changed:** The four carriers now show in four places:
+  - **Header:** "We ship USPS · UPS · FedEx · DHL" in the white space between the logo and Log in (on computers; hidden on phones so the header doesn't crowd).
+  - **Tracking box:** "Tracking numbers from USPS · UPS · FedEx · DHL" under the Track button.
+  - **Ship a package:** a big **"Every major carrier, at one counter"** row with the four carriers, near the top.
+  - **Footer:** "We ship with USPS · UPS · FedEx · DHL" on every page.
+- **Logos:** for now each carrier shows as its **name** in a clean badge. Their logos are trademarks, so only the **official files** can be used, as supplied and under each carrier's rules (usually for authorized retail locations). The site is ready for them: put the file in `site/public/brand/carriers/` and set it in `site/src/data/carriers.ts`, and that carrier's badge becomes its logo everywhere at once. The wording says "We ship", not "partner" or "authorized", until the store's status with each carrier is confirmed (to-do P11).
+- **Why:** Seeing the carriers right away tells people this is where to ship.
+- **Files:** [site/src/data/carriers.ts](../site/src/data/carriers.ts) (new), [site/src/components/CarrierBadges.astro](../site/src/components/CarrierBadges.astro) (new), [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/pages/index.astro](../site/src/pages/index.astro), [site/src/pages/ship/in-store.astro](../site/src/pages/ship/in-store.astro), [site/src/pages/ship/index.astro](../site/src/pages/ship/index.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Look at the top of any page on a computer, the home page's tracking box, **Ship a package**, and the bottom of any page.
+
 ## 2026-11-15 13:19 CST · Deals and news boxes on the sign-up form (email pre-checked, texts not)
 
 - **Asked for:** "let this be the area they can opt in to get text messages and emails.. and have them prechecked.. that way they'll just mindlessly click create account. and its up to them if they uncheck or leave it checked"

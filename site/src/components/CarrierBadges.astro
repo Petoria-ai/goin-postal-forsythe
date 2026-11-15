@@ -1,0 +1,10 @@
+---
+import { CARRIERS } from '../data/carriers';
+// A row of the carriers the store ships with: the official logo when its file is set in data/carriers.ts,
+// otherwise the carrier's name as a plain badge. size: sm (header, tracking box, footer) or lg (Ship pages).
+interface Props { size?: 'sm' | 'lg' }
+const { size = 'sm' } = Astro.props;
+---
+<ul class={`carriers ${size}`}>
+  {CARRIERS.map((c) => <li class={`carrier c-${c.id}`}>{c.logo ? <img src={c.logo} alt={c.name} loading="lazy" /> : <span>{c.name}</span>}</li>)}
+</ul>

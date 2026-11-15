@@ -13,6 +13,7 @@ const brandRest = store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
 // The nav tab for the page being viewed is drawn pressed (aria-current).
 const here = Astro.url.pathname.replace(/\/$/, '') || '/';
 const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')) ? 'page' : undefined);
+import CarrierBadges from '../components/CarrierBadges.astro';
 ---
 <!doctype html>
 <html lang="en">
@@ -54,6 +55,8 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
         <div class="top-row">
           <!-- The franchise's own logo file, used as supplied: never redrawn or recolored. -->
           <a class="brand" href="/"><img src="/brand/goin-postal-logo.png" alt="Goin' Postal" width="170" height="35" /><span class="brand-store">{brandRest}</span></a>
+          <!-- The carriers the store ships with (Peter, Nov 15 2026), in the space between the logo and Log in. Wide screens only. -->
+          <div class="hdr-carriers"><span class="muted" data-i18n="carr.weship">We ship</span><CarrierBadges /></div>
           <!-- Log in, top right of every page (Peter, Nov 14 2026). Signed in, it greets the customer and opens their account. -->
           <a class="login-btn" id="loginBtn" href="/account" data-i18n="acct.login">Log in</a>
         </div>
@@ -94,6 +97,7 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
     </main>
     <footer>
       <div class="wrap">
+        <div class="foot-carriers"><span data-i18n="carr.footer">We ship with</span><CarrierBadges /></div>
         {store.name} · {store.address}.
         <span data-i18n="footer">Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.</span>
         · <a href="/counter" data-i18n="st.in.link">Staff sign-in</a>

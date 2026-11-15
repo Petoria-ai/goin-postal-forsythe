@@ -930,3 +930,21 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .signup-mkt { margin: 6px 0 4px; padding: 10px 12px 12px; }
 .signup-mkt legend { font-size: .95rem; padding: 0 6px; margin-left: -4px; }
 .signup-mkt .check span { font-size: .92rem; }
+
+/* Carrier badges (Peter, Nov 15 2026): official logos once supplied, the names until then. */
+.carriers { list-style: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; padding: 0; }
+.carrier { display: inline-flex; align-items: center; justify-content: center; background: #fff; border: 1.5px solid var(--hair); border-radius: 999px; padding: 4px 12px; min-height: 30px; }
+.carrier span { font-family: var(--fw-display); font-weight: 800; color: var(--navy); font-size: .9rem; letter-spacing: .02em; }
+.carrier img { height: 22px; width: auto; display: block; }
+.carriers.lg { gap: 14px; justify-content: center; }
+.carriers.lg .carrier { border-radius: 14px; padding: 14px 26px; min-width: 130px; min-height: 70px; box-shadow: 0 4px 14px rgba(40, 30, 10, .08); }
+.carriers.lg .carrier span { font-size: 1.5rem; }
+.carriers.lg .carrier img { height: 40px; }
+.hdr-carriers { display: flex; align-items: center; gap: 10px; margin-left: auto; margin-right: 18px; }
+.hdr-carriers .muted { font-size: .85rem; font-weight: 700; white-space: nowrap; }
+@media (max-width: 1000px) { .hdr-carriers { display: none; } }
+.track-carriers { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; margin: 14px 0 0; }
+.track-carriers .muted { font-size: .92rem; font-weight: 700; }
+.foot-carriers { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; font-weight: 700; color: var(--navy); }
+.carrier-band { text-align: center; background: #fff; border: 1px solid var(--hair); border-radius: 18px; padding: 22px 16px 26px; margin: 8px 0 24px; }
+.carrier-band h2 { margin: 0 0 16px; font-size: 1.35rem; }
