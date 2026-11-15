@@ -10,7 +10,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P4 | [Find a texting (SMS) platform for messages and marketing](#p4-find-a-texting-sms-platform-for-messages-and-marketing) | ⏳ Next to research | Pick the platform, then register the store's texting |
 | P5 | ["Sign in with Google"](#p5-sign-in-with-google) | ⏸ Later | The site's real web address, a privacy policy page, and Peter's Google setup |
 | P6 | [A fresher website theme](#p6-a-fresher-website-theme) | ✅ Done Nov 14: Theme B | A larger logo file from franchise support would be sharper |
-| P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (step 1 ✅) | Step 2, the Print & Promo page |
+| P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1–2 ✅) | Business card "pick your business type" designs; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 
 ---
@@ -224,7 +224,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 ### Build order
 
 - [x] **1. Online labels off with a switch, before the site goes live** (see P8): the Ship page becomes "Get a quote, then pay at the counter", or leaves the menu. Nothing is deleted. ✅ 2026-11-14 19:15 CST: staff **Settings** page, owner PIN only, audited, starts Off. Off = reserve online, pay at the counter. **Changed 2026-11-14 19:42 CST:** Off now means no shipping prices on the website at all; the Ship page becomes "Ship with us in the store" and the home page talks about the counter.
-- [ ] **2. A "Print & Promo" section** in the menu: one page with every product, photos of real work, and a button each.
+- [x] **2. A "Print & Promo" section** in the menu: one page with every product, photos of real work, and a button each. ✅ 2026-11-14 20:07 CST: named **Printing** (Peter), a dropdown with Business Cards, Banners & Yard Signs, Custom T-Shirts, Pens & Promo Items and "See all printing"; a page per product. Still to add: **photos of real work** on the tiles.
 - [ ] **3. Request a quote:** the customer's form (product, file upload, details, quantity), a staff page to price it and send a payment link, the order on the customer's account. One build covers t-shirts, pens and any future custom product.
 - [ ] **4. Banners and yard signs** in the designer, priced by size.
 - [ ] **5. Mailbox reservation** online, finished at the counter.

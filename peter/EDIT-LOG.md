@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 20:07 CST · "Printing" menu with a dropdown, and a page for each product
+
+- **Asked for:** "lets do 'Printing' and then have a drop down menu for: Business Cards, Banners & Yard Signs, Custom T-Shirts, Pens & Promo Items, maybe have See all printing at the top of the dropdown menu or bottom"
+- **What changed:**
+  - The **Business cards** tab is now **Printing ▾**. Its dropdown lists **Business Cards, Banners & Yard Signs, Custom T-Shirts, Pens & Promo Items**, then a line, then **See all printing** at the bottom. It works like the Tracking menu: it opens on hover on a computer and with the ▾ arrow on a phone.
+  - **New page "Printing"** (See all printing): a tile for each product. Business Cards is marked **Order online** with a "Design your cards" button. The other three are marked **Order in the store**, each with "Learn more".
+  - **New pages for Banners & Yard Signs, Custom T-Shirts and Pens & Promo Items**: what it's for, how it works (tell us what you need, we send a price and a proof, pick it up), "Online ordering is coming soon", a **Call us** button and a **Send us a message** button, plus the store's hours. These pages will get the online "request a quote" form later (to-do P7 step 3).
+  - **Fixed on phones:** the whole site was secretly about 1,000 pixels wide on a phone, so phones shrank the page to fit. That was caused by the menu bar and the language/text-size bar from the Theme B work. Pages now fit the screen exactly, and on a phone a dropdown opens as a full-width panel right under the menu bar.
+  - Everything is in all 14 languages.
+- **Why:** So visitors see right away that the store does printing, not just shipping, using the same "Shipping · Printing · Office Services" words as the franchise logo.
+- **Files:** [site/src/layouts/Base.astro](../site/src/layouts/Base.astro) (the menu), [site/src/pages/printing/index.astro](../site/src/pages/printing/index.astro), [banners.astro](../site/src/pages/printing/banners.astro), [t-shirts.astro](../site/src/pages/printing/t-shirts.astro), [promo.astro](../site/src/pages/printing/promo.astro) (all new), [site/src/components/PrintProduct.astro](../site/src/components/PrintProduct.astro) (new, the shared layout of the three product pages), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Hover **Printing** in the menu, then click each item. On a phone, or with the browser window made narrow, tap the ▾ next to Printing.
+
 ## 2026-11-14 19:42 CST · Switch Off now means no shipping prices online at all
 
 - **Asked for:** "I think the way I want the switch to work is basically not even give them quotes on the website."

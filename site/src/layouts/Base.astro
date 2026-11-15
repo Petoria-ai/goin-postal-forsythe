@@ -68,7 +68,19 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
               <a href="/account#orders" data-i18n="nav.allships">View all shipments</a>
             </div>
           </div>
-          <a href="/cards" aria-current={cur('/cards')} data-i18n="nav.cards">Business cards</a>
+          <!-- Printing menu (Peter, Nov 14 2026): every printing product, then "See all printing" at the bottom. Same behavior as Tracking. -->
+          <div class="nav-drop" id="printDrop">
+            <a href="/printing" aria-current={cur('/printing') ?? cur('/cards')} data-i18n="nav.printing">Printing</a>
+            <button type="button" class="nav-caret" aria-expanded="false" aria-controls="printMenu" aria-label="Printing menu">▾</button>
+            <div class="nav-menu" id="printMenu">
+              <a href="/cards" data-i18n="nav.print.cards">Business Cards</a>
+              <a href="/printing/banners" data-i18n="nav.print.banners">Banners & Yard Signs</a>
+              <a href="/printing/t-shirts" data-i18n="nav.print.shirts">Custom T-Shirts</a>
+              <a href="/printing/promo" data-i18n="nav.print.promo">Pens & Promo Items</a>
+              <div class="nav-sep" role="separator"></div>
+              <a href="/printing" data-i18n="nav.print.all">See all printing</a>
+            </div>
+          </div>
           <a href="/#services" data-i18n="nav.services">Services</a>
           <a href="/#hours" data-i18n="nav.hours">Hours</a>
           <a href="/contact" aria-current={cur('/contact')} data-i18n="nav.contact">Contact</a>
@@ -115,13 +127,24 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
       };
       if (loginBtn && !location.pathname.startsWith('/counter')) fetch('/api/account', { credentials: 'same-origin' }).then((r) => r.json()).then((j) => { me = j; paintLogin(); }).catch(() => {});
       paintLogin(); document.addEventListener('langchange', paintLogin);
-      // Tracking menu: the arrow button opens and closes it (hover and keyboard focus open it through CSS); Escape or a click elsewhere closes it.
-      const drop = document.getElementById('trackDrop'), caret = drop?.querySelector<HTMLButtonElement>('.nav-caret');
-      const openDrop = (on: boolean) => { drop?.classList.toggle('open', on); caret?.setAttribute('aria-expanded', String(on)); };
-      caret?.addEventListener('click', (e) => { e.stopPropagation(); openDrop(!drop!.classList.contains('open')); });
-      document.addEventListener('click', (e) => { if (drop && !drop.contains(e.target as Node)) openDrop(false); });
-      drop?.addEventListener('keydown', (e) => { if (e.key === 'Escape') { openDrop(false); caret?.focus(); } });
-      const caretLabel = () => caret?.setAttribute('aria-label', t('nav.trackmenu'));
+      // Tracking and Printing menus: the arrow button opens and closes one (hover and keyboard focus open it through CSS);
+      // opening one closes the other; Escape or a click elsewhere closes it.
+      const drops = [['trackDrop', 'nav.trackmenu'], ['printDrop', 'nav.printmenu']].map(([id, label]) => {
+        const drop = document.getElementById(id)!, caret = drop.querySelector<HTMLButtonElement>('.nav-caret')!;
+        return { drop, caret, label };
+      });
+      const openDrop = (d: (typeof drops)[number], on: boolean) => {
+        if (on) d.drop.style.setProperty('--menu-top', `${Math.round((d.drop.closest('nav') ?? d.caret).getBoundingClientRect().bottom + 4)}px`); // phones: the panel sits under the bar
+        d.drop.classList.toggle('open', on); d.caret.setAttribute('aria-expanded', String(on));
+      };
+      // Phones: scrolling the page closes an open panel, so it never floats away from the bar.
+      window.addEventListener('scroll', () => drops.forEach((o) => { if (o.drop.classList.contains('open')) openDrop(o, false); }), { passive: true });
+      for (const d of drops) {
+        d.caret.addEventListener('click', (e) => { e.stopPropagation(); const on = !d.drop.classList.contains('open'); drops.forEach((o) => openDrop(o, false)); openDrop(d, on); });
+        d.drop.addEventListener('keydown', (e) => { if (e.key === 'Escape') { openDrop(d, false); d.caret.focus(); } });
+      }
+      document.addEventListener('click', (e) => { for (const d of drops) if (!d.drop.contains(e.target as Node)) openDrop(d, false); });
+      const caretLabel = () => drops.forEach((d) => d.caret.setAttribute('aria-label', t(d.label)));
       caretLabel(); document.addEventListener('langchange', caretLabel);
       document.getElementById('lang')!.addEventListener('change', (e) => { const el = e.target as HTMLSelectElement; setLang(el.value as Lang); el.blur(); });
     </script>
