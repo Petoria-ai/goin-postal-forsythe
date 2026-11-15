@@ -26,6 +26,9 @@ const needName = !!me && (!me.name || me.name === 'Customer');
 
   <div id="review" class="review-grid" hidden>
     <div class="review-cards">
+      <!-- 3D look (Peter, Nov 14 2026): drag to turn, Front and Back buttons; the flat pictures below are the exact proof. -->
+      <h3 data-i18n="c3d.title">See it in 3D</h3>
+      <div id="card3d"></div>
       <h3 data-i18n="cards.front">Front</h3>
       <div class="card-wrap" id="front"></div>
       <h3 data-i18n="cards.back">Back</h3>
@@ -63,6 +66,7 @@ const needName = !!me && (!me.name || me.name === 'Customer');
   <script>
     import { t } from '../../i18n';
     import { renderCard, sanitizeDesign } from '../../lib/cards';
+    import { mountCard3D } from '../../lib/card3d';
     const $ = (id: string) => document.getElementById(id)!;
     const DRAFT = 'gp-card-order';
     let order: any = null;
@@ -73,6 +77,8 @@ const needName = !!me && (!me.name || me.name === 'Customer');
       const design = sanitizeDesign(order.design);
       $('front').innerHTML = renderCard(design, 'front');
       $('back').innerHTML = renderCard(design, 'back');
+      const show3d = () => mountCard3D($('card3d'), renderCard(design, 'front'), renderCard(design, 'back'), order.options ?? {}, { front: t('cards.front'), back: t('cards.back'), hint: t('c3d.hint') });
+      show3d(); document.addEventListener('langchange', show3d);
       if (order.notes) { $('notesRow').hidden = false; $('notes').textContent = order.notes; }
       // Prices from the server, the same table the order is charged from.
       const paintLines = (j: any) => {

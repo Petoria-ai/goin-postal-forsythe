@@ -772,3 +772,32 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
   .shop-hero, .finish-panel { grid-template-columns: 1fr; }
   .shop-stack { max-width: 420px; width: 100%; margin: 0 auto; }
 }
+
+/* 3D card viewer (Peter, Nov 14 2026): drag to turn, Front and Back buttons. */
+.c3d-stage { position: relative; overflow: hidden; perspective: 1400px; padding: 40px 20px 56px; display: grid; place-items: center; cursor: grab; touch-action: none; user-select: none; border-radius: 16px; background: radial-gradient(ellipse at 50% 40%, #ffffff, #efe8dc); outline: none; }
+.c3d-stage:focus-visible { box-shadow: 0 0 0 3px var(--soft-red), 0 0 0 5px var(--red); }
+.c3d-stage.grabbing { cursor: grabbing; }
+.c3d-card { --t: 3px; --r: 0px; position: relative; width: min(100%, 520px); aspect-ratio: 1050 / 600; transform-style: preserve-3d; }
+.c3d-card.stock-thick { --t: 5px; }
+.c3d-card.stock-linen { --t: 4px; }
+.c3d-card.rounded { --r: 4.5%; }
+.c3d-face, .c3d-layer { position: absolute; inset: 0; border-radius: var(--r) / calc(var(--r) * 1.75); overflow: hidden; backface-visibility: hidden; }
+.c3d-front { transform: translateZ(calc(var(--t) / 2)); }
+.c3d-back { transform: rotateY(180deg) translateZ(calc(var(--t) / 2)); }
+.c3d-layer { background: #e9e3d8; transform: translateZ(calc(var(--t) / 2 - var(--t) * var(--i) / 5)); backface-visibility: visible; }
+.c3d-art, .c3d-art svg { width: 100%; height: 100%; display: block; }
+.c3d-tex, .c3d-sheen { position: absolute; inset: 0; pointer-events: none; }
+.c3d-card.stock-linen .c3d-tex { background: repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(0,0,0,.06) 0 1px, transparent 1px 3px); mix-blend-mode: multiply; }
+.c3d-card.finish-gloss .c3d-sheen { background: linear-gradient(115deg, transparent calc(var(--sheen, 50%) - 22%), rgba(255,255,255,.6) var(--sheen, 50%), transparent calc(var(--sheen, 50%) + 22%)); }
+.c3d-card.finish-softtouch .c3d-sheen { background: linear-gradient(115deg, rgba(0,0,0,.05), rgba(255,255,255,.08) var(--sheen, 50%), rgba(0,0,0,.05)); }
+.c3d-card.finish-matte .c3d-sheen { background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.12) var(--sheen, 50%), transparent 70%); }
+.c3d-shadow { position: absolute; left: 50%; bottom: 18px; width: min(70%, 440px); height: 40px; margin-left: calc(min(70%, 440px) / -2); border-radius: 50%; background: radial-gradient(ellipse, rgba(40,30,10,.35), transparent 70%); filter: blur(6px); }
+.c3d-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: center; margin: 10px 0 0; }
+.c3d-sides { display: inline-flex; border: 1px solid var(--hair); border-radius: 999px; padding: 3px; background: #fff; }
+.c3d-side { border: 0; background: none; font: inherit; font-weight: 700; color: var(--navy); padding: 6px 18px; border-radius: 999px; cursor: pointer; min-height: 36px; }
+.c3d-side[aria-pressed="true"] { background: var(--navy); color: #fff; }
+.c3d-dialog { width: min(760px, calc(100vw - 32px)); border: 0; border-radius: 18px; padding: 18px; box-shadow: 0 20px 60px rgba(0,0,0,.35); }
+.c3d-dialog::backdrop { background: rgba(23, 20, 50, .55); }
+.c3d-dialog .c3d-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+.c3d-dialog h2 { margin: 0; font-size: 1.3rem; }
+@media (prefers-reduced-motion: reduce) { .c3d-card { transition: none !important; } }

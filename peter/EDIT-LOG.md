@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 11:28 CST · Business cards: turn the card in 3D, with Front and Back buttons
+
+- **Asked for:** "after the customer is done with their design that they can drag their card or flip their card around to check how their card looks digitally.. it gives a customer a professional and 'editorial' feel", and "it gives a front and back view option in the 3d card viewer".
+- **What changed:**
+  - **A 3D card** the customer can **drag to turn** with a mouse or a finger. **Front** and **Back** buttons under it turn it to face that side straight on, and the button for the side facing you lights up. The keyboard works too: arrow keys turn it, Enter flips it.
+  - It shows what was picked: **gloss** has a shine that slides across as the card turns, **soft touch** a soft sheen, **linen** its weave, **thick** paper a thicker edge, and **rounded corners** are round.
+  - It's on the **Review your order** page, above the flat front and back (those stay as the exact proof), and behind a new **Preview in 3D** button in the designer, which opens it in a window.
+  - In all 14 languages.
+- **Why:** It makes checking the card feel professional, like a big print shop, and helps people see the finish they're paying for.
+- **Files:** [site/src/lib/card3d.ts](../site/src/lib/card3d.ts) (new: the 3D viewer), [site/src/pages/cards/review.astro](../site/src/pages/cards/review.astro), [site/src/pages/cards/design.astro](../site/src/pages/cards/design.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Open Business Cards, pick a design, tick Gloss and Rounded corners, and press **Preview in 3D**. Drag the card, then press **Back** and **Front**. The same card is on the review page after **Review order**.
+
 ## 2026-11-14 20:24 CST · Business card shop page, like an online print shop, plus "Upload your design"
 
 - **Asked for:** "once someone click business cards. it should start looking like a vistaprint website", with screenshots of Vistaprint's paper, shape, finish, business-use and editor sections; "allow people to feel they have options and feel this is the place to go". Who prints the cards is still open, and the prices stay as they are for now.
