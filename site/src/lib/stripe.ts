@@ -63,7 +63,7 @@ export async function createCardCheckout(env: Env, order: CardOrder): Promise<st
     ...(order.tax ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.tax.amount * 100), product_data: { name: `Sales tax ${order.tax.percent}%` } } }] : []),
     ...(order.fee ? [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(order.fee.amount * 100), product_data: { name: 'Online convenience fee' } } }] : [])],
     success_url: `${site}/cards/done?order=${order.id}`,
-    cancel_url: `${site}/cards?cancelled=${order.id}`,
+    cancel_url: `${site}/cards/design?cancelled=${order.id}`,
   });
   return session.url!;
 }

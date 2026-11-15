@@ -4,6 +4,27 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 20:24 CST · Business card shop page, like an online print shop, plus "Upload your design"
+
+- **Asked for:** "once someone click business cards. it should start looking like a vistaprint website", with screenshots of Vistaprint's paper, shape, finish, business-use and editor sections; "allow people to feel they have options and feel this is the place to go". Who prints the cards is still open, and the prices stay as they are for now.
+- **What changed:**
+  - **Business Cards now opens a shop page** (`/cards`) built the way online print shops lay theirs out, in our own colors, words and pictures (every card picture is drawn from the site's own designs; nothing of Vistaprint's is copied):
+    - a top banner, "Business cards, printed here in Monroe", **From $24.99 · $0.25 each / 100 cards**, with **Browse designs** and **Upload your design** buttons, and a fanned stack of sample cards;
+    - four reasons to order here: pick up in the store, a real person checks every card, next-day rush, local help;
+    - **Pick your paper**: Standard, Thick and Linen, each with its "From" price;
+    - **Compare finishes**: Matte, Gloss and Soft touch tabs with what each is like and its price;
+    - **Square or rounded corners**;
+    - **Designs for your type of business**: Restaurant & Food, Beauty & Salon, Construction & Trades, Real Estate, Auto & Repair, Lawn & Landscaping, Church & Nonprofit, Medical & Health (each opens the designs in that business's colors and with matching sample wording), plus "See every design" and "Already have a design?";
+    - **How it works** in three steps.
+  - **Every price on the page comes from the same price list the checkout charges**, so the page can't show a price that's different from the bill. Only what the store sells today is shown.
+  - **The designer moved to `/cards/design`.** Clicking a paper, finish or corner on the shop page opens it with that option already ticked in the order form.
+  - **New: Upload your design.** Someone with a finished card from their own designer starts from a blank card and presses **Upload your design** (or **Upload a finished design** in the toolbar). The picture fills the card and is sized for printing. If it's too small to print sharply, or the wrong shape so the edges get trimmed, they're warned in plain words. A card that is only an uploaded picture can now be ordered (before, the front had to have text).
+  - **Fixed:** "Payment was cancelled" never showed after someone backed out of the card payment, because that page was built once ahead of time. It's now built on each visit.
+  - Everything is in all 14 languages.
+- **Why:** So the store feels like the place to go for business cards: lots of options, clear prices, and the local advantages a big website can't offer.
+- **Files:** [site/src/pages/cards/index.astro](../site/src/pages/cards/index.astro) (new shop page), [site/src/pages/cards/design.astro](../site/src/pages/cards/design.astro) (the designer, moved from `cards/index.astro`), [site/src/lib/cardShop.ts](../site/src/lib/cardShop.ts) (new: business types and "From" prices), [site/src/pages/cards/review.astro](../site/src/pages/cards/review.astro), [site/src/lib/stripe.ts](../site/src/lib/stripe.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/tests/card-shop.test.ts](../site/tests/card-shop.test.ts) (new, 3 tests), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Open **Printing → Business Cards**. Click the Gloss tab, a paper, and a business type. Then try **Upload your design** with any picture from your computer.
+
 ## 2026-11-14 20:07 CST · "Printing" menu with a dropdown, and a page for each product
 
 - **Asked for:** "lets do 'Printing' and then have a drop down menu for: Business Cards, Banners & Yard Signs, Custom T-Shirts, Pens & Promo Items, maybe have See all printing at the top of the dropdown menu or bottom"

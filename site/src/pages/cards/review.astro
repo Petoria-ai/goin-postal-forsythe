@@ -21,7 +21,7 @@ const needName = !!me && (!me.name || me.name === 'Customer');
 
   <div id="none" class="card" hidden>
     <p data-i18n="cardsrev.none">There's no card order to review yet.</p>
-    <p><a class="btn" href="/cards" data-i18n="cardsrev.design">Design your cards</a></p>
+    <p><a class="btn" href="/cards/design" data-i18n="cardsrev.design">Design your cards</a></p>
   </div>
 
   <div id="review" class="review-grid" hidden>
@@ -30,7 +30,7 @@ const needName = !!me && (!me.name || me.name === 'Customer');
       <div class="card-wrap" id="front"></div>
       <h3 data-i18n="cards.back">Back</h3>
       <div class="card-wrap" id="back"></div>
-      <p><a href="/cards" data-i18n="cardsrev.edit">Back to the design</a></p>
+      <p><a href="/cards/design" data-i18n="cardsrev.edit">Back to the design</a></p>
     </div>
 
     <div class="card review-side">
