@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 15, 2026, 18:59 CST.
+**Last updated:** November 14, 2026, 18:59 CST.
 
 ## How Peter is working
 
@@ -79,7 +79,7 @@ The site runs on demo rates, so these follow each carrier's published format but
 | D16 | The header now has both a **Log in** button and an **Account** tab. Keep both, or drop the Account tab? | Peter, William | Kept both for now |
 | D17 | **"Sign in with Google"** (and maybe Apple): needs the real web address, a privacy policy page, and Peter's Google Cloud setup. | Peter | [TODO P5](TODO.md#p5-sign-in-with-google) |
 | D18 | ✅ **Decided Nov 14: Theme B, Friendly & warm**, in the logo's navy (#29276E) and red (#CB3833), Nunito, the franchise logo top left, a slim utility bar for language and text size. | Peter | Built; a larger logo file from franchise support would be sharper |
-| D19 | ✅ **Peter's direction (Nov 15): e-commerce first** (business cards, banners and yard signs, t-shirts, business pens and promo items, mailbox reservations); **online shipping labels on the sideline** until that earns, then taken on with business accounts, fraud protection, weight-adjustment terms and a franchise-agreement check. Online label buying should be switched off before the site goes live. | Peter, with William and Rin | [TODO P7](TODO.md#p7-print--promo-online-the-e-commerce-side-first), [TODO P8](TODO.md#p8-online-shipping-labels-later-and-on-purpose). Questions for William: does the store print banners in-house? what happened to the online mailbox sign-up (v1.47.0)? |
+| D19 | ✅ **Peter's direction (Nov 14): e-commerce first** (business cards, banners and yard signs, t-shirts, business pens and promo items, mailbox reservations); **online shipping labels on the sideline** until that earns, then taken on with business accounts, fraud protection, weight-adjustment terms and a franchise-agreement check. Online label buying should be switched off before the site goes live. | Peter, with William and Rin | [TODO P7](TODO.md#p7-print--promo-online-the-e-commerce-side-first), [TODO P8](TODO.md#p8-online-shipping-labels-later-and-on-purpose). Questions for William: does the store print banners in-house? what happened to the online mailbox sign-up (v1.47.0)? |
 | D11 | The packaging list says "Ask for one at our counter". Does the store keep USPS, UPS and FedEx packaging on hand to give out? | Peter | Change the wording if not |
 | D9 | Return labels "charged only if used", like Pirate Ship? Needs the postal service's pay-on-use returns on the store's account, and a way to bill the customer later. Business accounts could be billed on their monthly statement; walk-in website customers would need a saved card. | Peter, William, Rin | For the prices meeting. Today: charged up front, and the page says so |
 
