@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 14:54 CST · The store's address beside the logo, instead of "Forsythe"
+
+- **Asked for:** "change Forsythe to 'Monroe, LA'", then "or rather change it to '1800 Forsythe Ave, Suite 2, Monroe, LA 71201'"
+- **What changed:** The red words beside the Goin' Postal logo at the top of every page now read **1800 Forsythe Ave, Suite 2, Monroe, LA 71201**. On a computer they sit beside the logo in two neat lines; on a phone they go under the logo so nothing overlaps the Log in button. Only the header changed: the store's name ("Goin' Postal Forsythe") stays the same on labels, receipts and page titles. The words come from a new store setting, `headerLabel`, so each store can set its own.
+- **Files:** [site/src/data/store.ts](../site/src/data/store.ts), [site/stores/forsythe.json](../site/stores/forsythe.json), [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/styles/global.css](../site/src/styles/global.css), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`, and look at the top of any page on a computer and on a phone (or a narrow browser window).
+
 ## 2026-11-15 14:51 CST · Official carrier logos on the site
 
 - **Asked for:** "Here's the logos to use.." (USPS, UPS, FedEx Authorized ShipCenter, DHL, and the DHL Express Certified International Specialist badge)

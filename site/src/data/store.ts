@@ -8,6 +8,7 @@ import { env as cfEnv } from 'cloudflare:workers';
 export interface StoreFacts {
   id: string;                 // short slug, used in logs and the Z-report: forsythe, west-carroll
   name: string;
+  headerLabel?: string;       // the words beside the logo in the header (Peter, Nov 15 2026); the store name's last part when blank
   address: string;
   phone: string;
   email: string;
@@ -23,6 +24,7 @@ export interface StoreFacts {
 export const defaults: StoreFacts = {
   id: 'forsythe',
   name: "Goin' Postal Forsythe",
+  headerLabel: "1800 Forsythe Ave, Suite 2, Monroe, LA 71201", // Peter, Nov 15 2026
   address: "1800 Forsythe Ave Ste 2, Monroe, LA 71201",
   phone: "(318) 570-2132", // Peter, Nov 14 2026
   email: "wbp93623@gmail.com",

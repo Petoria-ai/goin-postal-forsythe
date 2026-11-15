@@ -9,7 +9,8 @@ import { store } from '../data/store';
 interface Props { title: string; description?: string }
 const { title, description = `Shipping, packing, mailboxes and printing at ${store.address}.` } = Astro.props;
 // The brand reads "Goin' Postal" plus the store's own word: Forsythe, Oak Grove.
-const brandRest = store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
+// Beside the logo: the store's header label (the address, for Forsythe; Peter Nov 15 2026), else the last part of its name.
+const brandRest = store.headerLabel || store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
 // The nav tab for the page being viewed is drawn pressed (aria-current).
 const here = Astro.url.pathname.replace(/\/$/, '') || '/';
 const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')) ? 'page' : undefined);
