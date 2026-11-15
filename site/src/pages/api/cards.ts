@@ -37,6 +37,8 @@ export const POST: APIRoute = async ({ request }) => {
     const me = meId ? await getCustomer(env, meId) : null;
     if (!me || !me.email) return json({ error: 'Sign in to order your cards.', signin: true }, 401);
     if (b.proofed !== true) throw new Error('Tick the box to say you checked the spelling and layout');
+    // Design help: we design from the customer's notes, so the notes can't be empty.
+    if (priced.chosen.help === 'designhelp' && !String(b.notes ?? '').trim()) throw new Error('Tell us in the notes what you would like on your cards');
     // The account gives the pickup details; a missing name or phone is asked on the review page and saved to the account.
     const name = me.name && me.name !== 'Customer' ? me.name : String(b.customer?.name ?? '').trim().slice(0, 60);
     const newPhone = normalizePhone(String(b.customer?.phone ?? ''));
@@ -56,7 +58,7 @@ export const POST: APIRoute = async ({ request }) => {
       tax: salesTax(cfg, priced.subtotal),
       fee: onlineFee(cfg, priced.subtotal),
       design: sanitizeDesign(b.design),
-      notes: String(b.notes ?? '').slice(0, 300),
+      notes: String(b.notes ?? '').slice(0, 600),
     };
     order.total = Math.round((priced.subtotal + (order.tax?.amount ?? 0) + (order.fee?.amount ?? 0)) * 100) / 100;
     await saveCardOrder(env, order);

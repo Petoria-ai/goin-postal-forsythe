@@ -8,7 +8,7 @@ import { TEMPLATES, PALETTES, QUANTITIES, PRICES, FONT_NAMES, CARD_OPTIONS, OPTI
 const cancelled = Astro.url.searchParams.get('cancelled');
 ---
 <Base title={`Design business cards · ${store.name}`} description="Design your own business cards in the browser like Vistaprint, pay online, and pick them up at Goin' Postal Forsythe.">
-  <section class="hero">
+  <section class="hero" id="edHero">
     <h1 data-i18n="cards.h1">Design your business cards</h1>
     <p class="lead" data-i18n="cards.lead">Pick a design, then click any text on the card to change it. Drag things where you want them. Pay online, pick up in the shop.</p>
     {cancelled && <p class="card" data-i18n="cards.cancelled">Payment was cancelled, so no order was placed. Your design is still here.</p>}
@@ -28,46 +28,61 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     <div class="gallery" id="gallery"></div>
   </section>
 
-  <!-- Step 2: editor -->
-  <section id="step2" hidden>
-    <h2 data-i18n="cards.step2">2. Make it yours</h2>
-    <div class="editor">
-      <div class="stage">
-        <div class="toolbar">
-          <div class="tabs">
-            <button type="button" class="tab active" data-side="front" data-i18n="cards.front">Front</button>
-            <button type="button" class="tab" data-side="back" data-i18n="cards.back">Back</button>
-          </div>
-          <button type="button" class="tool" id="addText" data-i18n="cards.addtext">+ Text</button>
-          <label class="tool"><span data-i18n="cards.addimg">+ Logo or photo</span> <input type="file" id="addImage" accept="image/png,image/jpeg,image/svg+xml" hidden /></label>
-          <label class="tool"><span data-i18n="cards.uploadside">Upload a finished design</span> <input type="file" id="uploadFull" accept="image/png,image/jpeg" hidden /></label>
-          <label class="tool"><span data-i18n="cards.bg">Background</span> <input type="color" id="bg" /></label>
-          <label class="tool"><span data-i18n="cards.type">Type</span>
-            <select id="font">{Object.entries(FONT_NAMES).map(([k, v]) => <option value={k}>{v}</option>)}</select>
-          </label>
-          <button type="button" class="tool" id="undo" title="Ctrl+Z" data-i18n="cards.undo">Undo</button>
-          <button type="button" class="tool" id="redo" title="Ctrl+Y" data-i18n="cards.redo">Redo</button>
-          <button type="button" class="tool" id="changeDesign" data-i18n="cards.change">Change design</button>
-          <button type="button" class="tool" id="preview3d" data-i18n="c3d.preview">Preview in 3D</button>
-          <button type="button" class="tool" id="saveCard" data-i18n="saved.save">Save to my account</button>
-        </div>
-        <div class="canvas-box">
-          <div class="canvas card-wrap" id="canvas"></div>
-          <!-- Upload your design (Peter, Nov 14 2026): on a blank side, a finished design from the customer's own designer fills the card. -->
-          <div class="upload-cta" id="uploadCta" hidden>
-            <button type="button" class="btn" id="uploadBtn" data-i18n="cards.uploadbtn">Upload your design</button>
-            <p class="muted" data-i18n="cards.uploadhint">A PNG or JPG of the whole side, 3.5 × 2 inches. It fills the card.</p>
-          </div>
-        </div>
-        <p class="err" id="uploadWarn" hidden></p>
-        <p id="saveMsg" role="status" hidden></p>
-        <p class="muted" data-i18n="cards.safe">Dashed line is the safe area. Keep text inside it. Grey text is sample copy, click it and type yours. Delete key removes the selected item, arrow keys nudge it.</p>
-        <p><button class="btn kraft" type="button" id="png" data-i18n="cards.png">Download PNG (free)</button></p>
-      </div>
+  <!-- Step 2: the editor (Peter, Nov 15 2026), laid out like an online print shop's: the tools down the left, each
+       opening its own panel; the card big in the middle with Front and Back on the right; the price and Next at the
+       top right. Next goes to step 3, the options and order. Same element ids as before, so the editing code is unchanged. -->
+  <section id="step2" class="ed" hidden>
+    <div class="ed-top">
+      <span class="ed-product" data-i18n="nav.print.cards">Business Cards</span>
+      <span class="ed-group">
+        <button type="button" class="ed-btn" id="undo" title="Ctrl+Z"><span aria-hidden="true">↶</span> <span data-i18n="cards.undo">Undo</span></button>
+        <button type="button" class="ed-btn" id="redo" title="Ctrl+Y"><span aria-hidden="true">↷</span> <span data-i18n="cards.redo">Redo</span></button>
+        <button type="button" class="ed-btn" id="saveCard"><span aria-hidden="true">💾</span> <span data-i18n="ed.save">Save</span></button>
+      </span>
+      <span class="ed-spacer"></span>
+      <button type="button" class="ed-btn" id="preview3d"><span aria-hidden="true">👁</span> <span data-i18n="ed.preview">Preview</span></button>
+      <span class="ed-price"><strong id="edPrice">$0.00</strong></span>
+      <button type="button" class="btn" id="nextBtn" data-i18n="ed.next">Next</button>
+    </div>
+    <!-- Let us design it for you (Peter, Nov 15 2026): a paid add-on; it ticks the option and goes to step 3 to tell us what you want. -->
+    <p class="ed-help"><button type="button" class="linkish" id="helpBtn"><span aria-hidden="true">✎</span> <span data-i18n="help.link">Let us design it for you</span> <span id="helpPrice"></span></button></p>
+    <p id="saveMsg" role="status" hidden></p>
 
-      <aside class="props card" id="props">
-        <p class="muted" id="noSel" data-i18n="cards.clicksel">Click something on the card to edit it.</p>
-        <div id="textProps" hidden>
+    <div class="ed-body">
+      <nav class="ed-rail" aria-label="Tools">
+        <button type="button" class="ed-tool" data-panel="designs"><span aria-hidden="true">▦</span><span data-i18n="ed.designs">Designs</span></button>
+        <button type="button" class="ed-tool active" data-panel="text"><span aria-hidden="true">T</span><span data-i18n="cards.text">Text</span></button>
+        <button type="button" class="ed-tool" data-panel="uploads"><span aria-hidden="true">⇪</span><span data-i18n="ed.uploads">Uploads</span></button>
+        <button type="button" class="ed-tool" data-panel="background"><span aria-hidden="true">◐</span><span data-i18n="cards.bg">Background</span></button>
+      </nav>
+
+      <aside class="ed-panel" id="props">
+        <div class="ed-pane" data-pane="designs" hidden>
+          <h3 data-i18n="ed.designs">Designs</h3>
+          <p class="muted" data-i18n="ed.designs.p">Start over from a different layout and colors.</p>
+          <button type="button" class="btn small kraft" id="changeDesign" data-i18n="cards.change">Change design</button>
+          <label><span data-i18n="ed.font">Font for the whole card</span> <select id="font">{Object.entries(FONT_NAMES).map(([k, v]) => <option value={k}>{v}</option>)}</select></label>
+        </div>
+        <div class="ed-pane" data-pane="text">
+          <h3 data-i18n="cards.text">Text</h3>
+          <button type="button" class="btn small ed-wide" id="addText"><span data-i18n="ed.addtext">+ Add text</span></button>
+          <p class="muted" id="noSel" data-i18n="cards.clicksel">Click something on the card to edit it.</p>
+        </div>
+        <div class="ed-pane" data-pane="uploads" hidden>
+          <h3 data-i18n="ed.uploads">Uploads</h3>
+          <label class="btn small ed-wide"><span data-i18n="cards.addimg">+ Logo or photo</span> <input type="file" id="addImage" accept="image/png,image/jpeg,image/svg+xml" hidden /></label>
+          <p class="muted" data-i18n="ed.uploads.p">A logo or photo goes on the card where you can move and resize it.</p>
+          <label class="btn small kraft ed-wide"><span data-i18n="cards.uploadside">Upload a finished design</span> <input type="file" id="uploadFull" accept="image/png,image/jpeg" hidden /></label>
+          <p class="muted" data-i18n="cards.uploadhint">A PNG or JPG of the whole side, 3.5 × 2 inches. It fills the card.</p>
+        </div>
+        <div class="ed-pane" data-pane="background" hidden>
+          <h3 data-i18n="cards.bg">Background</h3>
+          <label class="ed-color"><span data-i18n="ed.bgcolor">Color of this side</span> <input type="color" id="bg" /></label>
+        </div>
+
+        <!-- The selected item: shown under whichever panel is open. -->
+        <div id="textProps" class="ed-sel" hidden>
+          <h4 data-i18n="ed.seltext">Selected text</h4>
           <label><span data-i18n="cards.text">Text</span> <textarea id="pText" rows="3"></textarea></label>
           <label><span data-i18n="cards.size">Size</span> <input id="pSize" type="range" min="12" max="160" /> <span id="pSizeVal"></span></label>
           <div class="btnrow">
@@ -80,22 +95,56 @@ const cancelled = Astro.url.searchParams.get('cancelled');
           <label><span data-i18n="cards.color">Color</span> <input id="pColor" type="color" /></label>
           <label><span data-i18n="cards.width">Width</span> <input id="pWidth" type="range" min="60" max="1050" /></label>
         </div>
-        <div id="imageProps" hidden>
+        <div id="imageProps" class="ed-sel" hidden>
+          <h4 data-i18n="ed.selimg">Selected picture</h4>
           <label><span data-i18n="cards.width">Width</span> <input id="iWidth" type="range" min="20" max="1050" /></label>
           <label><span data-i18n="cards.height">Height</span> <input id="iHeight" type="range" min="4" max="600" /></label>
           <label><input id="iLock" type="checkbox" checked /> <span data-i18n="cards.lock">Keep proportions</span></label>
         </div>
-        <div class="btnrow" id="selActions" hidden>
+        <div class="btnrow ed-sel" id="selActions" hidden>
           <button type="button" class="tool" id="pFront" data-i18n="cards.tofront">Bring to front</button>
           <button type="button" class="tool" id="pBack" data-i18n="cards.toback">Send to back</button>
           <button type="button" class="tool" id="pDup" data-i18n="cards.dup">Duplicate</button>
           <button type="button" class="tool danger" id="pDel" data-i18n="cards.del">Delete</button>
         </div>
       </aside>
-    </div>
 
+      <div class="ed-stage">
+        <div class="ed-guides"><span class="ed-chip safe" data-i18n="ed.safe">Safety area</span></div>
+        <div class="canvas-box" id="canvasBox">
+          <div class="canvas card-wrap" id="canvas"></div>
+          <!-- Upload your design (Peter, Nov 14 2026): on a blank side, a finished design from the customer's own designer fills the card. -->
+          <div class="upload-cta" id="uploadCta" hidden>
+            <button type="button" class="btn" id="uploadBtn" data-i18n="cards.uploadbtn">Upload your design</button>
+            <p class="muted" data-i18n="cards.uploadhint">A PNG or JPG of the whole side, 3.5 × 2 inches. It fills the card.</p>
+          </div>
+        </div>
+        <p class="err" id="uploadWarn" hidden></p>
+        <p class="muted ed-note" data-i18n="cards.safe">Dashed line is the safe area. Keep text inside it. Grey text is sample copy, click it and type yours. Delete key removes the selected item, arrow keys nudge it.</p>
+        <div class="ed-zoom" role="group" aria-label="Zoom">
+          <button type="button" class="ed-btn" id="zoomOut" aria-label="Zoom out">−</button>
+          <span id="zoomVal">100%</span>
+          <button type="button" class="ed-btn" id="zoomIn" aria-label="Zoom in">+</button>
+          <button type="button" class="linkish" id="png" data-i18n="cards.png">Download PNG (free)</button>
+        </div>
+      </div>
+
+      <div class="ed-sides" role="group" aria-label="Sides">
+        <button type="button" class="tab ed-side active" data-side="front"><span class="ed-thumb card-wrap" data-thumb="front"></span><span data-i18n="cards.front">Front</span></button>
+        <button type="button" class="tab ed-side" data-side="back"><span class="ed-thumb card-wrap" data-thumb="back"></span><span data-i18n="cards.back">Back</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 3: options and order (Next from the editor). -->
+  <section id="step3" hidden>
+    <p><button type="button" class="linkish" id="backToDesign">← <span data-i18n="ed.back">Back to the design</span></button></p>
+    <div class="ed-step3">
+      <div>
+        <div class="card-wrap" id="step3Card"></div>
+      </div>
     <form id="order" class="order card">
-      <h3 data-i18n="cards.step3">3. Order and pay</h3>
+      <h3 data-i18n="ed.options">Choose your options</h3>
       <p class="muted" data-i18n="cards.paynow">Pay by card now. We print them and you pick them up in the shop.</p>
       <label><span data-i18n="cards.qty">Quantity</span>
         <select name="quantity">
@@ -110,12 +159,14 @@ const cancelled = Astro.url.searchParams.get('cancelled');
           ))}
         </fieldset>
       ))}
+      <p class="card" id="helpNote" hidden data-i18n="help.note">We'll design your cards for you. Tell us below what you'd like: your business name, details, colors and any ideas. If you have a logo, add it in the designer first (Uploads). We send you a proof to approve before anything is printed.</p>
       <p class="subtotal"><span data-i18n="cards.subtotal">Total before the online fee</span>: <strong id="subtotal">$0.00</strong></p>
-      <label><span data-i18n="cards.notes">Notes</span> <input name="notes" maxlength="300" placeholder="Anything else we should know" /></label>
+      <label><span data-i18n="cards.notes">Notes</span> <textarea name="notes" maxlength="600" rows="3" placeholder="Anything else we should know"></textarea></label>
       <!-- Review order (Peter, Nov 14 2026): the next page shows the cards and the total, asks to sign in if needed, then Stripe takes payment. -->
       <button class="btn" type="submit" id="orderBtn" data-i18n="cards.review">Review order</button>
       <p class="err" id="err" hidden></p>
     </form>
+    </div>
   </section>
 
   <dialog id="dlg3d" class="c3d-dialog" aria-labelledby="dlg3dH">
@@ -130,7 +181,13 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     import { businessType } from '../../lib/cardShop';
 
     const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-    const step1 = $('step1'), step2 = $('step2'), canvas = $('canvas');
+    const step1 = $('step1'), step2 = $('step2'), step3 = $('step3'), canvas = $('canvas');
+    // Steps (Peter, Nov 15 2026): 1 pick a design, 2 the editor, 3 options and order. The page heading only shows on step 1.
+    function showStep(n: 1 | 2 | 3) {
+      step1.hidden = n !== 1; step2.hidden = n !== 2; step3.hidden = n !== 3; $('edHero').hidden = n !== 1;
+      if (n === 3) $('step3Card').innerHTML = renderCard(printable(), 'front');
+      window.scrollTo({ top: 0 });
+    }
 
     // Placeholder copy the customer replaces. Same layout as the sample, generic words.
     const BLANK = { name: 'Your Name', title: 'Your Title', company: 'Company Name', phone: '(000) 000-0000', email: 'you@example.com', website: 'yourwebsite.com', address: 'Street, City, State', tagline: 'Your tagline here' };
@@ -146,6 +203,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     const cur = () => design[side];
     const sel = () => cur().elements.find((e) => e.id === selected) ?? null;
 
+    let thumbTimer: ReturnType<typeof setTimeout> | undefined;
     let uploadMode = false; // started from "Upload your design": an empty side offers the upload button
     // Saved cards (Peter, Nov 15 2026): the account card this design came from, so saving or ordering updates it.
     const SAVED_KEY = 'gp-card-saved-id';
@@ -158,10 +216,17 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       ($('bg') as HTMLInputElement).value = cur().bg;
       ($('font') as HTMLSelectElement).value = design.font;
       document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', (t as HTMLElement).dataset.side === side));
+      clearTimeout(thumbTimer);
+      thumbTimer = setTimeout(() => document.querySelectorAll<HTMLElement>('[data-thumb]').forEach((el) => { el.innerHTML = renderCard(design, el.dataset.thumb as 'front' | 'back'); }), 150);
       renderProps();
       try { localStorage.setItem('gp-card-design', JSON.stringify(design)); } catch {}
     }
 
+    // The tool rail: each button opens its panel.
+    function openPane(name: string) {
+      document.querySelectorAll<HTMLElement>('.ed-pane').forEach((p) => { p.hidden = p.dataset.pane !== name; });
+      document.querySelectorAll<HTMLElement>('.ed-tool').forEach((b) => b.classList.toggle('active', b.dataset.panel === name));
+    }
     function renderProps() {
       const e = sel();
       $('noSel').hidden = !!e;
@@ -169,6 +234,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       $('textProps').hidden = !(e && e.type === 'text');
       $('imageProps').hidden = !(e && e.type === 'image');
       if (!e) return;
+      openPane(e.type === 'text' ? 'text' : 'uploads');
       if (e.type === 'text') {
         const ta = $('pText') as HTMLTextAreaElement;
         if (document.activeElement !== ta) { ta.value = e.placeholder ? '' : e.text; ta.placeholder = e.placeholder ? e.text : ''; }
@@ -188,8 +254,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       design = makeTemplate(t, PALETTES[pi], BLANK, true);
       uploadMode = false; setSaved(null);
       undoStack.length = 0; redoStack.length = 0; selected = null; side = 'front';
-      step1.hidden = true; step2.hidden = false; render();
-      step2.scrollIntoView({ behavior: 'smooth' });
+      showStep(2); render();
     }
 
     // ---- gallery: one thumbnail per layout in the chosen palette, drawn with Rin Ho's sample details
@@ -213,7 +278,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     function startBlank() {
       design = { template: 'minimal', font: 'sans', front: { bg: '#ffffff', elements: [] }, back: { bg: '#ffffff', elements: [] } };
       uploadMode = true; setSaved(null); undoStack.length = 0; redoStack.length = 0; selected = null; side = 'front';
-      step1.hidden = true; step2.hidden = false; render();
+      showStep(2); render();
     }
     function uploadFull(file: File) {
       const warn = $('uploadWarn'); warn.hidden = true;
@@ -254,6 +319,31 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     });
     $('close3d').addEventListener('click', () => dlg.close());
 
+    // Tool rail, Next / Back, zoom (Peter, Nov 15 2026).
+    document.querySelectorAll<HTMLElement>('.ed-tool').forEach((b) => b.addEventListener('click', () => openPane(b.dataset.panel!)));
+    $('nextBtn').addEventListener('click', () => showStep(3));
+    $('backToDesign').addEventListener('click', () => { showStep(2); render(); });
+    let zoom = 100;
+    const setZoom = (z: number) => { zoom = Math.max(60, Math.min(200, z)); $('canvasBox').style.width = `${zoom}%`; $('zoomVal').textContent = `${zoom}%`; };
+    $('zoomIn').addEventListener('click', () => setZoom(zoom + 20));
+    $('zoomOut').addEventListener('click', () => setZoom(zoom - 20));
+
+    // Let us design it for you (Peter, Nov 15 2026): a paid option. The link at the top ticks it and goes to the
+    // options, where the customer tells us what they want; we design it and send a proof before printing.
+    const helpRadio = () => document.querySelector<HTMLInputElement>('#order input[name=help][value=designhelp]');
+    const helpOn = () => !!helpRadio()?.checked;
+    const paintHelp = () => {
+      $('helpNote').hidden = !helpOn();
+      (document.querySelector('#order [name=notes]') as HTMLTextAreaElement).required = helpOn();
+    };
+    const hp = Number(helpRadio()?.dataset.price ?? 0);
+    $('helpPrice').textContent = hp ? `(+$${hp.toFixed(2)})` : '';
+    $('helpBtn').addEventListener('click', () => {
+      const r = helpRadio(); if (r) { r.checked = true; r.dispatchEvent(new Event('change', { bubbles: true })); }
+      showStep(3); (document.querySelector('#order [name=notes]') as HTMLTextAreaElement).focus();
+    });
+    document.getElementById('order')!.addEventListener('change', paintHelp); paintHelp();
+
     // Save to my account: signed in, it saves (or updates) the card on the account; signed out, it explains and links
     // to sign in. The design stays on this device meanwhile, and the designer offers to continue it.
     $('saveCard').addEventListener('click', async () => {
@@ -279,7 +369,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'design_get', id: savedParam }) })
         .then(async (r) => { if (r.status === 401) { location.href = `/account?next=${encodeURIComponent(location.pathname + location.search)}`; return; } const j = await r.json(); if (!r.ok) throw new Error(j.error);
           if (j.design.product !== 'card') throw new Error('That design is not a business card'); design = j.design.design; setSaved(j.design.id); uploadMode = false; side = 'front'; selected = null; undoStack.length = 0; redoStack.length = 0;
-          step1.hidden = true; step2.hidden = false; render();
+          showStep(2); render();
           if (j.design.quantity) (document.querySelector('#order [name=quantity]') as HTMLSelectElement).value = String(j.design.quantity);
           for (const [g, v] of Object.entries(j.design.options ?? {})) { const r2 = document.querySelector<HTMLInputElement>(`#order input[name=${g}][value="${CSS.escape(String(v))}"]`); if (r2) r2.checked = true; }
           document.getElementById('order')!.dispatchEvent(new Event('change'));
@@ -291,14 +381,14 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       const v = q.get(g); const r = v ? document.querySelector<HTMLInputElement>(`#order input[name=${g}][value="${CSS.escape(v)}"]`) : null;
       if (r) r.checked = true;
     }
-    $('changeDesign').addEventListener('click', () => { if (confirm(t('cards.changeconfirm'))) { step2.hidden = true; step1.hidden = false; step1.scrollIntoView(); } });
+    $('changeDesign').addEventListener('click', () => { if (confirm(t('cards.changeconfirm'))) { showStep(1); } });
 
     // A saved design is offered, never forced: the gallery always shows first.
     try {
       const saved = localStorage.getItem('gp-card-design');
       if (saved) {
         $('resume').hidden = false;
-        $('resumeBtn').addEventListener('click', () => { design = JSON.parse(saved); side = 'front'; selected = null; step1.hidden = true; step2.hidden = false; render(); step2.scrollIntoView({ behavior: 'smooth' }); });
+        $('resumeBtn').addEventListener('click', () => { design = JSON.parse(saved); side = 'front'; selected = null; showStep(2); render(); });
         $('discardBtn').addEventListener('click', () => { localStorage.removeItem('gp-card-design'); $('resume').hidden = true; });
       }
     } catch {}
@@ -421,17 +511,19 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       const qty = order.querySelector<HTMLSelectElement>('[name=quantity]')!;
       let sum = Number(qty.selectedOptions[0]?.dataset.price ?? 0);
       order.querySelectorAll<HTMLInputElement>('.opts input:checked').forEach((i) => { sum += Number(i.dataset.price ?? 0); });
-      $('subtotal').textContent = `$${sum.toFixed(2)}`;
+      $('subtotal').textContent = `$${sum.toFixed(2)}`; $('edPrice').textContent = `$${sum.toFixed(2)}`;
     };
     order.addEventListener('change', subtotal); subtotal();
-    const picks = () => Object.fromEntries(['stock', 'finish', 'corners', 'speed'].map((g) => [g, (order.querySelector(`input[name=${g}]:checked`) as HTMLInputElement | null)?.value ?? '']));
+    const picks = () => Object.fromEntries(['stock', 'finish', 'corners', 'speed', 'help'].map((g) => [g, (order.querySelector(`input[name=${g}]:checked`) as HTMLInputElement | null)?.value ?? '']));
     order.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const d = printable();
       const left = [...design.front.elements, ...design.back.elements].filter((e) => e.type === 'text' && e.placeholder).length;
-      if (left && !confirm(`${left} ${t('cards.leftph')}`)) return;
+      const help = helpOn();
+      if (help && !String((document.querySelector('#order [name=notes]') as HTMLTextAreaElement).value).trim()) { err.textContent = t('help.neednotes'); err.hidden = false; return; }
+      if (!help && left && !confirm(`${left} ${t('cards.leftph')}`)) return;
       // The front needs some text, or a whole uploaded design (an image that fills the card).
-      if (!d.front.elements.some((e) => e.type === 'text' || (e.type === 'image' && e.w >= CARD_W && e.h >= CARD_H))) { err.textContent = t('cards.nofront'); err.hidden = false; return; }
+      if (!help && !d.front.elements.some((e) => e.type === 'text' || (e.type === 'image' && e.w >= CARD_W && e.h >= CARD_H))) { err.textContent = t('cards.nofront'); err.hidden = false; return; }
       const o = Object.fromEntries(new FormData(order).entries()) as Record<string, string>;
       // The order waits on this device for the review page (and through a sign-in); nothing is charged yet.
       try { localStorage.setItem('gp-card-order', JSON.stringify({ at: Date.now(), design: d, quantity: Number(o.quantity), options: picks(), notes: o.notes, saved_id: savedId })); }

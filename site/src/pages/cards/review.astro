@@ -80,6 +80,9 @@ const needName = !!me && (!me.name || me.name === 'Customer');
       const show3d = () => mountCard3D($('card3d'), renderCard(design, 'front'), renderCard(design, 'back'), order.options ?? {}, { front: t('cards.front'), back: t('cards.back'), hint: t('c3d.hint') });
       show3d(); document.addEventListener('langchange', show3d);
       if (order.notes) { $('notesRow').hidden = false; $('notes').textContent = order.notes; }
+      // Design help (Peter, Nov 15 2026): we design it, so the box the customer ticks says a proof comes first.
+      const proofSpan = document.querySelector<HTMLElement>('[data-i18n="cardsrev.proof"]');
+      if (order.options?.help === 'designhelp' && proofSpan) { proofSpan.dataset.i18n = 'help.proof'; proofSpan.textContent = t('help.proof'); }
       // Prices from the server, the same table the order is charged from.
       const paintLines = (j: any) => {
         const ul = $('lines'); ul.innerHTML = '';

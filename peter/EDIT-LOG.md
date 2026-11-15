@@ -4,6 +4,25 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 12:03 CST · New card editor screen, and "Let us design it for you"
+
+- **Asked for:** "Let us design it for you" from Vistaprint, "may be neat to have when people are customizing their business card as an additional charge ... towards the top of the page"; and "the buttons at the top are starting to look a little convoluting ... like as if its photoshop ... possibly a editor window with the function buttons on the left like how vistaprint does it and then it allows you to hit next at the top right".
+- **What changed:**
+  - **The designer is now an editor screen** instead of a row of buttons:
+    - **A top bar:** "Business Cards", Undo, Redo, Save, then Preview, the **price** (it follows the options), and a red **Next** button at the top right.
+    - **A tool bar down the left** with four tools, each opening its own panel next to it: **Designs** (change the layout, and the font for the whole card), **Text** (+ Add text), **Uploads** (logo or photo, or a finished design), and **Background** (the color of the side).
+    - **When something on the card is clicked**, its settings (size, bold, color, and so on) appear in the panel under the tool.
+    - **The card big in the middle**, with a "Safety area" tag, and **zoom** (− 100% +) underneath.
+    - **Front and Back** as small pictures of each side on the right. Click one to switch sides.
+    - **Next** goes to a separate **Choose your options** step (quantity, paper, finish, corners, timing, design), showing the card next to it, with **Back to the design**. The page heading only shows on the first step.
+    - On a phone, the tools sit in a row across the top and everything stacks.
+  - **"Let us design it for you (+$20.00)"** is a link just under the top bar, and a new **Design** choice in the options: "I'll design it myself" (included) or "Let us design it for you" (+$20.00). Choosing it explains what happens and asks the customer to write in the notes what they want (business name, details, colors, ideas, plus their logo in Uploads). Notes are required for it and can now be twice as long. On the review page, the box they tick says the store will design the cards and send a proof to approve before printing. **Staff see a big "DESIGN HELP" banner** on the counter card page, like the RUSH one.
+  - **The $20 is a placeholder** like the other card prices; the real price is part of to-do P9.
+  - In all 14 languages.
+- **Why:** The editor was getting crowded. Now each button has a clear place, like the big print sites. Design help is extra money for the store from customers who don't want to design it themselves.
+- **Files:** [site/src/pages/cards/design.astro](../site/src/pages/cards/design.astro), [site/src/lib/cards.ts](../site/src/lib/cards.ts) (the Design option), [site/src/pages/api/cards.ts](../site/src/pages/api/cards.ts), [site/src/pages/cards/review.astro](../site/src/pages/cards/review.astro), [site/src/pages/counter/card/[code].astro](../site/src/pages/counter/card/%5Bcode%5D.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/cards.test.ts](../site/tests/cards.test.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Open Business Cards and pick a design. Try each tool on the left, click text on the card, switch Front and Back on the right, then press **Next**. Go back and click **Let us design it for you**.
+
 ## 2026-11-15 11:51 CST · Saved designs on the customer's account: edit, reorder (business cards now, every product later)
 
 - **Asked for:** "once they make an account, they'll have their business card saved and they can still make edits to their previous card and make an order with that or just reorder the same one", then "along with t shirts, pens, banners and yard signs. same deal save their stuff"
