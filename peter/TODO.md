@@ -13,6 +13,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P12 | [Automatic mailbox reminders](#p12-automatic-mailbox-reminders) | ⏳ Next for mailboxes | A daily scheduled job on Cloudflare; Peter's revision of the mailbox pages |
 | P11 | [Official carrier logos (USPS, UPS, FedEx, DHL)](#p11-official-carrier-logos-usps-ups-fedex-dhl) | ✅ Done Nov 15 | A larger UPS file would be sharper | Goin' Postal corporate or each carrier's retail program |
 | P10 | [Is real AI design worth about 2 cents a try?](#p10-is-real-ai-design-worth-about-2-cents-a-try) | ⏸ Decide later | Peter and Rin try the demo; then the key and a monthly cap (D22) |
 
@@ -235,7 +236,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [x] **2e. Saved designs on the account** (Peter): every business card a customer saves or orders is kept, with Edit, Reorder and Delete. ✅ 2026-11-15 11:51 CST. Built for every product: **t-shirts, banners, yard signs and pens and promo items save the same way** when steps 3 and 4 put them online (their quote or design is saved with `product` set, and Reorder fills in the last quantity and options).
 - [ ] **3. Request a quote:** the customer's form (product, file upload, details, quantity), a staff page to price it and send a payment link, the order on the customer's account. One build covers t-shirts, pens and any future custom product.
 - [ ] **4. Banners and yard signs** in the designer, priced by size.
-- [ ] **5. Mailbox reservation** online, finished at the counter.
+- [x] **5. Mailbox reservation** online, finished at the counter. ✅ 2026-11-15 15:38 CST: reserve online, staff assign the box, **My mailbox** on the account, text and email reminders (a staff button for now, P12). Peter to confirm: medium 6 months (he wrote 7), the box ranges, the address format.
 
 ### To find out
 
@@ -314,6 +315,16 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P12. Automatic mailbox reminders
+
+**Added:** 2026-11-15 15:38 CST. **Status:** next for mailboxes. Today the reminders (30 days, 7 days, the day after it expires) go out when staff press **Send due reminders** on Counter → Mailboxes. Each goes once, so pressing it every morning is safe.
+
+- [ ] A daily **scheduled job** on Cloudflare (a Cron Trigger) that does the same thing at, say, 10 am, so nobody has to remember. William's site has no scheduled jobs yet, so this is a small piece of new setup (D25).
+- [ ] Real texts need the Twilio keys and real emails need the Resend key (P4); until then they're logged, not sent.
+- [ ] Peter's revision pass on the Mailboxes page, the staff page and My mailbox.
+- [ ] Later: renew and pay online (Stripe), so a holder can renew from the reminder link.
+- [ ] Bring in the boxes already rented: they're in William's register (`physical-mailbox/`); staff can assign each to the holder's account by hand, or a one-time import.
 
 ## P11. Official carrier logos (USPS, UPS, FedEx, DHL)
 

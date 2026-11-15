@@ -572,3 +572,36 @@ CREATE TABLE IF NOT EXISTS saved_designs (
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS saved_designs_customer ON saved_designs(customer_id, product);
+
+-- Physical mailboxes on the website (Peter, Nov 15 2026). The counter's LibreOffice register (physical-mailbox/)
+-- stays the full record (IDs, PS Form 1583, payments); these two tables are what the website needs.
+-- A reservation made online (size and term), finished at the counter with two IDs and the 1583.
+CREATE TABLE IF NOT EXISTS mailbox_reservations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,            -- MR-XXXXX, for the counter
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  size TEXT NOT NULL,                   -- small, medium, large (src/data/mailboxes.json)
+  term INTEGER NOT NULL,                -- 6 or 12 months
+  status TEXT NOT NULL DEFAULT 'waiting', -- waiting, done (a box was assigned), cancelled
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mailbox_reservations_customer ON mailbox_reservations(customer_id);
+-- A box assigned to a website account, so the holder sees it on their account and gets renewal reminders.
+-- reminders: JSON list of reminders sent, as "paid-through-date:stage", so none goes out twice.
+CREATE TABLE IF NOT EXISTS mailboxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  box_no INTEGER NOT NULL,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  size TEXT NOT NULL,
+  term INTEGER NOT NULL,
+  start_date TEXT NOT NULL,             -- YYYY-MM-DD
+  paid_through TEXT NOT NULL,           -- YYYY-MM-DD
+  status TEXT NOT NULL DEFAULT 'active', -- active, closed
+  reminders TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  closed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS mailboxes_customer ON mailboxes(customer_id);
+CREATE INDEX IF NOT EXISTS mailboxes_box ON mailboxes(box_no, status);

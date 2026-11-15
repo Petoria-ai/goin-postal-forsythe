@@ -11,6 +11,8 @@ import { recordConsent } from '../../shipping/store';
 import { listSavedDesigns } from '../../shipping/store';
 import { renderCard, sanitizeDesign, CARD_OPTIONS } from '../../lib/cards';
 import { listCardOrdersFor, cardTotal } from '../../lib/cardOrders';
+import { mailboxesFor, waitingReservation } from '../../shipping/store';
+import { sizeById, addressFor, boxStatus, day } from '../../lib/mailbox';
 import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
 
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
@@ -58,6 +60,10 @@ const consent = me ? await marketingConsent(env, me.id) : null;
 // Saved designs (Peter, Nov 15 2026): business cards today; t-shirts, banners, yard signs and promo items join
 // this list when they're ordered online. Each shows its picture, what was picked last time, and Edit / Reorder / Delete.
 const savedDesigns = me ? await listSavedDesigns(env, me.id) : [];
+// Mailboxes (Peter, Nov 15 2026): the holder's boxes once the store assigns them, and a reservation still waiting.
+const myBoxes = me ? (await mailboxesFor(env, me.id)).map((b) => ({ ...b, sizeName: sizeById(b.size)?.name ?? b.size, address: addressFor(b.box_no), state: boxStatus(b, day(new Date())) })) : [];
+const myRes = me ? await waitingReservation(env, me.id) : null;
+const longDate = (ymd: string) => new Date(ymd + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 // Business card orders on this account (newest first), for My orders.
 const cardOrders = me ? await listCardOrdersFor(env, me.id) : [];
 const savedProducts = [...new Set(savedDesigns.map((d) => d.product))];
@@ -123,6 +129,7 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
       <a href="#orders" role="tab" data-tab="orders" data-i18n="acct.tab.orders">My orders</a>
       <a href="#designs" role="tab" data-tab="designs" data-i18n="acct.tab.designs">My designs</a>
       <a href="#addresses" role="tab" data-tab="addresses" data-i18n="acct.tab.addresses">Addresses</a>
+      {(myBoxes.length > 0 || myRes) && <a href="#mailbox" role="tab" data-tab="mailbox" data-i18n="acct.tab.mailbox">My mailbox</a>}
       {biz && <a href="#business" role="tab" data-tab="business" data-i18n="acct.tab.business">Business</a>}
     </nav>
     <p id="msg" role="alert"></p>
@@ -197,6 +204,26 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
         <p id="savedMsg" role="alert"></p>
       </div>
     </section>
+    {(myBoxes.length > 0 || myRes) && <section class="acct-panel" id="mailbox" data-panel="mailbox" role="tabpanel">
+      {myBoxes.map((b) => (
+        <div class="card mb-mine">
+          <h3><span data-i18n="mb.box">Mailbox</span> #{b.box_no} <span class={`acct-status mb-${b.state}`} data-i18n={`mb.state.${b.state}`}>{b.state}</span></h3>
+          <p><span data-i18n="mb.youraddr">Your address:</span><br /><strong class="mb-address">{b.address}</strong> <button type="button" class="linkish" data-copy={b.address} data-i18n="mb.copy">Copy</button></p>
+          <dl class="mb-facts">
+            <dt data-i18n="mb.pick.size">Size</dt><dd data-i18n={`mb.size.${b.size}`}>{b.sizeName}</dd>
+            <dt data-i18n="mb.paidthru">Paid through</dt><dd>{longDate(b.paid_through)}</dd>
+            <dt data-i18n="mb.term">Term</dt><dd>{b.term === 12 ? <span data-i18n="mb.year">1 year</span> : <span data-i18n="mb.six">6 months</span>}</dd>
+          </dl>
+          <p class="muted" data-i18n="mb.renew.p">Renew at the counter for 6 months or a year. We'll text and email you before it's due.</p>
+        </div>
+      ))}
+      {myRes && <div class="card">
+        <h3 data-i18n="mb.reserve.h">Reserve a mailbox</h3>
+        <p><span data-i18n="mb.reserved">Reserved:</span> <strong data-i18n={`mb.size.${myRes.size}`}>{sizeById(myRes.size)?.name}</strong> · {myRes.term === 12 ? <span data-i18n="mb.year">1 year</span> : <span data-i18n="mb.six">6 months</span>} · <span data-i18n="mb.code">code</span> <strong>{myRes.code}</strong></p>
+        <p data-i18n="mb.reserved.p">Bring your two IDs to the counter and we'll get your box ready. We'll call you if we have questions.</p>
+        <p><a href="/mailbox" data-i18n="mb.what">What to bring</a></p>
+      </div>}
+    </section>}
     <section class="acct-panel" id="addresses" data-panel="addresses" role="tabpanel">
       <div class="card">
         <h3 data-i18n="acct.addresses">Saved addresses</h3>
@@ -267,6 +294,10 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
       window.addEventListener('hashchange', () => show(location.hash.slice(1)));
       show(location.hash.slice(1));
     }
+    // My mailbox: copy the address.
+    document.querySelectorAll<HTMLElement>('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(b.dataset.copy!); b.textContent = t('mb.copied'); } catch {}
+    }));
     // My designs: filter by product.
     document.querySelectorAll<HTMLElement>('.saved-filters [data-filter]').forEach((b) => b.addEventListener('click', () => {
       document.querySelectorAll('.saved-filters [data-filter]').forEach((x) => x.classList.toggle('on', x === b));

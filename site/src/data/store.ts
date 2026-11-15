@@ -52,7 +52,7 @@ export const defaults: StoreFacts = {
     { key: "ship", name: "Shipping", blurb: "UPS, FedEx, USPS and DHL under one roof. We compare rates so you pay the least." },
     { key: "pack", name: "Packing", blurb: "Bring it in loose. We box, cushion and label it so it arrives in one piece." },
     { key: "returns", name: "Returns drop-off", blurb: "Amazon, UPS, FedEx and USPS returns. We print the label from your phone, box it, and scan it in so you have proof.", link: "/returns" },
-    { key: "mailbox", name: "Mailbox rental", blurb: "A real street address and package acceptance from every carrier. Sign up at the counter with two IDs." },
+    { key: "mailbox", name: "Mailbox rental", blurb: "A real street address and package acceptance from every carrier. Reserve online, finish at the counter with two IDs.", link: "/mailbox" },
     { key: "print", name: "Printing and copies", blurb: "Flyers, banners and everyday copies, often same day. Design your own business cards online.", link: "/cards" },
     { key: "notary", name: "Notary", blurb: "Notary on call. Phone ahead and we will have one here when you arrive." },
     { key: "shred", name: "Shredding", blurb: "Drop off a bag or a box. Secure, by the pound." },

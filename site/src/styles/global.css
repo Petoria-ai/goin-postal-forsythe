@@ -964,3 +964,22 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
   header.top .brand { flex-direction: column; align-items: flex-start; gap: 3px; }
   .brand-store { max-width: 14rem; border-left: 0; padding-left: 2px; font-size: .68rem; line-height: 1.25; }
 }
+
+/* Mailboxes (Peter, Nov 15 2026) */
+.mb-sizes { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 8px 0 20px; }
+.mb-size h2 { margin: 0 0 8px; color: var(--navy); }
+.mb-price { margin: 2px 0; font-size: 1.1rem; }
+.mb-price strong { font-size: 1.5rem; color: var(--navy); }
+.mb-reserve fieldset { margin: 6px 0; }
+.mb-total strong { font-size: 1.3rem; color: var(--navy); }
+.mb-address { font-size: 1.15rem; color: var(--navy); }
+.mb-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 10px 0; }
+.mb-facts dt { color: var(--muted); font-weight: 700; }
+.mb-facts dd { margin: 0; }
+.acct-status.mb-current { background: #e6f4ea; color: #17602a; }
+.acct-status.mb-due_soon { background: #fdf2d0; color: #8a5a00; }
+.acct-status.mb-overdue { background: #fbe4e3; color: #9b2420; }
+.mb-found { list-style: none; padding: 0; display: grid; gap: 6px; }
+.mb-assign { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.mb-assign p { flex-basis: 100%; margin: 0; }
+.mb-assign.hidden { display: none; }

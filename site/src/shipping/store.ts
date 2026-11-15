@@ -148,12 +148,14 @@ const mem = {
   x402: [] as X402PaymentRow[],
   settings: new Map<string, SettingRow>(),
   savedDesigns: [] as SavedDesignRow[],
+  mbReservations: [] as MailboxReservation[],
+  mailboxes: [] as MailboxRow[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -196,6 +198,8 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'fulfillment_fees': return mem.fees;
     case 'site_settings': return [...mem.settings.values()];
     case 'saved_designs': return mem.savedDesigns;
+    case 'mailbox_reservations': return mem.mbReservations;
+    case 'mailboxes': return mem.mailboxes;
     default: return [];
   }
 };
@@ -667,6 +671,72 @@ export async function listAudit(env: Env, o: { staff_id?: number; limit?: number
     return (await env.DB.prepare(`SELECT * FROM audit_log ORDER BY id DESC LIMIT ${limit}`).all<AuditRow>()).results;
   }
   return mem.audit.filter((a) => !o.staff_id || a.staff_id === o.staff_id).slice(0, limit);
+}
+
+// ---- physical mailboxes (Peter, Nov 15 2026) ------------------------------------------------------------
+// Reservations made online and boxes assigned to website accounts. Prices, ranges and reminder rules are in
+// lib/mailbox.ts; the counter's register stays the full record of IDs and the 1583.
+export interface MailboxReservation { id: number; code: string; customer_id: string; size: string; term: number; status: 'waiting' | 'done' | 'cancelled'; created_at: string; updated_at: string }
+export interface MailboxRow { id: number; box_no: number; customer_id: string; size: string; term: number; start_date: string; paid_through: string; status: 'active' | 'closed'; reminders: string; created_at: string; updated_at: string; closed_at: string | null }
+const mbCode = () => 'MR-' + Array.from(crypto.getRandomValues(new Uint8Array(5)), (x) => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[x % 32]).join('');
+
+/** A customer's reservation: a new one replaces their earlier one that is still waiting. */
+export async function reserveMailbox(env: Env, r: { customer_id: string; size: string; term: number }): Promise<MailboxReservation> {
+  const t = now();
+  const old = await waitingReservation(env, r.customer_id);
+  if (old) await setReservationStatus(env, old.id, 'cancelled');
+  const row = { code: mbCode(), customer_id: r.customer_id, size: r.size, term: r.term, status: 'waiting' as const, created_at: t, updated_at: t };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_reservations (code, customer_id, size, term, status, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING id').bind(row.code, row.customer_id, row.size, row.term, row.status, t, t).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mbReservations.push(full); return full;
+}
+export async function waitingReservation(env: Env, customerId: string): Promise<MailboxReservation | null> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailbox_reservations WHERE customer_id = ?1 AND status = 'waiting' ORDER BY id DESC LIMIT 1").bind(customerId).first<MailboxReservation>()) ?? null;
+  return [...mem.mbReservations].reverse().find((r) => r.customer_id === customerId && r.status === 'waiting') ?? null;
+}
+export async function listWaitingReservations(env: Env): Promise<MailboxReservation[]> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailbox_reservations WHERE status = 'waiting' ORDER BY id").all<MailboxReservation>()).results;
+  return mem.mbReservations.filter((r) => r.status === 'waiting');
+}
+export async function getReservation(env: Env, code: string): Promise<MailboxReservation | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_reservations WHERE code = ?1').bind(code).first<MailboxReservation>()) ?? null;
+  return mem.mbReservations.find((r) => r.code === code) ?? null;
+}
+export async function setReservationStatus(env: Env, id: number, status: MailboxReservation['status']) {
+  const t = now();
+  if (env.DB) { await env.DB.prepare('UPDATE mailbox_reservations SET status = ?1, updated_at = ?2 WHERE id = ?3').bind(status, t, id).run(); return; }
+  const r = mem.mbReservations.find((x) => x.id === id); if (r) Object.assign(r, { status, updated_at: t });
+}
+
+/** The box with this number that is in use, if any. */
+export async function activeBox(env: Env, boxNo: number): Promise<MailboxRow | null> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailboxes WHERE box_no = ?1 AND status = 'active' LIMIT 1").bind(boxNo).first<MailboxRow>()) ?? null;
+  return mem.mailboxes.find((b) => b.box_no === boxNo && b.status === 'active') ?? null;
+}
+export async function assignMailbox(env: Env, b: { box_no: number; customer_id: string; size: string; term: number; start_date: string; paid_through: string }): Promise<MailboxRow> {
+  if (await activeBox(env, b.box_no)) throw new Error(`Box #${b.box_no} is already in use`);
+  const t = now();
+  const row = { ...b, status: 'active' as const, reminders: '[]', created_at: t, updated_at: t, closed_at: null };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailboxes (box_no, customer_id, size, term, start_date, paid_through, status, reminders, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) RETURNING id').bind(b.box_no, b.customer_id, b.size, b.term, b.start_date, b.paid_through, 'active', '[]', t, t).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mailboxes.push(full); return full;
+}
+export async function getMailbox(env: Env, id: number): Promise<MailboxRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailboxes WHERE id = ?1').bind(id).first<MailboxRow>()) ?? null;
+  return mem.mailboxes.find((b) => b.id === id) ?? null;
+}
+export async function listActiveMailboxes(env: Env): Promise<MailboxRow[]> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailboxes WHERE status = 'active' ORDER BY box_no").all<MailboxRow>()).results;
+  return mem.mailboxes.filter((b) => b.status === 'active').sort((a, b) => a.box_no - b.box_no);
+}
+export async function mailboxesFor(env: Env, customerId: string): Promise<MailboxRow[]> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailboxes WHERE customer_id = ?1 AND status = 'active' ORDER BY box_no").bind(customerId).all<MailboxRow>()).results;
+  return mem.mailboxes.filter((b) => b.customer_id === customerId && b.status === 'active');
+}
+export async function updateMailbox(env: Env, id: number, patch: Partial<Pick<MailboxRow, 'term' | 'paid_through' | 'status' | 'reminders' | 'closed_at'>>) {
+  const t = now();
+  const b = await getMailbox(env, id); if (!b) return;
+  const next = { ...b, ...patch, updated_at: t };
+  if (env.DB) { await env.DB.prepare('UPDATE mailboxes SET term = ?1, paid_through = ?2, status = ?3, reminders = ?4, closed_at = ?5, updated_at = ?6 WHERE id = ?7').bind(next.term, next.paid_through, next.status, next.reminders, next.closed_at, t, id).run(); return; }
+  Object.assign(mem.mailboxes.find((x) => x.id === id)!, next);
 }
 
 // ---- saved designs (Peter, Nov 15 2026) ---------------------------------------------------------------

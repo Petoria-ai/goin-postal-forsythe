@@ -4,6 +4,21 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 15:38 CST · Mailboxes on the website
+
+- **Asked for:** "another function i want to add is for mailboxes", then the prices (small $90 / $180, medium $120 / $240, large $180 / $360 for 6 months / a year), the box numbers in the 1000s, "i want the customers who have an account on the website to be able to view their mailbox once i have assigned them their box", and "email and text them to remind them that their mailbox is expiring soon".
+- **What changed:**
+  - A new **Mailboxes** page (`/mailbox`, linked from Services): the three sizes and prices, what you get, what to bring (two IDs, USPS Form 1583, payment), and a sample address. A signed-in customer picks a size and 6 months or a year, sees the total, and presses **Reserve my mailbox**. They get a code like MR-ABCDE and pay at the counter.
+  - A new staff page, **Counter → Mailboxes** (in every counter page's menu): free boxes per size, **reservations waiting** (type the box number, press Assign), **boxes on the website** with paid-through date and status, **+6 months / +1 year**, **Remind**, **Close**, and **Assign a box to an account** for customers who signed up at the counter.
+  - The customer's **Account** page gets a **My mailbox** tab once a box is assigned: box number, status (Current, Renews soon, Expired), their full address with a Copy button, size, paid-through date and term.
+  - **Reminders by text and email**: 30 days before, 7 days before, and the day after it expires, each sent once. For now staff press **Send due reminders** on the Mailboxes page once a day; making it automatic needs a scheduled job (TODO P12).
+  - Prices, box ranges, the address format and the reminder days are in one file Peter can edit: `site/src/data/mailboxes.json`.
+  - Every change (assign, renew, close, reminders) is in the audit log, and both new tables are in Export.
+- **Assumed, please confirm:** medium is **6 months** for $120 (Peter wrote "7 months"); box numbers **#1100–1220 small, #1221–1284 medium, #1300–1323 large**; addresses read **1800 Forsythe Ave, Suite 2 #1230, Monroe, LA 71201**.
+- **Fixed while testing:** the reminder code read the send functions' "mock mode" flag as "sent", so in real use it would have said "no phone"; and the staff page's section shared a name with the page layout and never showed.
+- **Files:** [site/src/data/mailboxes.json](../site/src/data/mailboxes.json), [site/src/lib/mailbox.ts](../site/src/lib/mailbox.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/mailbox.astro](../site/src/pages/mailbox.astro), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro) (and the menu line in every counter page), [site/src/pages/account/index.astro](../site/src/pages/account/index.astro), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/db/schema.sql](../site/db/schema.sql), [site/src/data/store.ts](../site/src/data/store.ts), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/mailbox.test.ts](../site/tests/mailbox.test.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then **`npm run db:local`** (new tables), then `npm run dev`. Sign in as a customer, open **Services → Mailboxes** (or `/mailbox`) and reserve one. Then open `/counter/mailboxes`, enter PIN 1234, type a box number like 1230 and press Assign. Back on **Account**, the **My mailbox** tab shows it. Reminder texts and emails show in the PowerShell window as `[mock sms]` and `[mock email]`.
+
 ## 2026-11-15 14:55 CST · Carrier logos in the Tracking page's box
 
 - **Asked for:** "go in the tracking page. put the logo brands in that box as well"
