@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 14:45 CST · Carrier wording: "Authorized for"
+
+- **Asked for:** "we are authorized for everything"
+- **What changed:** The carrier wording now says the store is authorized: **"Authorized for USPS · UPS · FedEx · DHL"** in the header, **"Authorized for every major carrier"** on the Ship page, and **"Authorized shipping location for ..."** in the footer (the tracking box still says "Tracking numbers from"). In all 14 languages. It stays general rather than naming each carrier's program title, since each program words its title differently; the exact titles can come with the logo kits.
+- **Why:** The store is an authorized location for all four carriers (Peter), which is a selling point.
+- **Files:** [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/pages/ship/in-store.astro](../site/src/pages/ship/in-store.astro), [site/src/pages/ship/index.astro](../site/src/pages/ship/index.astro), [site/src/data/carriers.ts](../site/src/data/carriers.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Look at the top and bottom of any page, and Ship a package.
+
 ## 2026-11-15 14:42 CST · Carrier branding: USPS, UPS, FedEx, DHL across the site
 
 - **Asked for:** "add more branding for the providers we are partnered with such as ups/fedex/usps/dhl ... at the top of the page lined up at the white blank, maybe the tracking box, at the footnote possibly ... also in the 'Ship a package' tab. we need more branding in there"

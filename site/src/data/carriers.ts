@@ -1,6 +1,8 @@
 // The carriers the store ships with, shown across the site (Peter, Nov 15 2026): beside the logo, under the
 // tracking box, on the Ship page and in the footer.
 //
+// The store is an authorized location for all four (Peter, Nov 15 2026), so the site says "Authorized for".
+//
 // Logos: the UPS, FedEx, USPS and DHL logos are trademarks. Only the official files may be used, as supplied and
 // under each carrier's brand rules (usually for authorized retail locations; Goin' Postal corporate or the carrier's
 // retail program provides them). Never redraw or recolor them. Until a file is here the carrier's name shows as a
