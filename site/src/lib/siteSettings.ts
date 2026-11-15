@@ -2,12 +2,13 @@ import { getSetting, setSetting, type SettingRow } from '../shipping/store';
 
 // The owners' site switches (Peter, Nov 14 2026), flipped at /counter/settings.
 //
-// online_labels: may customers pay for a shipping label online?
-//   'on'  - the Ship page takes the card through Stripe, as William built it.
-//   'off' - the Ship page still compares rates, but the order is reserved and paid at the counter
-//           (the same "reserved" state as international and walk-up orders). The default when the
-//           switch has never been set, because the owners chose to keep online labels on the
-//           sideline for now (FOR-WILLIAM D19, TODO P7/P8).
+// online_labels: does the website do shipping at all?
+//   'on'  - the Ship page quotes and takes the card through Stripe, as William built it.
+//   'off' - no shipping prices online: /ship shows the in-store page, /api/rates answers staff PINs only
+//           (the Queue's walk-up quote), /api/orders refuses, and the home page talks about the counter.
+//           The default when the switch has never been set, because the owners chose to keep online
+//           labels on the sideline for now (FOR-WILLIAM D19, TODO P7/P8). Business accounts' API keys
+//           (/api/v1) are not affected.
 export const ONLINE_LABELS = 'online_labels';
 
 export async function onlineLabelsOn(env: Env): Promise<boolean> {

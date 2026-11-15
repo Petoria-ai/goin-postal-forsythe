@@ -8,7 +8,7 @@ import { siteSettings, setOnlineLabels } from '../../lib/siteSettings';
 
 // The owners' site switches, from /counter/settings (Peter, Nov 14 2026).
 //  get:           every switch and who last changed it. Any staff PIN can look.
-//  online_labels: turn online label buying on or off ({ on: true|false }). Owner PIN only, and audited.
+//  online_labels: turn online shipping (prices and labels) on or off ({ on: true|false }). Owner PIN only, and audited.
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json();
@@ -19,7 +19,7 @@ export const POST: APIRoute = async ({ request }) => {
       if (!atLeast(user, 'owner')) return json({ error: 'Only an owner PIN can change this.' }, 403);
       if (typeof b.on !== 'boolean') throw new Error('on must be true or false');
       await setOnlineLabels(env, b.on, user.name);
-      await logAudit(env, { id: user.id, name: user.name }, 'settings.online_labels', b.on ? 'on' : 'off', b.on ? 'Customers can pay for labels online' : 'Labels are reserved online and paid at the counter');
+      await logAudit(env, { id: user.id, name: user.name }, 'settings.online_labels', b.on ? 'on' : 'off', b.on ? 'Shipping prices and labels online' : 'No shipping prices online; ship in the store');
       return json({ settings: await siteSettings(env), can_change: true });
     }
     throw new Error('Unknown action');

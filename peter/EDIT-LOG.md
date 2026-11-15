@@ -4,6 +4,20 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-14 19:42 CST · Switch Off now means no shipping prices online at all
+
+- **Asked for:** "I think the way I want the switch to work is basically not even give them quotes on the website."
+- **What changed:** The Settings switch is now called **Online shipping: prices and labels**. When it's **Off** (as it is now):
+  - The **Ship a package** page no longer has the price form. It shows **"Ship with us in the store"**: what we do for you (every carrier, packing, insurance and signature, a receipt with tracking), the address, phone and hours, a **Get directions** button and **Track a package**.
+  - The **home page** headline says **"Every carrier, one counter."** with in-store steps (bring your package, we compare every carrier, we print the label) instead of "buy your label online".
+  - The website's price lookup **refuses customers** and only answers staff PINs, so prices can't be pulled from the site some other way. Online orders are refused too.
+  - **Staff quotes on the Queue page still work**, because the Queue sends your PIN.
+  - The "reserve online, pay at the counter" idea from the last entry is gone, because there are no online prices to reserve.
+  - When it's **On**, everything is back to William's online shipping with one click.
+- **Why:** Peter wants shipping to bring people into the store, not give prices away online.
+- **Files:** [site/src/pages/ship/in-store.astro](../site/src/pages/ship/in-store.astro) (new), [site/src/pages/ship/index.astro](../site/src/pages/ship/index.astro), [site/src/pages/index.astro](../site/src/pages/index.astro), [site/src/pages/api/rates.ts](../site/src/pages/api/rates.ts), [site/src/pages/api/orders.ts](../site/src/pages/api/orders.ts), [site/src/pages/counter/queue.astro](../site/src/pages/counter/queue.astro), [site/src/pages/counter/settings.astro](../site/src/pages/counter/settings.astro), [site/src/pages/api/settings.ts](../site/src/pages/api/settings.ts), [site/src/lib/siteSettings.ts](../site/src/lib/siteSettings.ts), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/site-settings.test.ts](../site/tests/site-settings.test.ts) (9 tests now), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** First `git pull`, then `npm run dev`. Open http://localhost:4321/ship: it says "Ship with us in the store". The home page headline says "Every carrier, one counter." Turn it On at /counter/settings with the owner PIN and both go back to online shipping.
+
 ## 2026-11-14 19:15 CST · Online label buying: an on/off switch for the owners
 
 - **Asked for:** "where or how should we do a online labels with a switch? a admin login to switch it off?" (P7 step 1)

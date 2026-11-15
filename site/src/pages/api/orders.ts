@@ -20,6 +20,8 @@ import { onlineLabelsOn } from '../../lib/siteSettings';
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json();
+    // The owners' switch (/counter/settings, Peter Nov 14 2026): Off means no shipping online at all.
+    if (!(await onlineLabelsOn(env))) return json({ error: 'Shipping is in the store for now. Bring your package to the counter.', offline: true }, 403);
     // Buying a label online needs a free account (Peter, Nov 14 2026). Quotes stay open to everyone.
     const meId = await readSession(env, request.headers.get('cookie'));
     const me = meId ? await getCustomer(env, meId) : null;
@@ -64,13 +66,10 @@ export const POST: APIRoute = async ({ request }) => {
     }
     const subtotal = Math.round((rate.total_charge + extras.extras_total + (return_rate?.total_charge ?? 0)) * 100) / 100;
     const tax = salesTax(cfg, taxableExtras(extras));
-    // The owners' switch (/counter/settings, Peter Nov 14 2026). Off: no card online. The order is reserved,
-    // like an international one, and staff ring it up at the counter, so there is no online fee either.
-    const online = await onlineLabelsOn(env);
-    const fee = online ? onlineFee(cfg, subtotal) : undefined;
+    const fee = onlineFee(cfg, subtotal);
     const order: Order = {
       id: newOrderId(),
-      status: online ? 'awaiting_payment' : 'reserved',
+      status: 'awaiting_payment',
       created_at: new Date().toISOString(),
       email, phone: sms ? phone : undefined, sms, origin, destination, parcel, rate, international: false, kind, return_rate,
       name, // the customer's own name: without it the saved quote fell back to the recipient's name and renamed the customer (H9)
@@ -92,7 +91,6 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    if (!online) return json({ order_id: order.id, next: `/ship/done?order=${order.id}`, reserved: true });
     const url = await createCheckout(env, order);
     return json({ order_id: order.id, next: url });
   } catch (e: any) {

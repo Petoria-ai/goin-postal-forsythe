@@ -322,7 +322,7 @@ import { store } from '../../data/store';
       werr.hidden = true; results.hidden = true; picked = null; addBtn.disabled = true; rateBtn.disabled = true;
       payload = read();
       try {
-        const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin: payload.origin, destination: payload.destination ?? STORE, parcel: payload.parcel }) });
+        const res = await fetch('/api/rates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ origin: payload.origin, destination: payload.destination ?? STORE, parcel: payload.parcel, pin: pin() }) });
         const j = await res.json();
         if (!res.ok) throw new Error(j.error);
         $('mockNote').hidden = !j.demo;

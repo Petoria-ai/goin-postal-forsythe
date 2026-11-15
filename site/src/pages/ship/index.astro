@@ -25,16 +25,14 @@ const insTerms = addonCfg.insurance;
 // The packaging picker's groups, in Pirate Ship's order: own packaging, then USPS, UPS, FedEx.
 const pkgGroups = (['own', 'USPS', 'UPS', 'FedEx'] as const).map((g) => ({ g, items: PACKAGING.filter((x) => x.group === g) }));
 const pkgDefault = PACKAGING.find((x) => x.id === DEFAULT_PACKAGING)!;
-// The owners' switch (/counter/settings, Peter Nov 14 2026): off means quote here, pay at the counter.
-const online = await onlineLabelsOn(env);
+// The owners' switch (/counter/settings, Peter Nov 14 2026): Off means no prices online; the in-store page instead.
+if (!(await onlineLabelsOn(env))) return Astro.rewrite('/ship/in-store');
 ---
 <Base title={`Ship a package · ${store.name}`} description="Compare USPS, UPS, FedEx and DHL rates and buy a label online. Print at home or show a QR code at the counter.">
   <section class="hero">
     <p class="ps-kicker" data-i18n="home.ps.kicker">PeterShip, our shipping counter on the web</p>
     <h1 data-i18n="ship.h1">Ship a package</h1>
-    {online
-      ? <p class="lead" data-i18n="ship.lead">Compare USPS, UPS, FedEx and DHL in one place. Pay online and print at home, or show us the QR code and we print it at the counter.</p>
-      : <p class="lead" data-i18n="ship.lead.counter">Compare USPS, UPS, FedEx and DHL in one place. Reserve your label here, then pay and pick it up at the counter.</p>}
+    <p class="lead" data-i18n="ship.lead">Compare USPS, UPS, FedEx and DHL in one place. Pay online and print at home, or show us the QR code and we print it at the counter.</p>
     {cancelled && <p class="card" data-i18n="ship.cancelled">Payment was cancelled. Your quote is below if you want to try again.</p>}
   </section>
 
@@ -155,7 +153,6 @@ const online = await onlineLabelsOn(env);
       )}
       {me && !me.phone && <label><span data-i18n="ship.acctphone">Your mobile number (for problems with this shipment)</span> <input name="acct_phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="318 555 0100" /></label>}
       {me && <label class="check"><input name="save_address" type="checkbox" /> <span data-i18n="acct.savethis">Save this address to my account</span></label>}
-      {!online && <p class="card" id="counterNote" data-i18n="ship.counteronly">Pay at the counter: we hold this price for you, and we print the label when you come in. Bring the package and your pickup code.</p>}
       <p id="feeRow" class="muted" hidden></p>
       <p id="totalRow" class="price"><span data-i18n="ship.total">Total</span>: <strong id="totalAmt"></strong></p>
       <label class="check"><input name="sms" type="checkbox" /> <span data-i18n="ship.sms">Text me when it ships and when it is delivered</span> <span id="smsFee" class="muted"></span></label>
@@ -419,7 +416,7 @@ const online = await onlineLabelsOn(env);
       else if (pk && pk.oversize) { pn.textContent = t('ship.packing.oversize'); pn.hidden = false; }
       else pn.hidden = true;
       document.getElementById('mockNote')!.hidden = !j.demo;
-      buyBtn.dataset.i18n = j.online_labels ? 'ship.pay' : 'ship.reserve';
+      buyBtn.dataset.i18n = 'ship.pay';
       buyBtn.textContent = t(buyBtn.dataset.i18n);
       ratesEl.innerHTML = '';
       for (const r of j.rates) {

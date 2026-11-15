@@ -11,10 +11,14 @@ import { benchmarkFor } from '../../lib/benchmark';
 import { logBenchmark } from '../../shipping/store';
 import { directed, pickReturnRate, returnParcel } from '../../lib/options';
 import { onlineLabelsOn } from '../../lib/siteSettings';
+import { authenticate } from '../../lib/auth';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json();
+    // The owners' switch (/counter/settings, Peter Nov 14 2026): Off means the website gives customers no
+    // prices at all. Staff still quote at the counter: the Queue page sends its PIN.
+    if (!(await onlineLabelsOn(env)) && !(await authenticate(env, b.pin))) return json({ error: 'Shipping is in the store for now. Bring your package to the counter.', offline: true }, 403);
     const parcel = parseParcel(b.parcel);
     // "Return label only" swaps the addresses: the label runs from the receiver back to the sender.
     const { origin, destination } = directed(b.origin ? parseAddress(b.origin) : store.origin, parseAddress(b.destination), parcel.options);
@@ -38,9 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
     // The Pirate Ship benchmark (T26): shown beside the rates and logged for the weekly share.
     const benchmark = benchmarkFor(destination, parcel, rates);
     if (benchmark) await logBenchmark(env, { source: b.online ? 'online' : 'counter', zone: benchmark.zone, weight_lb: parcel.weight_lb, store_price: benchmark.store, benchmark: benchmark.pirate_ship }).catch(() => {});
-    // Online label buying off (/counter/settings): the page says "reserve, pay at the counter" and drops the online fee.
-    const online_labels = await onlineLabelsOn(env);
-    return json({ rates: offered, demo, oversize, extras: online_labels ? extras : { ...extras, online_fee: null }, packing, address, benchmark, online_labels });
+    return json({ rates: offered, demo, oversize, extras, packing, address, benchmark });
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }

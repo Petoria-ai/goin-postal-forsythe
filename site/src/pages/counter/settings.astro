@@ -4,8 +4,8 @@ import Base from '../../layouts/Base.astro';
 
 // Owner page: the site's switches (Peter, Nov 14 2026). Any staff PIN can see them; only an owner
 // PIN can flip one, and every change goes in the audit log with the name that did it.
-// Online label buying: on = customers pay for labels on the Ship page; off = they reserve the label
-// there and pay at the counter (staff ring it up from the Queue).
+// Online shipping: On = customers see prices and buy labels on the Ship page; Off = the website shows no
+// shipping prices at all and /ship shows the in-store page. Staff quotes on the Queue page work either way.
 ---
 <Base title="Counter · Settings">
   <section class="hero">
@@ -25,8 +25,8 @@ import Base from '../../layouts/Base.astro';
 
   <div id="panel" class="hidden">
     <div class="card setting">
-      <h3 data-i18n="st.set.labels">Online label buying</h3>
-      <p data-i18n="st.set.labels.p">On: customers pay for shipping labels on the Ship page and print at home. Off: they still compare rates and reserve a label, then pay at the counter, where you ring it up from the Queue.</p>
+      <h3 data-i18n="st.set.labels">Online shipping: prices and labels</h3>
+      <p data-i18n="st.set.labels.p">On: customers see shipping prices on the website and buy labels by card. Off: the website shows no shipping prices at all; the Ship page tells customers to bring their package to the store. Your quotes on the Queue page work either way.</p>
       <p class="btnrow">
         <strong id="state"></strong>
         <button class="btn" id="turnOn" type="button" data-i18n="st.set.turnon">Turn on</button>

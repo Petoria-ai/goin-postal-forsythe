@@ -53,3 +53,38 @@ describe('online label switch', () => {
     expect(rows).toEqual([expect.objectContaining({ key: 'online_labels', value: 'on', updated_by: 'Peter' })]);
   });
 });
+
+describe('with online shipping off, the website gives customers no prices', () => {
+  const post = async (route: any, body: Record<string, unknown>) => {
+    const res = await route({ request: new Request('http://x/api', { method: 'POST', body: JSON.stringify(body) }) });
+    return { status: res.status, body: await res.json() };
+  };
+  const quoteBody = {
+    origin: { contact_name: 'A', line_1: '100 Main St', city: 'Monroe', state: 'LA', postal_code: '71201', country_alpha2: 'US' },
+    destination: { contact_name: 'Sam', line_1: '500 Elm St', city: 'Dallas', state: 'TX', postal_code: '75201', country_alpha2: 'US' },
+    parcel: { weight_lb: 3, length_in: 12, width_in: 10, height_in: 6 },
+  };
+  beforeAll(async () => { Object.assign(env as any, { OWNER_PIN: '9999', COUNTER_PIN: '1234' }); await setOnlineLabels(env as any, false, 'test'); });
+
+  it('refuses a customer quote', async () => {
+    const { POST: rates } = await import('../src/pages/api/rates');
+    const r = await post(rates, quoteBody);
+    expect(r.status).toBe(403);
+    expect(r.body.offline).toBe(true);
+    expect(r.body.rates).toBeUndefined();
+  });
+
+  it('still quotes for staff at the counter', async () => {
+    const { POST: rates } = await import('../src/pages/api/rates');
+    const r = await post(rates, { ...quoteBody, pin: '1234' });
+    expect(r.status).toBe(200);
+    expect(r.body.rates.length).toBeGreaterThan(0);
+  });
+
+  it('refuses an online order', async () => {
+    const { POST: orders } = await import('../src/pages/api/orders');
+    const r = await post(orders, { ...quoteBody, rate_id: 'x' });
+    expect(r.status).toBe(403);
+    expect(r.body.offline).toBe(true);
+  });
+});
