@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 14:55 CST · Carrier logos in the Tracking page's box
+
+- **Asked for:** "go in the tracking page. put the logo brands in that box as well"
+- **What changed:** The **Tracking** page's "Track a package" box now shows **"Tracking numbers from"** with the USPS, UPS, FedEx and DHL logos under the Track button, the same as the home page's box.
+- **Files:** [site/src/pages/track/index.astro](../site/src/pages/track/index.astro)
+- **How to check it:** `git pull`, then `npm run dev`, and open **Tracking** in the menu.
+
 ## 2026-11-15 14:54 CST · The store's address beside the logo, instead of "Forsythe"
 
 - **Asked for:** "change Forsythe to 'Monroe, LA'", then "or rather change it to '1800 Forsythe Ave, Suite 2, Monroe, LA 71201'"

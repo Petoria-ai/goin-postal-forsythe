@@ -2,6 +2,7 @@
 import { store } from '../../data/store';
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
+import CarrierBadges from '../../components/CarrierBadges.astro';
 import { env } from '../../lib/env';
 import { readSession } from '../../lib/session';
 import { getCustomer, listTracked } from '../../shipping/store';
@@ -24,6 +25,8 @@ const tracked = me ? await listTracked(env, me.id, 10) : [];
       <input id="track-q" name="q" value={q} placeholder="Pickup code or tracking number" data-i18n-ph="track.field" required minlength="4" maxlength="40" inputmode="text" autocapitalize="characters" />
       <button class="btn kraft" type="submit" data-i18n="track.button">Track</button>
     </form>
+    <!-- The carriers' logos (Peter, Nov 15 2026), same as under the home page's tracking box. -->
+    <div class="track-carriers"><span class="muted" data-i18n="carr.track">Tracking numbers from</span><CarrierBadges /></div>
     <p id="msg" class="err" role="alert"></p>
     <div id="elsewhere" hidden>
       <p data-i18n="track.elsewhere">We didn't ship that one here, but it looks like a tracking number from the carrier below. Follow it on their site:</p>
