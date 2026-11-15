@@ -13,7 +13,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
-| P11 | [Official carrier logos (USPS, UPS, FedEx, DHL)](#p11-official-carrier-logos-usps-ups-fedex-dhl) | ⏳ Authorized ✅; ask for the logo files | Goin' Postal corporate or each carrier's retail program |
+| P11 | [Official carrier logos (USPS, UPS, FedEx, DHL)](#p11-official-carrier-logos-usps-ups-fedex-dhl) | ✅ Done Nov 15 | A larger UPS file would be sharper | Goin' Postal corporate or each carrier's retail program |
 | P10 | [Is real AI design worth about 2 cents a try?](#p10-is-real-ai-design-worth-about-2-cents-a-try) | ⏸ Decide later | Peter and Rin try the demo; then the key and a monthly cap (D22) |
 
 ---
@@ -323,8 +323,8 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 
 ### Steps
 
-- [ ] **1. Ask Goin' Postal corporate** whether the franchise provides carrier logo files and the rules for using them online. Most franchise stores are authorized locations for several carriers.
+- [x] ✅ 2026-11-15 14:51 CST (files supplied). **1. Ask Goin' Postal corporate** whether the franchise provides carrier logo files and the rules for using them online. Most franchise stores are authorized locations for several carriers.
 - [x] ✅ 2026-11-15 14:45 CST: authorized for all four (Peter); the site now says "Authorized for". **2. Confirm the store's status with each carrier**, and the exact name for it: UPS (Authorized Shipping Outlet), FedEx (Authorized ShipCenter), USPS (Approved Postal Provider), DHL (Authorized Service Point). Each program has its own logo kit and rules.
-- [ ] **3. Put each file in `site/public/brand/carriers/`** (SVG is best, PNG is fine) and set its `logo` in `site/src/data/carriers.ts`. That carrier's badge becomes its logo everywhere at once.
+- [x] ✅ 2026-11-15 14:51 CST: Peter supplied all four plus the DHL CIS badge. **3. Put each file in `site/public/brand/carriers/`** (SVG is best, PNG is fine) and set its `logo` in `site/src/data/carriers.ts`. That carrier's badge becomes its logo everywhere at once.
 - [x] ✅ 2026-11-15 14:45 CST. **4. Once confirmed, the wording can say "Authorized"** for that carrier (for example "UPS Authorized Shipping Outlet"); until then it stays "We ship".
 

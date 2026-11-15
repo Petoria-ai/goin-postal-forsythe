@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 14:51 CST · Official carrier logos on the site
+
+- **Asked for:** "Here's the logos to use.." (USPS, UPS, FedEx Authorized ShipCenter, DHL, and the DHL Express Certified International Specialist badge)
+- **What changed:** The carrier name badges are now the **official logos** Peter supplied, everywhere they appear: next to "Authorized for" at the top of every page, under the tracking box, the big row on **Ship a package**, and the footer. The **DHL Certified International Specialist** badge shows in the big row on Ship a package. The files are used as supplied; the two DHL images only had their plain grey margin trimmed so they line up with the others.
+- **Note:** the UPS file is small (56 × 67 pixels), so it can look a little soft on sharp screens. A larger copy from the UPS logo kit would be crisper; just send it and it replaces this one.
+- **Files:** [site/public/brand/carriers/](../site/public/brand/carriers/) (the five logo files), [site/src/data/carriers.ts](../site/src/data/carriers.ts), [site/src/components/CarrierBadges.astro](../site/src/components/CarrierBadges.astro), [site/src/styles/global.css](../site/src/styles/global.css), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Look at the top of any page, the home page's tracking box, Ship a package, and the bottom of any page.
+
 ## 2026-11-15 14:45 CST · Carrier wording: "Authorized for"
 
 - **Asked for:** "we are authorized for everything"
