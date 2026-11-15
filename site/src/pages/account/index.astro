@@ -9,6 +9,7 @@ import { marketingConsent } from '../../shipping/store';
 import { CONSENT_WORDING } from '../../lib/consent';
 import { listSavedDesigns } from '../../shipping/store';
 import { renderCard, sanitizeDesign, CARD_OPTIONS } from '../../lib/cards';
+import { listCardOrdersFor, cardTotal } from '../../lib/cardOrders';
 import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
 
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
@@ -23,6 +24,8 @@ if (token) {
     await markEmailVerified(env, c.id);
     if (t?.pw) await setPasswordHash(env, c.id, t.pw);
     if (t?.name && (!c.name || c.name === 'Customer')) await setCustomerName(env, c.id, t.name, null);
+    // The mobile number given at sign-up (Peter, Nov 15 2026), only if the account has none yet.
+    if (t?.phone && !c.phone) await setCustomerName(env, c.id, (t?.name && (!c.name || c.name === 'Customer')) ? t.name : c.name, t.phone);
   }
   if (c) {
     Astro.cookies; // Astro needs the cookies API touched before set-cookie on a redirect in some adapters
@@ -50,6 +53,9 @@ const consent = me ? await marketingConsent(env, me.id) : null;
 // Saved designs (Peter, Nov 15 2026): business cards today; t-shirts, banners, yard signs and promo items join
 // this list when they're ordered online. Each shows its picture, what was picked last time, and Edit / Reorder / Delete.
 const savedDesigns = me ? await listSavedDesigns(env, me.id) : [];
+// Business card orders on this account (newest first), for My orders.
+const cardOrders = me ? await listCardOrdersFor(env, me.id) : [];
+const savedProducts = [...new Set(savedDesigns.map((d) => d.product))];
 const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
   let svg = ''; try { svg = renderCard(sanitizeDesign(JSON.parse(d.design_json)), 'front'); } catch {}
   const picks: Record<string, string> = d.last_options_json ? JSON.parse(d.last_options_json) : {};
@@ -60,7 +66,7 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
 <Base title={`Your account · ${store.name}`} description="Sign in with your email, keep your addresses, see your orders, ship again in two clicks.">
   <section class="hero">
     <h1 data-i18n={me ? 'acct.h1' : 'acct.signin'}>{me ? 'Your account' : 'Sign in'}</h1>
-    <p class="lead" data-i18n={me ? 'acct.lead.in' : 'acct.lead'}>{me ? 'Your addresses and orders. Ship again in two clicks.' : 'Sign in with your email and password, or create a free account.'}</p>
+    <p class="lead" data-i18n={me ? 'acct.lead.in' : 'acct.lead'}>{me ? 'Your profile, orders, designs and addresses.' : 'Sign in with your email and password, or create a free account.'}</p>
     {expired && <p class="card" data-i18n="acct.expired">That link has expired or was already used. Ask for a new one.</p>}
   </section>
   {!me ? (
@@ -78,6 +84,9 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
         <h3 data-i18n="acct.create.h">Create a free account</h3>
         <label><span data-i18n="f.name">Name</span> <input name="name" maxlength="60" autocomplete="name" /></label>
         <label><span data-i18n="f.email">Email</span> <input name="email" type="email" required autocomplete="email" /></label>
+        <!-- Mobile number at sign-up (Peter, Nov 15 2026): so the store can call or text about an order right away. -->
+        <label><span data-i18n="acct.mobile">Mobile number</span> <input name="phone" type="tel" inputmode="tel" required autocomplete="tel" placeholder="318 555 0100" /></label>
+        <p class="muted" data-i18n="acct.mobile.p">So we can call or text you about your order. Not for marketing unless you say yes.</p>
         <label><span data-i18n="acct.pw">Password</span> <input name="password" type="password" required minlength="8" autocomplete="new-password" /></label>
         <p class="muted" data-i18n="acct.pw.hint">At least 8 characters. A short sentence is easy to remember.</p>
         <button class="btn kraft" type="submit" data-i18n="acct.create">Create an account</button>
@@ -92,8 +101,20 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
         </ul>
       </div>
     </div>
-  ) : (
-    <div class="grid">
+  ) : (<>
+    <!-- Account tabs (Peter, Nov 15 2026): Profile, My orders, My designs, Addresses, and Business for business
+         accounts. One shows at a time; the address bar remembers which (#orders, #designs...), so old links still
+         land in the right place. Without JavaScript every section shows, one under another. -->
+    <nav class="acct-tabs" role="tablist" aria-label="Account">
+      <a href="#profile" role="tab" data-tab="profile" data-i18n="acct.tab.profile">Profile</a>
+      <a href="#orders" role="tab" data-tab="orders" data-i18n="acct.tab.orders">My orders</a>
+      <a href="#designs" role="tab" data-tab="designs" data-i18n="acct.tab.designs">My designs</a>
+      <a href="#addresses" role="tab" data-tab="addresses" data-i18n="acct.tab.addresses">Addresses</a>
+      {biz && <a href="#business" role="tab" data-tab="business" data-i18n="acct.tab.business">Business</a>}
+    </nav>
+    <p id="msg" role="alert"></p>
+    <section class="acct-panel" id="profile" data-panel="profile" role="tabpanel">
+      <div class="grid acct-profile">
       <div class="card">
         <h3 data-i18n="acct.you">You</h3>
         <form id="namef">
@@ -115,6 +136,56 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
           <label class="check"><input type="checkbox" data-channel="email" checked={consent?.email} /> <span data-i18n="mkt.email">{CONSENT_WORDING.email}</span></label>
           <label class="check"><input type="checkbox" data-channel="sms" checked={consent?.sms} /> <span data-i18n="mkt.sms">{CONSENT_WORDING.sms}</span></label>
         </fieldset>
+      </div>
+      </div>
+    </section>
+    <section class="acct-panel" id="orders" data-panel="orders" role="tabpanel">
+      <div class="card">
+        <h3 data-i18n="acct.myorders.cards">Business cards</h3>
+        {!cardOrders.length && <p class="muted" data-i18n="acct.nocards">No card orders yet.</p>}
+        {cardOrders.length > 0 && <table class="list">{cardOrders.map((o) => <tr><td>{fmt(o.created_at)}</td><td><a href={`/cards/done?order=${o.id}`}>{o.id}</a></td><td>{o.quantity} <span data-i18n="shop.cards">cards</span></td><td>${cardTotal(o).toFixed(2)}</td><td><span class={`acct-status s-${o.status}`} data-i18n={`acct.cs.${o.status}`}>{o.status}</span></td></tr>)}</table>}
+      </div>
+      <div class="card">
+        <h3 data-i18n="acct.myorders.h">Shipping</h3>
+        {!quotes.length && <p class="muted" data-i18n="acct.noorders">No orders yet under this email.</p>}
+        <table class="list">{quotes.map((q) => <tr><td>{fmt(q.created_at)}</td><td><a href={q.shipment_status ? `/track?q=${q.id}` : `/ship/done?order=${q.id}`}>{q.id}</a></td><td>{q.carrier} {q.service}</td><td>{q.destination}</td><td>${Number(q.price).toFixed(2)}</td><td>{q.shipment_status ?? q.status}</td><td>{q.shipment_status && q.shipment_status !== 'voided' ? <button type="button" class="btn small kraft" data-resend={q.id} data-i18n="acct.resend">Email me the label again</button> : null}</td></tr>)}</table>
+      </div>
+    </section>
+    <section class="acct-panel" id="designs" data-panel="designs" role="tabpanel">
+      <div class="card">
+        <h3 data-i18n="saved.h">Your saved designs</h3>
+        <p class="muted" data-i18n="saved.p">Everything you design or order is kept here. Edit it, or order the same again in a click.</p>
+        {savedCards.length ? <>
+          <!-- One place for every product (Peter, Nov 15 2026), with a filter per product that has designs. -->
+          <div class="saved-filters" role="group" aria-label="Filter">
+            <button type="button" class="chip on" data-filter="all" data-i18n="saved.all">All</button>
+            {savedProducts.map((pr) => <button type="button" class="chip" data-filter={pr} data-i18n={`saved.p.${pr}`}>{pr}</button>)}
+          </div>
+          <div class="saved-grid">
+            {savedCards.map((c) => (
+              <div class="saved-item" data-saved={c.id} data-product={c.product}>
+                <div class="card-wrap" set:html={c.svg} />
+                <span class="saved-tag" data-i18n={`saved.p.${c.product}`}>Business card</span>
+                <p class="saved-name">{c.name}</p>
+                {c.last_quantity
+                  ? <p class="muted"><span data-i18n="saved.last">Last ordered</span> {fmt(c.last_ordered_at ?? c.updated_at)}: {c.last_quantity} <span data-i18n="shop.cards">cards</span>{c.extras.map((o) => <> · <span data-i18n={`cards.opt.${o.code}`}>{o.name}</span></>)}</p>
+                  : <p class="muted"><span data-i18n="saved.saved">Saved</span> {fmt(c.updated_at)}</p>}
+                <p class="btnrow">
+                  <a class="btn small" href={`/cards/design?saved=${c.id}`} data-i18n="saved.edit">Edit</a>
+                  <button type="button" class="btn small kraft" data-reorder={c.id} data-i18n={c.last_quantity ? 'saved.reorder' : 'saved.order'}>{c.last_quantity ? 'Reorder' : 'Order'}</button>
+                  <button type="button" class="linkish" data-deldesign={c.id} data-i18n="saved.delete">Delete</button>
+                </p>
+              </div>
+            ))}
+          </div>
+        </> : <p data-i18n="saved.none">No saved designs yet. Design business cards and press "Save to my account", or order them, and they'll be kept here.</p>}
+        <p class="muted" data-i18n="saved.soon">T-shirts, banners, yard signs and promo items will be saved here too once they can be ordered online.</p>
+        <p><a href="/cards" data-i18n="shop.browse">Browse designs</a></p>
+        <p id="savedMsg" role="alert"></p>
+      </div>
+    </section>
+    <section class="acct-panel" id="addresses" data-panel="addresses" role="tabpanel">
+      <div class="card">
         <h3 data-i18n="acct.addresses">Saved addresses</h3>
         <ul id="addrs">{saved.map((a) => { const d = JSON.parse(a.address_json); return <li data-id={a.id}><strong>{a.label}</strong>: {d.contact_name}, {d.line_1}{d.line_2 ? ` ${d.line_2}` : ''}, {d.city} {d.state} {d.postal_code} · <a href={`/ship?to=${a.id}`} data-i18n="acct.shipto">Ship to this address</a> · <button type="button" class="btn small" data-del={a.id}>×</button></li>; })}</ul>
         {!saved.length && <p class="muted" data-i18n="acct.noaddr">None yet. Tick "save this address" when you ship, or add one here.</p>}
@@ -134,9 +205,10 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
           </div>
           <p><button class="btn small" type="submit" data-i18n="acct.addaddr">Add address</button></p>
         </form>
-        <p id="msg" role="alert"></p>
       </div>
-      {biz && <div class="card" id="biz">
+    </section>
+    {biz && <section class="acct-panel" id="business" data-panel="business" role="tabpanel">
+      <div class="card" id="biz">
         <h3><span data-i18n="acct.biz.h3">Business account</span>: {biz.business_name}</h3>
         <p class="muted"><span data-i18n="acct.biz.lead">What the store keeps for your account. Labels are billed to your monthly statement; the counter makes keys and links for you.</span>{biz.discount_percent ? <> <span data-i18n="acct.biz.discount">Your discount:</span> {biz.discount_percent}%.</> : null}</p>
         <h4 data-i18n="acct.biz.unbilled">Unbilled so far</h4>
@@ -149,40 +221,9 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
         {fulfil.length > 0 && <><h4 data-i18n="acct.biz.fulfil">Orders we ship for you</h4><table class="list">{fulfil.map((o) => <tr><td>{o.created_at.slice(0, 10)}</td><td>{o.reference ?? o.code}</td><td>{JSON.parse(o.lines_json).map((l: any) => `${l.qty}× ${l.sku}`).join(', ')}</td><td>{o.shipment_id ? <a href={`/track?q=${o.shipment_id}`}>{o.shipment_id}</a> : <span data-i18n={`st.pu.status.${o.status === 'open' ? 'scheduled' : 'cancelled'}`}>{o.status}</span>}</td></tr>)}</table></>}
         <h4 data-i18n="acct.biz.api">API keys</h4>
         {keys.length ? <p>{keys.map((k) => <span><code>{k.prefix}…</code> {k.label}{k.webhook_url ? ' · webhook' : ''} </span>)} · <a href="/developers" data-i18n="acct.biz.docs">API docs</a></p> : <p class="muted"><span data-i18n="acct.biz.nokeys">No keys yet. Ask the counter for one to connect your shop.</span> <a href="/developers" data-i18n="acct.biz.docs">API docs</a></p>}
-      </div>}
-      <div class="card" id="designs">
-        <h3 data-i18n="saved.h">Your saved designs</h3>
-        <p class="muted" data-i18n="saved.p">Everything you design or order is kept here. Edit it, or order the same again in a click.</p>
-        {savedCards.length ? <>
-          <h4 data-i18n="nav.print.cards">Business Cards</h4>
-          <div class="saved-grid">
-            {savedCards.map((c) => (
-              <div class="saved-item" data-saved={c.id}>
-                <div class="card-wrap" set:html={c.svg} />
-                <p class="saved-name">{c.name}</p>
-                {c.last_quantity
-                  ? <p class="muted"><span data-i18n="saved.last">Last ordered</span> {fmt(c.last_ordered_at ?? c.updated_at)}: {c.last_quantity} <span data-i18n="shop.cards">cards</span>{c.extras.map((o) => <> · <span data-i18n={`cards.opt.${o.code}`}>{o.name}</span></>)}</p>
-                  : <p class="muted"><span data-i18n="saved.saved">Saved</span> {fmt(c.updated_at)}</p>}
-                <p class="btnrow">
-                  <a class="btn small" href={`/cards/design?saved=${c.id}`} data-i18n="saved.edit">Edit</a>
-                  <button type="button" class="btn small kraft" data-reorder={c.id} data-i18n={c.last_quantity ? 'saved.reorder' : 'saved.order'}>{c.last_quantity ? 'Reorder' : 'Order'}</button>
-                  <button type="button" class="linkish" data-deldesign={c.id} data-i18n="saved.delete">Delete</button>
-                </p>
-              </div>
-            ))}
-          </div>
-        </> : <p data-i18n="saved.none">No saved designs yet. Design business cards and press "Save to my account", or order them, and they'll be kept here.</p>}
-        <p class="muted" data-i18n="saved.soon">T-shirts, banners, yard signs and promo items will be saved here too once they can be ordered online.</p>
-        <p><a href="/cards" data-i18n="shop.browse">Browse designs</a></p>
-        <p id="savedMsg" role="alert"></p>
       </div>
-      <div class="card">
-        <h3 id="orders" data-i18n="acct.orders">Your orders</h3>
-        {!quotes.length && <p class="muted" data-i18n="acct.noorders">No orders yet under this email.</p>}
-        <table class="list">{quotes.map((q) => <tr><td>{fmt(q.created_at)}</td><td><a href={q.shipment_status ? `/track?q=${q.id}` : `/ship/done?order=${q.id}`}>{q.id}</a></td><td>{q.carrier} {q.service}</td><td>{q.destination}</td><td>${Number(q.price).toFixed(2)}</td><td>{q.shipment_status ?? q.status}</td><td>{q.shipment_status && q.shipment_status !== 'voided' ? <button type="button" class="btn small kraft" data-resend={q.id} data-i18n="acct.resend">Email me the label again</button> : null}</td></tr>)}</table>
-      </div>
-    </div>
-  )}
+    </section>}
+  </>)}
   <script>
     import { t } from '../../i18n';
     const $ = (id: string) => document.getElementById(id);
@@ -194,12 +235,30 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
     // Where to go after signing in: the page the customer came from (a path on this site only), else this account page.
     const nextParam = new URLSearchParams(location.search).get('next') ?? undefined;
     const goNext = (n?: string) => { location.href = n && /^\/(?![\/\\])/.test(n) ? n : (nextParam && /^\/(?![\/\\])/.test(nextParam) ? nextParam : '/account'); };
-    const codeMsg = (e: any) => ({ bad_login: t('acct.badlogin'), locked: t('acct.locked'), pw_short: t('acct.weak'), pw_long: t('acct.weak'), pw_common: t('acct.weak') } as Record<string, string>)[e.code] ?? e.message;
+    const codeMsg = (e: any) => ({ bad_login: t('acct.badlogin'), locked: t('acct.locked'), pw_short: t('acct.weak'), pw_long: t('acct.weak'), pw_common: t('acct.weak'), phone: t('acct.mobile.bad') } as Record<string, string>)[e.code] ?? e.message;
     async function apiCoded(body: Record<string, unknown>) {
       const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const j = await res.json().catch(() => ({})); if (!res.ok) throw Object.assign(new Error(j.error ?? 'Try again'), { code: j.code }); return j;
     }
     const devLink = (el: HTMLElement, link?: string) => { if (link) { const a = document.createElement('a'); a.href = link; a.textContent = ' (dev: open it)'; el.append(a); } };
+    // Account tabs: show the one named in the address bar (#orders, #designs...), Profile otherwise.
+    const tabs = [...document.querySelectorAll<HTMLElement>('.acct-tabs [data-tab]')];
+    if (tabs.length) {
+      const panels = [...document.querySelectorAll<HTMLElement>('.acct-panel')];
+      const show = (name: string) => {
+        if (!panels.some((x) => x.dataset.panel === name)) name = 'profile';
+        panels.forEach((x) => { x.hidden = x.dataset.panel !== name; });
+        tabs.forEach((x) => { const on = x.dataset.tab === name; x.classList.toggle('on', on); x.setAttribute('aria-selected', String(on)); });
+      };
+      tabs.forEach((x) => x.addEventListener('click', (e) => { e.preventDefault(); history.replaceState(null, '', `#${x.dataset.tab}`); show(x.dataset.tab!); }));
+      window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+      show(location.hash.slice(1));
+    }
+    // My designs: filter by product.
+    document.querySelectorAll<HTMLElement>('.saved-filters [data-filter]').forEach((b) => b.addEventListener('click', () => {
+      document.querySelectorAll('.saved-filters [data-filter]').forEach((x) => x.classList.toggle('on', x === b));
+      document.querySelectorAll<HTMLElement>('.saved-item').forEach((it) => { it.hidden = b.dataset.filter !== 'all' && it.dataset.product !== b.dataset.filter; });
+    }));
     // Saved designs: Reorder fills the review page with the same card, quantity and options (priced again today);
     // Delete asks first.
     document.querySelectorAll<HTMLElement>('[data-reorder]').forEach((b) => b.addEventListener('click', async () => {
@@ -225,7 +284,7 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
       ev.preventDefault();
       const f = ev.target as HTMLFormElement, sm = $('smsg')!;
       const val = (n: string) => (f.querySelector(`[name=${n}]`) as HTMLInputElement).value;
-      try { const j = await apiCoded({ action: 'signup', name: val('name'), email: val('email'), password: val('password'), next: nextParam }); sm.className = 'card'; sm.textContent = t('acct.confirm.sent'); devLink(sm, j.mock_link); f.querySelector('button[type=submit]')!.setAttribute('disabled', ''); }
+      try { const j = await apiCoded({ action: 'signup', name: val('name'), email: val('email'), phone: val('phone'), password: val('password'), next: nextParam }); sm.className = 'card'; sm.textContent = t('acct.confirm.sent'); devLink(sm, j.mock_link); f.querySelector('button[type=submit]')!.setAttribute('disabled', ''); }
       catch (e: any) { sm.className = 'err'; sm.textContent = codeMsg(e); }
     });
     $('pwf')?.addEventListener('submit', async (ev) => {

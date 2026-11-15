@@ -5,7 +5,7 @@ import { env } from '../../lib/env';
 import { authenticate } from '../../lib/auth';
 import { logAudit } from '../../shipping/store';
 import { sanitizeDesign, PRICES, priceCards } from '../../lib/cards';
-import { newCardId, saveCardOrder, type CardOrder } from '../../lib/cardOrders';
+import { newCardId, saveCardOrder, indexCardOrder, type CardOrder } from '../../lib/cardOrders';
 import { json } from '../../lib/validate';
 import { createCardCheckout } from '../../lib/stripe';
 import { readSession } from '../../lib/session';
@@ -52,6 +52,7 @@ export const POST: APIRoute = async ({ request }) => {
       created_at: new Date().toISOString(),
       status: 'awaiting_payment',
       customer: { name, email, phone },
+      customer_id: me.id,
       quantity,
       price: priced.price,
       options: priced.options,
@@ -62,6 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
     };
     order.total = Math.round((priced.subtotal + (order.tax?.amount ?? 0) + (order.fee?.amount ?? 0)) * 100) / 100;
     await saveCardOrder(env, order);
+    await indexCardOrder(env, me.id, order.id); // shows under My orders on the account page
     // Keep the card on the customer's account (Peter, Nov 15 2026): the saved card it came from is updated,
     // otherwise a new one is added, with what was picked this time for Reorder. A card that can't be saved
     // (too many pictures, or 30 cards already kept) never stops the order.

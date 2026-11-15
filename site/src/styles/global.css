@@ -897,3 +897,32 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 #aiPrompt { width: 100%; }
 .ai-start { margin: 6px 0 14px; }
 .ai-start .btn { border: 2px solid #7c3aed !important; color: #5b21b6 !important; background: #f5f0ff !important; }
+
+/* Account tabs (Peter, Nov 15 2026) */
+.acct-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 18px; padding: 6px; background: #fff; border: 1px solid var(--hair); border-radius: 999px; width: fit-content; max-width: 100%; }
+.acct-tabs a { padding: 9px 18px; border-radius: 999px; text-decoration: none; color: var(--navy); font-weight: 800; font-family: var(--fw-display); }
+.acct-tabs a:hover { background: #f1ece3; }
+.acct-tabs a.on { background: var(--navy); color: #fff; }
+.acct-panel[hidden] { display: none; }
+.acct-panel > .card + .card { margin-top: 18px; }
+.acct-profile { grid-template-columns: minmax(0, 40rem); margin-top: 0; }
+.acct-status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .85rem; font-weight: 800; background: #f1ece3; color: #5b4a2e; }
+.acct-status.s-paid, .acct-status.s-sent { background: #e8f1fb; color: #1d4ed8; }
+.acct-status.s-printed { background: #e6f4ea; color: #17602a; }
+.acct-status.s-picked_up { background: #eee; color: #444; }
+.saved-filters { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 12px; }
+.chip { padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--hair); background: #fff; color: var(--navy); font: inherit; font-weight: 700; cursor: pointer; }
+.chip.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+.saved-tag { align-self: flex-start; font-size: .78rem; font-weight: 800; color: #5b4a2e; background: #f1ece3; padding: 1px 8px; border-radius: 999px; }
+.saved-item[hidden] { display: none; }
+@media (max-width: 600px) { .acct-tabs { border-radius: 14px; } .acct-tabs a { padding: 8px 12px; } }
+/* Phones: tables scroll inside their card, and design tiles shrink to fit. */
+.acct-panel .card { min-width: 0; overflow-x: auto; }
+.saved-grid { grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); }
+/* Phones: a signed-in greeting ("Hi, Peter") never pushes the page wider; a long name ends in "…". */
+@media (max-width: 700px) {
+  header.top .top-row { min-width: 0; gap: 8px; }
+  header.top .brand { min-width: 0; flex-shrink: 1; }
+  header.top .brand img { max-width: 100%; height: auto; }
+  .login-btn { flex-shrink: 0; max-width: 42vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

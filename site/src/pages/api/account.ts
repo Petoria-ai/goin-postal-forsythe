@@ -59,13 +59,16 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.action === 'signup') {
       const email = String(b.email ?? '').trim().toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'A valid email is needed' }, 400);
+      // A mobile number is asked for at sign-up (Peter, Nov 15 2026), so the store can call or text about an order.
+      const phone = normalizePhone(String(b.phone ?? ''));
+      if (!phone) return json({ error: 'Enter your mobile number (10 digits).', code: 'phone' }, 400);
       const problem = passwordProblem(String(b.password ?? ''), email);
       if (problem) return json({ error: 'Use at least 8 characters, and not a common password.', code: `pw_${problem}` }, 400);
       const ip = request.headers.get('cf-connecting-ip') ?? 'local';
       if (await tooManyFails(env, `su:${ip}`, 20)) return json({ error: 'Too many tries. Wait 15 minutes.', code: 'locked' }, 429);
       await recordFail(env, `su:${ip}`); // counts sign-ups from one address, so the form can't be used to flood inboxes
       const pw = await hashPassword(String(b.password));
-      const token = await createSignupToken(env, email, { pw, name: String(b.name ?? '').trim().slice(0, 60) || undefined });
+      const token = await createSignupToken(env, email, { pw, name: String(b.name ?? '').trim().slice(0, 60) || undefined, phone });
       const next = safeNext(b.next);
       const link = `${env.SITE_URL}/account?token=${token}${next !== '/account' ? `&next=${encodeURIComponent(next)}` : ''}`;
       const mock = await sendEmail(env, email, `Confirm your email for ${store.name}`, `Click to confirm your email and finish setting up your ${store.name} account (the link works once, for thirty minutes):\n\n${link}\n\nIf you did not ask for this, ignore it; nothing changes.`);

@@ -4,6 +4,23 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 13:14 CST · Account page in tabs, mobile number at sign-up, card orders under My orders
+
+- **Asked for:** "can we be more organized on this page ... having buttons at the top.. like having a profile page", "get their number right from the bat at signup", "maybe one of the buttons be 'My orders'", and whether designs should be kept separate by product or in one area.
+- **What changed:**
+  - **The account page has tabs across the top: Profile · My orders · My designs · Addresses**, plus **Business** for customers with a business account. One section shows at a time, and the address bar remembers which one, so old links (like "View all shipments" in the Tracking menu, which opens `#orders`) land on the right tab.
+    - **Profile:** name, email, phone, password, and deals and news.
+    - **My orders:** **business card orders** with their status (Not paid, Paid and being made, At the printer, Ready to pick up, Picked up), then shipping orders. Card orders didn't show on the account at all before.
+    - **My designs:** **one place for every product**, with filter buttons (All, Business card, and later T-shirt, Banner, Yard sign, Promo item; only the ones with designs show) and a label on each design. Edit, Reorder and Delete as before.
+    - **Addresses:** saved addresses and the add form.
+  - **Sign-up now asks for a mobile number** (required, checked for 10 digits), with a note that it's for calls and texts about orders, not marketing unless they say yes. It's saved to the account when they confirm their email. Accounts made before this keep asking on their first purchase, as before.
+  - **Fixed on phones:** once signed in, the "Hi, Peter" button could push the page sideways on a phone (on every page). It now fits, and a long name ends in "…".
+  - In all 14 languages.
+- **Why:** The one long page was hard to scan. Getting the phone number at sign-up means the store can call or text a customer about any order.
+- **About older card orders:** only card orders placed from now on are listed under My orders (older ones weren't linked to an account).
+- **Files:** [site/src/pages/account/index.astro](../site/src/pages/account/index.astro), [site/src/pages/api/account.ts](../site/src/pages/api/account.ts), [site/src/lib/session.ts](../site/src/lib/session.ts), [site/src/lib/cardOrders.ts](../site/src/lib/cardOrders.ts), [site/src/pages/api/cards.ts](../site/src/pages/api/cards.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/tests/account-signup.test.ts](../site/tests/account-signup.test.ts) (new, 3 tests), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then `npm run dev`. Open http://localhost:4321/account, sign out, and create a new test account: the mobile number is now asked for. Then click through the tabs, and order a business card to see it under **My orders**.
+
 ## 2026-11-15 12:26 CST · Editor tools like Vistaprint (Templates, Graphics, Background, More) and "Design with AI" in demo mode
 
 - **Asked for:** "lets add more functions that is broken up similar to vista print" (Templates that stay in the editor, the Background panel with colors and patterns, the More menu with QR codes), "possibly allow people to use ai to come up a design", then "lets just see it in action first and we can decide later. put that in the to do list to see if its worth spending 2 cents per ai use".
