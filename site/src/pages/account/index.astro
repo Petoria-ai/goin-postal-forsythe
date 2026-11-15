@@ -7,6 +7,8 @@ import { consumeLoginTokenFull, readSession, signSession, sessionCookie, safeNex
 import { upsertCustomer, setPasswordHash, markEmailVerified, getLogin, setCustomerName } from '../../shipping/store';
 import { marketingConsent } from '../../shipping/store';
 import { CONSENT_WORDING } from '../../lib/consent';
+import { listSavedDesigns } from '../../shipping/store';
+import { renderCard, sanitizeDesign, CARD_OPTIONS } from '../../lib/cards';
 import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
 
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
@@ -45,6 +47,15 @@ const fulfil = biz ? (await listFulfillmentOrders(env, biz.id, true)).slice(0, 2
 const keys = biz ? (await listApiKeys(env, biz.id)).filter((k) => k.active) : [];
 const fmt = (iso: string) => iso.slice(0, 10);
 const consent = me ? await marketingConsent(env, me.id) : null;
+// Saved designs (Peter, Nov 15 2026): business cards today; t-shirts, banners, yard signs and promo items join
+// this list when they're ordered online. Each shows its picture, what was picked last time, and Edit / Reorder / Delete.
+const savedDesigns = me ? await listSavedDesigns(env, me.id) : [];
+const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
+  let svg = ''; try { svg = renderCard(sanitizeDesign(JSON.parse(d.design_json)), 'front'); } catch {}
+  const picks: Record<string, string> = d.last_options_json ? JSON.parse(d.last_options_json) : {};
+  const extras = Object.values(picks).map((code) => CARD_OPTIONS.find((o) => o.code === code)).filter((o) => o && !o.default).map((o) => o!);
+  return { ...d, svg, extras };
+});
 ---
 <Base title={`Your account · ${store.name}`} description="Sign in with your email, keep your addresses, see your orders, ship again in two clicks.">
   <section class="hero">
@@ -139,6 +150,32 @@ const consent = me ? await marketingConsent(env, me.id) : null;
         <h4 data-i18n="acct.biz.api">API keys</h4>
         {keys.length ? <p>{keys.map((k) => <span><code>{k.prefix}…</code> {k.label}{k.webhook_url ? ' · webhook' : ''} </span>)} · <a href="/developers" data-i18n="acct.biz.docs">API docs</a></p> : <p class="muted"><span data-i18n="acct.biz.nokeys">No keys yet. Ask the counter for one to connect your shop.</span> <a href="/developers" data-i18n="acct.biz.docs">API docs</a></p>}
       </div>}
+      <div class="card" id="designs">
+        <h3 data-i18n="saved.h">Your saved designs</h3>
+        <p class="muted" data-i18n="saved.p">Everything you design or order is kept here. Edit it, or order the same again in a click.</p>
+        {savedCards.length ? <>
+          <h4 data-i18n="nav.print.cards">Business Cards</h4>
+          <div class="saved-grid">
+            {savedCards.map((c) => (
+              <div class="saved-item" data-saved={c.id}>
+                <div class="card-wrap" set:html={c.svg} />
+                <p class="saved-name">{c.name}</p>
+                {c.last_quantity
+                  ? <p class="muted"><span data-i18n="saved.last">Last ordered</span> {fmt(c.last_ordered_at ?? c.updated_at)}: {c.last_quantity} <span data-i18n="shop.cards">cards</span>{c.extras.map((o) => <> · <span data-i18n={`cards.opt.${o.code}`}>{o.name}</span></>)}</p>
+                  : <p class="muted"><span data-i18n="saved.saved">Saved</span> {fmt(c.updated_at)}</p>}
+                <p class="btnrow">
+                  <a class="btn small" href={`/cards/design?saved=${c.id}`} data-i18n="saved.edit">Edit</a>
+                  <button type="button" class="btn small kraft" data-reorder={c.id} data-i18n={c.last_quantity ? 'saved.reorder' : 'saved.order'}>{c.last_quantity ? 'Reorder' : 'Order'}</button>
+                  <button type="button" class="linkish" data-deldesign={c.id} data-i18n="saved.delete">Delete</button>
+                </p>
+              </div>
+            ))}
+          </div>
+        </> : <p data-i18n="saved.none">No saved designs yet. Design business cards and press "Save to my account", or order them, and they'll be kept here.</p>}
+        <p class="muted" data-i18n="saved.soon">T-shirts, banners, yard signs and promo items will be saved here too once they can be ordered online.</p>
+        <p><a href="/cards" data-i18n="shop.browse">Browse designs</a></p>
+        <p id="savedMsg" role="alert"></p>
+      </div>
       <div class="card">
         <h3 id="orders" data-i18n="acct.orders">Your orders</h3>
         {!quotes.length && <p class="muted" data-i18n="acct.noorders">No orders yet under this email.</p>}
@@ -163,6 +200,21 @@ const consent = me ? await marketingConsent(env, me.id) : null;
       const j = await res.json().catch(() => ({})); if (!res.ok) throw Object.assign(new Error(j.error ?? 'Try again'), { code: j.code }); return j;
     }
     const devLink = (el: HTMLElement, link?: string) => { if (link) { const a = document.createElement('a'); a.href = link; a.textContent = ' (dev: open it)'; el.append(a); } };
+    // Saved designs: Reorder fills the review page with the same card, quantity and options (priced again today);
+    // Delete asks first.
+    document.querySelectorAll<HTMLElement>('[data-reorder]').forEach((b) => b.addEventListener('click', async () => {
+      try {
+        const j = await api({ action: 'design_get', id: Number(b.dataset.reorder) });
+        localStorage.setItem('gp-card-order', JSON.stringify({ at: Date.now(), design: j.design.design, quantity: j.design.quantity ?? 100, options: j.design.options ?? {}, notes: '', saved_id: j.design.id }));
+        if (!j.design.quantity) { location.href = `/cards/design?saved=${j.design.id}`; return; }
+        location.href = '/cards/review';
+      } catch (e: any) { const m = $('savedMsg')!; m.className = 'err'; m.textContent = e.message; }
+    }));
+    document.querySelectorAll<HTMLElement>('[data-deldesign]').forEach((b) => b.addEventListener('click', async () => {
+      if (!confirm(t('saved.confirmdel'))) return;
+      try { await api({ action: 'design_delete', id: Number(b.dataset.deldesign) }); b.closest('.saved-item')?.remove(); }
+      catch (e: any) { const m = $('savedMsg')!; m.className = 'err'; m.textContent = e.message; }
+    }));
     $('login')?.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const f = ev.target as HTMLFormElement;

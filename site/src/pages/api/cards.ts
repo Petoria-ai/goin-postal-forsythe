@@ -9,7 +9,8 @@ import { newCardId, saveCardOrder, type CardOrder } from '../../lib/cardOrders';
 import { json } from '../../lib/validate';
 import { createCardCheckout } from '../../lib/stripe';
 import { readSession } from '../../lib/session';
-import { getCustomer, setCustomerName, normalizePhone } from '../../shipping/store';
+import { getCustomer, setCustomerName, normalizePhone, saveSavedDesign, markSavedDesignOrdered } from '../../shipping/store';
+import { designForSaving, cardName, cleanPicks } from '../../lib/savedCards';
 
 // Customer orders cards (Peter, Nov 14 2026: design, then /cards/review, then Stripe's secure page, then the
 // confirmation page). action "preview" prices an order for the review page without saving anything; anyone may
@@ -59,8 +60,18 @@ export const POST: APIRoute = async ({ request }) => {
     };
     order.total = Math.round((priced.subtotal + (order.tax?.amount ?? 0) + (order.fee?.amount ?? 0)) * 100) / 100;
     await saveCardOrder(env, order);
+    // Keep the card on the customer's account (Peter, Nov 15 2026): the saved card it came from is updated,
+    // otherwise a new one is added, with what was picked this time for Reorder. A card that can't be saved
+    // (too many pictures, or 30 cards already kept) never stops the order.
+    let saved_id: number | null = null;
+    try {
+      const { design, json: dj } = designForSaving(order.design);
+      const row = await saveSavedDesign(env, { customer_id: me.id, product: 'card', id: Number(b.saved_id) || null, name: cardName(design, b.saved_name), design_json: dj });
+      await markSavedDesignOrdered(env, me.id, row.id, { order_id: order.id, quantity, options_json: JSON.stringify(cleanPicks(b.options)) });
+      saved_id = row.id;
+    } catch { /* the order goes ahead */ }
     const url = await createCardCheckout(env, order);
-    return json({ order_id: order.id, next: url });
+    return json({ order_id: order.id, next: url, saved_id });
   } catch (e: any) {
     return json({ error: e.message }, 400);
   }

@@ -106,12 +106,12 @@ const needName = !!me && (!me.name || me.name === 'Customer');
         btn.setAttribute('disabled', ''); $('err').textContent = '';
         const val = (n: string) => (f.querySelector(`[name=${n}]`) as HTMLInputElement | null)?.value ?? '';
         const res = await fetch('/api/cards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-          design: order.design, quantity: order.quantity, options: order.options, notes: order.notes,
+          design: order.design, quantity: order.quantity, options: order.options, notes: order.notes, saved_id: order.saved_id ?? null,
           proofed: (f.querySelector('[name=proofed]') as HTMLInputElement).checked, customer: { name: val('cname'), phone: val('cphone') },
         }) });
         const j = await res.json().catch(() => ({}));
         if (!res.ok) { $('err').textContent = j.error ?? 'Try again'; btn.removeAttribute('disabled'); return; }
-        try { localStorage.removeItem(DRAFT); localStorage.removeItem('gp-card-design'); } catch {}
+        try { localStorage.removeItem(DRAFT); localStorage.removeItem('gp-card-design'); localStorage.removeItem('gp-card-saved-id'); } catch {}
         location.href = j.next;
       });
     }

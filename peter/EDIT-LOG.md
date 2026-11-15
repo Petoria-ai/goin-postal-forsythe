@@ -4,6 +4,22 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-15 11:51 CST · Saved designs on the customer's account: edit, reorder (business cards now, every product later)
+
+- **Asked for:** "once they make an account, they'll have their business card saved and they can still make edits to their previous card and make an order with that or just reorder the same one", then "along with t shirts, pens, banners and yard signs. same deal save their stuff"
+- **What changed:**
+  - **The account page has a new "Your saved designs" section.** Each saved business card shows its picture, its name, and either "Saved (date)" or "Last ordered (date): 250 cards · Gloss". It has three buttons:
+    - **Edit** opens it in the designer, with the last quantity and options already ticked.
+    - **Reorder** goes straight to Review your order with the same card, quantity and options, priced again at **today's** prices.
+    - **Delete** asks first.
+  - **Cards are saved two ways:** a new **Save to my account** button in the designer, and **automatically every time a card is ordered**. Editing a saved card and saving or ordering it updates that same card, so the list doesn't fill up with copies. A customer who isn't signed in is told to sign in, and their design waits on the page meanwhile.
+  - **Built for every printed product.** T-shirts, banners, yard signs and pens and promo items use the same saved list once they can be ordered online (to-do P7). Until then the section says they're coming.
+  - **Safety:** a customer can only ever see, change or delete their own designs. Up to 30 of each product per customer, and a design with too many huge pictures is refused with a clear message. A design that can't be saved never stops the order.
+  - In all 14 languages.
+- **Why:** Repeat orders are easy money. A customer who can reorder their cards in two clicks comes back to us instead of starting over somewhere else.
+- **Files:** [site/db/schema.sql](../site/db/schema.sql) (new `saved_designs` table), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/lib/savedCards.ts](../site/src/lib/savedCards.ts) (new), [site/src/pages/api/account.ts](../site/src/pages/api/account.ts), [site/src/pages/api/cards.ts](../site/src/pages/api/cards.ts), [site/src/pages/account/index.astro](../site/src/pages/account/index.astro), [site/src/pages/cards/design.astro](../site/src/pages/cards/design.astro), [site/src/pages/cards/review.astro](../site/src/pages/cards/review.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/tests/saved-designs.test.ts](../site/tests/saved-designs.test.ts) (new, 4 tests), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then **`npm run db:local`** (new table), then `npm run dev`. Sign in, design a card, press **Save to my account**, then open **Account**: the card is under "Your saved designs". Try Edit, Reorder and Delete.
+
 ## 2026-11-15 11:28 CST · To-do P9: find a business card supplier and price to compete
 
 - **Asked for:** "add to the to do list. need to find a business card supplier. and understand their services and features they can provide. and getting prices to make sure we can be competitive"

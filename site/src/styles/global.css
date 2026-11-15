@@ -801,3 +801,12 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .c3d-dialog .c3d-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
 .c3d-dialog h2 { margin: 0; font-size: 1.3rem; }
 @media (prefers-reduced-motion: reduce) { .c3d-card { transition: none !important; } }
+
+/* Saved designs on the account page (Peter, Nov 15 2026) */
+.saved-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); margin: 10px 0 16px; }
+.saved-item { border: 1px solid var(--hair); border-radius: 14px; padding: 12px; background: #fff; display: flex; flex-direction: column; gap: 6px; }
+.saved-item .card-wrap { margin: 0 0 4px; }
+.saved-item p { margin: 0; }
+.saved-name { font-weight: 800; color: var(--navy); overflow-wrap: anywhere; }
+.saved-item .btnrow { margin-top: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ok-msg { color: #17602a; font-weight: 700; }

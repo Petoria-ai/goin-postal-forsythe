@@ -147,12 +147,13 @@ const mem = {
   apiKeys: [] as ApiKeyRow[],
   x402: [] as X402PaymentRow[],
   settings: new Map<string, SettingRow>(),
+  savedDesigns: [] as SavedDesignRow[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -194,6 +195,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'fulfillment_orders': return mem.fulfillmentOrders;
     case 'fulfillment_fees': return mem.fees;
     case 'site_settings': return [...mem.settings.values()];
+    case 'saved_designs': return mem.savedDesigns;
     default: return [];
   }
 };
@@ -665,6 +667,54 @@ export async function listAudit(env: Env, o: { staff_id?: number; limit?: number
     return (await env.DB.prepare(`SELECT * FROM audit_log ORDER BY id DESC LIMIT ${limit}`).all<AuditRow>()).results;
   }
   return mem.audit.filter((a) => !o.staff_id || a.staff_id === o.staff_id).slice(0, limit);
+}
+
+// ---- saved designs (Peter, Nov 15 2026) ---------------------------------------------------------------
+// A customer's designs on their account, to edit or reorder: business cards now, and t-shirts, banners, yard signs
+// and promo items when those are ordered online. Every read and write is scoped to the customer, so one customer
+// can never open, change or delete another's design.
+export type SavedProduct = 'card' | 't-shirt' | 'banner' | 'yard-sign' | 'promo';
+export const SAVED_PRODUCTS: SavedProduct[] = ['card', 't-shirt', 'banner', 'yard-sign', 'promo'];
+export interface SavedDesignRow { id: number; customer_id: string; product: SavedProduct; name: string; design_json: string; last_quantity: number | null; last_options_json: string | null; last_order_id: string | null; last_ordered_at: string | null; created_at: string; updated_at: string }
+export const SAVED_DESIGNS_MAX = 30; // per product
+export async function listSavedDesigns(env: Env, customerId: string, product?: SavedProduct): Promise<SavedDesignRow[]> {
+  if (env.DB) {
+    const q = product ? env.DB.prepare('SELECT * FROM saved_designs WHERE customer_id = ?1 AND product = ?2 ORDER BY updated_at DESC, id DESC').bind(customerId, product)
+      : env.DB.prepare('SELECT * FROM saved_designs WHERE customer_id = ?1 ORDER BY updated_at DESC, id DESC').bind(customerId);
+    return (await q.all<SavedDesignRow>()).results;
+  }
+  return mem.savedDesigns.filter((c) => c.customer_id === customerId && (!product || c.product === product)).sort((a, b) => b.updated_at.localeCompare(a.updated_at) || b.id - a.id);
+}
+export async function getSavedDesign(env: Env, customerId: string, id: number): Promise<SavedDesignRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM saved_designs WHERE id = ?1 AND customer_id = ?2').bind(id, customerId).first<SavedDesignRow>()) ?? null;
+  return mem.savedDesigns.find((c) => c.id === id && c.customer_id === customerId) ?? null;
+}
+/** Save a design: updates the customer's design `id` of the same product when given, otherwise adds a new one. */
+export async function saveSavedDesign(env: Env, c: { customer_id: string; product: SavedProduct; id?: number | null; name: string; design_json: string }): Promise<SavedDesignRow> {
+  if (!SAVED_PRODUCTS.includes(c.product)) throw new Error('Unknown product');
+  const t = now();
+  const found = c.id ? await getSavedDesign(env, c.customer_id, c.id) : null;
+  const existing = found && found.product === c.product ? found : null;
+  if (existing) {
+    if (env.DB) await env.DB.prepare('UPDATE saved_designs SET name = ?1, design_json = ?2, updated_at = ?3 WHERE id = ?4 AND customer_id = ?5').bind(c.name, c.design_json, t, existing.id, c.customer_id).run();
+    else Object.assign(existing, { name: c.name, design_json: c.design_json, updated_at: t });
+    return { ...existing, name: c.name, design_json: c.design_json, updated_at: t };
+  }
+  if ((await listSavedDesigns(env, c.customer_id, c.product)).length >= SAVED_DESIGNS_MAX) throw new Error(`You can keep up to ${SAVED_DESIGNS_MAX} of these. Delete one on your account page first.`);
+  const row = { customer_id: c.customer_id, product: c.product, name: c.name, design_json: c.design_json, last_quantity: null, last_options_json: null, last_order_id: null, last_ordered_at: null, created_at: t, updated_at: t };
+  if (env.DB) { const r = await env.DB.prepare('INSERT INTO saved_designs (customer_id, product, name, design_json, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING id').bind(row.customer_id, row.product, row.name, row.design_json, t, t).first<{ id: number }>(); return { id: r!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.savedDesigns.push(full); return full;
+}
+/** Remember what was picked when this design was ordered, for Reorder. */
+export async function markSavedDesignOrdered(env: Env, customerId: string, id: number, o: { order_id: string; quantity: number; options_json: string }) {
+  const t = now();
+  if (env.DB) { await env.DB.prepare('UPDATE saved_designs SET last_quantity = ?1, last_options_json = ?2, last_order_id = ?3, last_ordered_at = ?4, updated_at = ?4 WHERE id = ?5 AND customer_id = ?6').bind(o.quantity, o.options_json, o.order_id, t, id, customerId).run(); return; }
+  const c = mem.savedDesigns.find((x) => x.id === id && x.customer_id === customerId);
+  if (c) Object.assign(c, { last_quantity: o.quantity, last_options_json: o.options_json, last_order_id: o.order_id, last_ordered_at: t, updated_at: t });
+}
+export async function deleteSavedDesign(env: Env, customerId: string, id: number): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('DELETE FROM saved_designs WHERE id = ?1 AND customer_id = ?2').bind(id, customerId).run()).meta.changes ?? 0) > 0;
+  const n = mem.savedDesigns.length; mem.savedDesigns = mem.savedDesigns.filter((c) => !(c.id === id && c.customer_id === customerId)); return mem.savedDesigns.length < n;
 }
 
 // ---- site switches (Peter, Nov 14 2026) ---------------------------------------------------------

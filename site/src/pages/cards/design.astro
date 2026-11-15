@@ -49,6 +49,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
           <button type="button" class="tool" id="redo" title="Ctrl+Y" data-i18n="cards.redo">Redo</button>
           <button type="button" class="tool" id="changeDesign" data-i18n="cards.change">Change design</button>
           <button type="button" class="tool" id="preview3d" data-i18n="c3d.preview">Preview in 3D</button>
+          <button type="button" class="tool" id="saveCard" data-i18n="saved.save">Save to my account</button>
         </div>
         <div class="canvas-box">
           <div class="canvas card-wrap" id="canvas"></div>
@@ -59,6 +60,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
           </div>
         </div>
         <p class="err" id="uploadWarn" hidden></p>
+        <p id="saveMsg" role="status" hidden></p>
         <p class="muted" data-i18n="cards.safe">Dashed line is the safe area. Keep text inside it. Grey text is sample copy, click it and type yours. Delete key removes the selected item, arrow keys nudge it.</p>
         <p><button class="btn kraft" type="button" id="png" data-i18n="cards.png">Download PNG (free)</button></p>
       </div>
@@ -145,6 +147,11 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     const sel = () => cur().elements.find((e) => e.id === selected) ?? null;
 
     let uploadMode = false; // started from "Upload your design": an empty side offers the upload button
+    // Saved cards (Peter, Nov 15 2026): the account card this design came from, so saving or ordering updates it.
+    const SAVED_KEY = 'gp-card-saved-id';
+    let savedId: number | null = null;
+    try { savedId = Number(localStorage.getItem(SAVED_KEY)) || null; } catch {}
+    const setSaved = (id: number | null) => { savedId = id; try { if (id) localStorage.setItem(SAVED_KEY, String(id)); else localStorage.removeItem(SAVED_KEY); } catch {} };
     function render() {
       canvas.innerHTML = renderCard(design, side, { guides: true, editing: true, selected });
       $('uploadCta').hidden = !(uploadMode && cur().elements.length === 0);
@@ -179,7 +186,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
 
     function start(t: TemplateId, pi: number) {
       design = makeTemplate(t, PALETTES[pi], BLANK, true);
-      uploadMode = false;
+      uploadMode = false; setSaved(null);
       undoStack.length = 0; redoStack.length = 0; selected = null; side = 'front';
       step1.hidden = true; step2.hidden = false; render();
       step2.scrollIntoView({ behavior: 'smooth' });
@@ -205,7 +212,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
     // and saved as a JPEG small enough for the order; a picture smaller than print size gets a warning.
     function startBlank() {
       design = { template: 'minimal', font: 'sans', front: { bg: '#ffffff', elements: [] }, back: { bg: '#ffffff', elements: [] } };
-      uploadMode = true; undoStack.length = 0; redoStack.length = 0; selected = null; side = 'front';
+      uploadMode = true; setSaved(null); undoStack.length = 0; redoStack.length = 0; selected = null; side = 'front';
       step1.hidden = true; step2.hidden = false; render();
     }
     function uploadFull(file: File) {
@@ -246,11 +253,39 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       dlg.showModal();
     });
     $('close3d').addEventListener('click', () => dlg.close());
+
+    // Save to my account: signed in, it saves (or updates) the card on the account; signed out, it explains and links
+    // to sign in. The design stays on this device meanwhile, and the designer offers to continue it.
+    $('saveCard').addEventListener('click', async () => {
+      const m = $('saveMsg'); m.hidden = false; m.className = 'muted'; m.textContent = t('saved.saving');
+      const res = await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'design_save', product: 'card', id: savedId, design: printable() }) });
+      const j = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        m.className = 'card'; m.textContent = t('saved.signin') + ' ';
+        const a = document.createElement('a'); a.href = `/account?next=${encodeURIComponent('/cards/design')}`; a.textContent = t('acct.signin'); m.append(a);
+        return;
+      }
+      if (!res.ok) { m.className = 'err'; m.textContent = j.error ?? 'Try again'; return; }
+      setSaved(j.id); m.className = 'ok-msg'; m.textContent = t('saved.done') + ' ';
+      const a = document.createElement('a'); a.href = '/account#designs'; a.textContent = t('saved.see'); m.append(a);
+    });
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 
     // Coming from the shop page: ?t=&p= opens a layout straight away, ?upload=1 a blank card with the upload button,
     // ?stock= / ?finish= / ?corners= preselect the paper, finish and corners in the order form.
-    if (q.get('upload') === '1') startBlank();
+    // ?saved=ID opens a card kept on the customer's account, with the quantity and options from its last order.
+    const savedParam = Number(q.get('saved')) || 0;
+    if (savedParam) {
+      fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'design_get', id: savedParam }) })
+        .then(async (r) => { if (r.status === 401) { location.href = `/account?next=${encodeURIComponent(location.pathname + location.search)}`; return; } const j = await r.json(); if (!r.ok) throw new Error(j.error);
+          if (j.design.product !== 'card') throw new Error('That design is not a business card'); design = j.design.design; setSaved(j.design.id); uploadMode = false; side = 'front'; selected = null; undoStack.length = 0; redoStack.length = 0;
+          step1.hidden = true; step2.hidden = false; render();
+          if (j.design.quantity) (document.querySelector('#order [name=quantity]') as HTMLSelectElement).value = String(j.design.quantity);
+          for (const [g, v] of Object.entries(j.design.options ?? {})) { const r2 = document.querySelector<HTMLInputElement>(`#order input[name=${g}][value="${CSS.escape(String(v))}"]`); if (r2) r2.checked = true; }
+          document.getElementById('order')!.dispatchEvent(new Event('change'));
+        })
+        .catch((e) => { const m = $('saveMsg'); m.className = 'err'; m.textContent = e.message; m.hidden = false; });
+    } else if (q.get('upload') === '1') startBlank();
     else if (q.get('t') && TEMPLATES.some((x) => x.id === q.get('t'))) start(q.get('t') as TemplateId, Math.min(PALETTES.length - 1, Math.max(0, Number(q.get('p')) || 0)));
     for (const g of ['stock', 'finish', 'corners']) {
       const v = q.get(g); const r = v ? document.querySelector<HTMLInputElement>(`#order input[name=${g}][value="${CSS.escape(v)}"]`) : null;
@@ -399,7 +434,7 @@ const cancelled = Astro.url.searchParams.get('cancelled');
       if (!d.front.elements.some((e) => e.type === 'text' || (e.type === 'image' && e.w >= CARD_W && e.h >= CARD_H))) { err.textContent = t('cards.nofront'); err.hidden = false; return; }
       const o = Object.fromEntries(new FormData(order).entries()) as Record<string, string>;
       // The order waits on this device for the review page (and through a sign-in); nothing is charged yet.
-      try { localStorage.setItem('gp-card-order', JSON.stringify({ at: Date.now(), design: d, quantity: Number(o.quantity), options: picks(), notes: o.notes })); }
+      try { localStorage.setItem('gp-card-order', JSON.stringify({ at: Date.now(), design: d, quantity: Number(o.quantity), options: picks(), notes: o.notes, saved_id: savedId })); }
       catch { err.textContent = 'This browser is blocking saved data, so the order cannot continue. Try another browser.'; err.hidden = false; return; }
       location.href = '/cards/review';
     });

@@ -2,6 +2,8 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json, parseAddress } from '../../lib/validate';
+import { listSavedDesigns, getSavedDesign, saveSavedDesign, deleteSavedDesign, SAVED_PRODUCTS, type SavedProduct } from '../../shipping/store';
+import { designForSaving, cardName, cleanPicks, cleanQuantity } from '../../lib/savedCards';
 import { createLoginToken, readSession, clearCookie, safeNext, createSignupToken, tooManyFails, recordFail, clearFails, signSession, sessionCookie } from '../../lib/session';
 import { hashPassword, verifyPassword, passwordProblem } from '../../lib/password';
 import { getLogin, setPasswordHash } from '../../shipping/store';
@@ -122,12 +124,36 @@ export const POST: APIRoute = async ({ request }) => {
       await logAudit(env, { id: null, name: `Customer ${c.name}` }, 'label.email', o.id, `${c.email} (from the account page)`);
       return json({ ok: true, mock });
     }
+    // Saved designs (Peter, Nov 15 2026): only ever this customer's own. Business cards today; the other printed
+    // products use the same actions with their product name once they're ordered online.
+    const product = (SAVED_PRODUCTS as string[]).includes(String(b.product ?? 'card')) ? (String(b.product ?? 'card') as SavedProduct) : null;
+    if (b.action === 'designs_list') {
+      const rows = await listSavedDesigns(env, c.id, product ?? undefined);
+      return json({ designs: rows.map((r) => ({ id: r.id, product: r.product, name: r.name, updated_at: r.updated_at, last_quantity: r.last_quantity, last_options: r.last_options_json ? JSON.parse(r.last_options_json) : null, last_ordered_at: r.last_ordered_at })) });
+    }
+    if (b.action === 'design_get') {
+      const r = await getSavedDesign(env, c.id, Number(b.id));
+      if (!r) return json({ error: 'No such design on this account' }, 404);
+      const design = JSON.parse(r.design_json);
+      const card = r.product === 'card';
+      return json({ design: { id: r.id, product: r.product, name: r.name, design, quantity: card ? cleanQuantity(r.last_quantity) : r.last_quantity, options: card ? cleanPicks(r.last_options_json ? JSON.parse(r.last_options_json) : {}) : (r.last_options_json ? JSON.parse(r.last_options_json) : {}) } });
+    }
+    if (b.action === 'design_save') {
+      if (product !== 'card') return json({ error: 'Saving this product online is not available yet' }, 400);
+      const { design, json: dj } = designForSaving(b.design);
+      const r = await saveSavedDesign(env, { customer_id: c.id, product, id: Number(b.id) || null, name: cardName(design, b.name), design_json: dj });
+      return json({ ok: true, id: r.id, name: r.name });
+    }
+    if (b.action === 'design_delete') {
+      const ok = await deleteSavedDesign(env, c.id, Number(b.id));
+      return ok ? json({ ok: true }) : json({ error: 'No such design on this account' }, 404);
+    }
     if (b.action === 'delete_address') {
       const ok = await deleteCustomerAddress(env, c.id, Number(b.id));
       return ok ? json({ ok: true }) : json({ error: 'No such address' }, 404);
     }
     return json({ error: 'Unknown action' }, 400);
   } catch (e: any) {
-    return json({ error: e.message }, /Missing|must be|needed/.test(e.message ?? '') ? 400 : 500);
+    return json({ error: e.message }, /Missing|must be|needed|too many|up to/.test(e.message ?? '') ? 400 : 500);
   }
 };

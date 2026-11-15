@@ -551,3 +551,24 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated_at TEXT NOT NULL,
   updated_by TEXT NOT NULL
 );
+
+-- Saved designs (Peter, Nov 15 2026): a signed-in customer's designs, kept on their account to edit or reorder.
+-- One list for every printed product: product is 'card' for business cards now; 't-shirt', 'banner', 'yard-sign'
+-- and 'promo' join it when those are ordered online (TODO P7). Saved when the customer presses "Save to my account"
+-- and every time they order. last_* hold the quantity and options picked the last time it was ordered, so Reorder
+-- can fill them in; prices are always worked out again at today's prices. design_json holds the design (pictures
+-- inside it as data URLs, at most 1.5 MB).
+CREATE TABLE IF NOT EXISTS saved_designs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(id),
+  product TEXT NOT NULL DEFAULT 'card',
+  name TEXT NOT NULL,
+  design_json TEXT NOT NULL,
+  last_quantity INTEGER,
+  last_options_json TEXT,
+  last_order_id TEXT,
+  last_ordered_at TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS saved_designs_customer ON saved_designs(customer_id, product);
