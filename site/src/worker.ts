@@ -6,7 +6,7 @@
 //   on the paid-through date, and overage fees (45 cents a piece over the box's limit) charged to the card on file. Then an email to STAFF_EMAIL listing the boxes
 //   whose 6-month mail hold ended (once each), so their mail goes back to the sender.
 import astro from '@astrojs/cloudflare/entrypoints/server';
-import { sendDueReminders, holdEndNotices, autoRenewals, billOverages } from './lib/mailboxJobs';
+import { sendDueReminders, holdEndNotices, autoRenewals, billOverages, packageJobs } from './lib/mailboxJobs';
 
 export default {
   fetch: astro.fetch,
@@ -15,8 +15,8 @@ export default {
       (sent) => console.log(`mailbox reminders: ${sent.length} sent`),
       (e) => console.error('mailbox reminders failed:', e),
     ));
-    // Automatic renewals due today, then the day's overage fees, charged to the cards on file.
-    ctx.waitUntil(autoRenewals(env).then(() => billOverages(env)).then(
+    // Automatic renewals due today, then package fees and notices, then the day's fees charged to the cards on file.
+    ctx.waitUntil(autoRenewals(env).then(() => packageJobs(env)).then(() => billOverages(env)).then(
       (r) => console.log(`mailbox billing: ${r.paid} overage charges, $${r.total}`),
       (e) => console.error('mailbox billing failed:', e),
     ));

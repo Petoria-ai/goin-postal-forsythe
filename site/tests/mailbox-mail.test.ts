@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { env } from 'cloudflare:workers';
-import { fullness, reminderText, day, addMonths } from '../src/lib/mailbox';
-import { upsertCustomer, assignMailbox, addStaff, getMailbox, getMailboxSettings, listMailboxCharges, listAudit } from '../src/shipping/store';
+import { fullness, reminderText, day, addMonths, packageFeesDue, packageState } from '../src/lib/mailbox';
+import { upsertCustomer, assignMailbox, addStaff, getMailbox, getMailboxSettings, listMailboxCharges, listAudit, addMailboxItem } from '../src/shipping/store';
 import { hashPin } from '../src/lib/auth';
 import { signSession } from '../src/lib/session';
-import { chargeOverages, autoRenewals } from '../src/lib/mailboxJobs';
+import { chargeOverages, autoRenewals, packageJobs } from '../src/lib/mailboxJobs';
 import { POST } from '../src/pages/api/mailbox';
 import { GET as mockPaid } from '../src/pages/api/mock-paid';
 
@@ -45,16 +45,25 @@ describe('mail log, card and billing', () => {
     boxId = (await assignMailbox(env as any, { box_no: 1199, customer_id: cust, size: 'small', term: 6, start_date: today, paid_through: addMonths(today, 6) })).id;
   });
 
-  it('logs pieces; one notice a day; the 21st piece in a small box is a 45-cent overage', async () => {
+  it('letters fill the box: one notice a day; the 21st letter in a small box is a 45-cent overage', async () => {
     const first = await call({ pin: '6666', action: 'mail_in', box_no: '1199', kind: 'letter' });
     expect(first.status).toBe(200);
-    expect(first.body).toMatchObject({ pieces: 1, capacity: 20, over: false, notified: true });
-    for (let i = 2; i <= 20; i++) expect((await call({ pin: '6666', action: 'mail_in', box_no: 1199, kind: i % 5 ? 'letter' : 'package' })).body.notified).toBe(false);
-    const extra = await call({ pin: '6666', action: 'mail_in', box_no: 1199, kind: 'package', note: 'Amazon' });
+    expect(first.body).toMatchObject({ pieces: 1, capacity: 20, over: false, notified: true, packages: 0 });
+    for (let i = 2; i <= 20; i++) expect((await call({ pin: '6666', action: 'mail_in', box_no: 1199, kind: 'letter' })).body.notified).toBe(false);
+    const extra = await call({ pin: '6666', action: 'mail_in', box_no: 1199, kind: 'letter', note: 'catalog' });
     expect(extra.body).toMatchObject({ pieces: 21, over: true });
     const fees = await listMailboxCharges(env as any, { customer_id: cust, status: 'unbilled' });
     expect(fees.map((c) => [c.kind, c.amount])).toEqual([['overage', 0.45]]);
     expect((await call({ pin: '6666', action: 'mail_in', box_no: 1500, kind: 'letter' })).status).toBe(404);
+  });
+
+  it('packages do not fill the box; a 3rd package gets its own notice the same day', async () => {
+    const a = await call({ pin: '6666', action: 'mail_in', box_no: 1199, kind: 'package' });
+    expect(a.body).toMatchObject({ pieces: 21, packages: 1, over: false, extra_package: false, notified: false });
+    await call({ pin: '6666', action: 'mail_in', box_no: 1199, kind: 'package' });
+    const c = await call({ pin: '6666', action: 'mail_in', box_no: 1199, kind: 'package', note: 'Amazon' });
+    expect(c.body).toMatchObject({ packages: 3, extra_package: true, notified: true });
+    expect((await listMailboxCharges(env as any, { customer_id: cust, status: 'unbilled' })).length).toBe(1); // no fee on the day it comes in
   });
 
   it('undo takes the piece out and waives its fee', async () => {
@@ -65,12 +74,11 @@ describe('mail log, card and billing', () => {
     expect((await listMailboxCharges(env as any, { customer_id: cust, status: 'unbilled' })).length).toBe(1);
   });
 
-  it('the staff list shows how full each box is', async () => {
+  it('the staff list shows how full each box is, letters only, with the packages beside it', async () => {
     const list = await call({ pin: '6666', action: 'list' });
     const b = list.body.boxes.find((x: any) => x.box_no === 1199);
-    expect(b.inbox).toMatchObject({ letters: 16, packages: 5, pieces: 21, capacity: 20, pct: 105 });
+    expect(b.inbox).toMatchObject({ letters: 21, packages: 3, pieces: 21, capacity: 20, pct: 105, pkg_late: false, pkg_rts: false });
   });
-
   it('overages wait for a card, and for 50 cents', async () => {
     expect(await chargeOverages(env as any, cust)).toMatchObject({ status: 'no_card', total: 0.45 });
   });
@@ -97,7 +105,7 @@ describe('mail log, card and billing', () => {
 
   it('pick up clears the box', async () => {
     const r = await call({ pin: '6666', action: 'pickup', id: boxId });
-    expect(r.body.n).toBe(22);
+    expect(r.body.n).toBe(25);
     const b = (await call({ pin: '6666', action: 'list' })).body.boxes.find((x: any) => x.box_no === 1199);
     expect(b.inbox.pieces).toBe(0);
   });
@@ -125,5 +133,43 @@ describe('mail log, card and billing', () => {
     await call({ action: 'card_remove' }, cookie);
     expect(await getMailboxSettings(env as any, cust)).toMatchObject({ payment_method_id: null, autorenew: 0 });
     expect((await call({ action: 'set_prefs', autorenew: true }, cookie)).status).toBe(400); // needs a card
+  });
+});
+
+describe('package rules: 2 free at a time, 5 free days, $1 a day up to $10, final notice on day 30', () => {
+  const ago = (today: string, n: number) => new Date(Date.parse(today + 'T15:00:00Z') - n * 86_400_000).toISOString();
+  it('works out the fees for a box', () => {
+    const t = '2026-11-20';
+    const pk = [{ id: 1, arrived_at: ago(t, 8) }, { id: 2, arrived_at: ago(t, 3) }, { id: 3, arrived_at: ago(t, 2) }, { id: 4, arrived_at: ago(t, 1) }];
+    const due = packageFeesDue(pk, new Set(), t);
+    // #1: here 8 days, 3 storage days. #3 (3rd at a time, 2 days): $2. #4 (4th, only 1 day): nothing yet.
+    expect(due.map((d) => [d.marker, d.amount])).toEqual([['1:storage:1', 1], ['1:storage:2', 1], ['1:storage:3', 1], ['3:extra', 2]]);
+    expect(packageFeesDue(pk, new Set(due.map((d) => d.marker)), t)).toEqual([]); // never twice
+    const long = packageFeesDue([{ id: 9, arrived_at: ago(t, 40) }], new Set(), t);
+    expect(long.reduce((a, d) => a + d.amount, 0)).toBe(10); // capped
+    expect(packageState({ arrived_at: ago(t, 40) }, 0, t)).toMatchObject({ storage: 10, rts: true, late: true });
+    expect(packageState({ arrived_at: ago(t, 30) }, 0, t)).toMatchObject({ rts: false });
+    expect(packageState({ arrived_at: ago(t, 33) }, 0, t)).toMatchObject({ rts: true });
+    expect(packageState({ arrived_at: ago(t, 3) }, 0, t)).toMatchObject({ storage: 0, extra: 0, late: false });
+  });
+
+  it('the daily run adds the fees once and sends one notice per stage', async () => {
+    const today = day(new Date());
+    const who = (await upsertCustomer(env as any, { name: 'Pat Parcel', email: 'pat@example.com', phone: '318-555-0170' }))!;
+    const box = await assignMailbox(env as any, { box_no: 1188, customer_id: who, size: 'small', term: 6, start_date: today, paid_through: addMonths(today, 6) });
+    const add = (days: number) => addMailboxItem(env as any, { mailbox_id: box.id, customer_id: who, box_no: 1188, kind: 'package', note: null, over: 0, by_name: 'test' });
+    const a = await add(0); a.arrived_at = ago(today, 7); // mem store: backdate in place
+    const r1 = await packageJobs(env as any, today);
+    expect(r1.notices).toBeGreaterThanOrEqual(1);
+    const fees = (await listMailboxCharges(env as any, { customer_id: who })).filter((c) => c.kind === 'storage');
+    expect(fees.map((c) => c.amount)).toEqual([1, 1]); // days 6 and 7
+    const r2 = await packageJobs(env as any, today);
+    expect((await listMailboxCharges(env as any, { customer_id: who })).filter((c) => c.kind === 'storage').length).toBe(2);
+    const keys: string[] = JSON.parse((await getMailbox(env as any, box.id))!.reminders);
+    expect(keys).toEqual(expect.arrayContaining([`p${a.id}:d4`, `p${a.id}:d6`]));
+    expect(r2.notices).toBe(0);
+    a.arrived_at = ago(today, 30);
+    expect((await packageJobs(env as any, today)).notices).toBe(1); // the final notice
+    expect((await listMailboxCharges(env as any, { customer_id: who })).filter((c) => c.kind === 'storage').reduce((s, c) => s + c.amount, 0)).toBe(10);
   });
 });

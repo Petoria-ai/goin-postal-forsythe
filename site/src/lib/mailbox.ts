@@ -136,3 +136,48 @@ export function fullness(pieces: number, size: string) {
   return { pieces, capacity: cap, pct, full: cap > 0 && pieces >= cap, over: cap > 0 ? Math.max(0, pieces - cap) : 0 };
 }
 export const money = (n: number) => `$${n.toFixed(2)}`;
+
+// ---- Packages (Peter, Nov 16 2026): they don't fill the box; they have their own limits -----------------
+export const PKG = {
+  freeCount: (cfg as any).package_free_count ?? 2,
+  fee: (cfg as any).package_fee ?? 2,
+  feeAfterDays: (cfg as any).package_fee_after_days ?? 2,
+  freeDays: (cfg as any).package_free_days ?? 5,
+  storagePerDay: (cfg as any).storage_fee_per_day ?? 1,
+  remindDay: (cfg as any).package_remind_day ?? 4,
+  storageCap: (cfg as any).storage_cap ?? 10,
+  returnNoticeDay: (cfg as any).package_return_notice_day ?? 30,
+  returnAfter: (cfg as any).package_return_after_notice_days ?? 3,
+};
+/** Whole days a piece has been here (0 on the day it came in). */
+export const daysHeld = (arrivedAt: string, today: string) => Math.max(0, daysBetween(arrivedAt.slice(0, 10), today));
+/** The last free day for a package (it came in on day 0). */
+export const freeUntil = (arrivedAt: string) => day(new Date(Date.parse(arrivedAt.slice(0, 10) + 'T00:00:00Z') + PKG.freeDays * 86_400_000));
+
+/**
+ * The package fees a box owes today that aren't charged yet. packages: the ones still here, oldest first.
+ * charged: markers already charged ("<id>:extra", "<id>:storage:<n>"). A package past the free count (by arrival
+ * order among those still here) owes the extra-package fee once it has been here feeAfterDays; every package owes
+ * storage for each day past freeDays.
+ */
+export function packageFeesDue(packages: { id: number; arrived_at: string }[], charged: Set<string>, today: string) {
+  const out: { item_id: number; marker: string; amount: number; what: 'package' | 'storage'; label: string }[] = [];
+  packages.forEach((p, i) => {
+    const held = daysHeld(p.arrived_at, today);
+    if (i >= PKG.freeCount && held >= PKG.feeAfterDays && !charged.has(`${p.id}:extra`))
+      out.push({ item_id: p.id, marker: `${p.id}:extra`, amount: PKG.fee, what: 'package', label: `Package ${i + 1} at a time (more than ${PKG.freeCount}), here ${held} days` });
+    const days = Math.min(held - PKG.freeDays, Math.floor(PKG.storageCap / PKG.storagePerDay));
+    for (let n = 1; n <= days; n++)
+      if (!charged.has(`${p.id}:storage:${n}`)) out.push({ item_id: p.id, marker: `${p.id}:storage:${n}`, amount: PKG.storagePerDay, what: 'storage', label: `Package storage, day ${PKG.freeDays + n}` });
+  });
+  return out;
+}
+/** The day staff should return an unclaimed package to the sender. */
+export const returnOn = (arrivedAt: string) => day(new Date(Date.parse(arrivedAt.slice(0, 10) + 'T00:00:00Z') + (PKG.returnNoticeDay + PKG.returnAfter) * 86_400_000));
+/** One package's state today: free, the extra-package fee, storage so far (capped), and whether to return it. */
+export function packageState(p: { arrived_at: string }, indexInBox: number, today: string) {
+  const held = daysHeld(p.arrived_at, today);
+  const storage = Math.min(Math.max(0, held - PKG.freeDays) * PKG.storagePerDay, PKG.storageCap);
+  const extra = indexInBox >= PKG.freeCount && held >= PKG.feeAfterDays ? PKG.fee : 0;
+  return { held, free_until: freeUntil(p.arrived_at), storage, extra, return_on: returnOn(p.arrived_at), rts: today >= returnOn(p.arrived_at), late: held > PKG.freeDays };
+}

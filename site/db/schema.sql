@@ -680,7 +680,7 @@ CREATE TABLE IF NOT EXISTS mailbox_charges (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   customer_id TEXT NOT NULL,
   mailbox_id INTEGER NOT NULL,
-  kind TEXT NOT NULL,                   -- overage, renewal
+  kind TEXT NOT NULL,                   -- overage (letters over capacity), package (more than 2 at a time), storage (package kept past its free days), renewal
   amount REAL NOT NULL,
   description TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'unbilled', -- unbilled, paid, failed, paid_counter, waived

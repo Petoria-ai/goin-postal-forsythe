@@ -13,8 +13,8 @@ import {
   listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
-import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor } from '../../lib/mailboxJobs';
-import { fullness } from '../../lib/mailbox';
+import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs } from '../../lib/mailboxJobs';
+import { fullness, packageState, daysHeld, PKG } from '../../lib/mailbox';
 
 // Physical mailboxes on the website (Peter, Nov 15 and 17 2026).
 // Customer (signed in): reserve {size, term}, cancel_reservation, renew_checkout {id, term} (Stripe; the box is
@@ -116,8 +116,11 @@ export const POST: APIRoute = async ({ request }) => {
     const view = async (x: MailboxRow) => {
       docCounts ??= await countMailboxDocs(env);
       inBox ??= await countItemsIn(env);
-      const n = inBox.get(x.id) ?? { letters: 0, packages: 0, last: null };
-      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0, inbox: { ...n, ...fullness(n.letters + n.packages, x.size) } };
+      const n = inBox.get(x.id) ?? { letters: 0, packages: 0, last: null, first_pkg: null };
+      // Letters fill the box; packages are flagged when the oldest is past its free days or due back to the sender.
+      const oldest = n.first_pkg ? daysHeld(n.first_pkg, today) : 0;
+      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0,
+        inbox: { ...n, ...fullness(n.letters, x.size), pkg_late: n.packages > 0 && oldest > PKG.freeDays, pkg_rts: n.packages > 0 && oldest >= PKG.returnNoticeDay + PKG.returnAfter } };
     };
 
     if (b.action === 'list') {
@@ -205,8 +208,9 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.action === 'run_billing') {
       if (!atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can run billing.' }, 403);
       const renewed = await autoRenewals(env, today);
+      const packages = await packageJobs(env, today);
       const overages = await billOverages(env);
-      return json({ ok: true, renewed, overages });
+      return json({ ok: true, renewed, packages, overages });
     }
     // Card and charges for one holder.
     if (['card_link', 'set_autorenew', 'charge_now', 'paid_counter', 'waive'].includes(b.action)) {
@@ -276,8 +280,11 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.action === 'box_detail') { // the Edit window: what's in the box, the card, money owed, forwarding
       const st = await getMailboxSettings(env, box.customer_id);
       const bal = await balanceFor(env, box.customer_id);
+      const items = await listMailboxItems(env, box.id, true);
+      const pk = items.filter((i) => i.kind === 'package').sort((a, c) => a.arrived_at.localeCompare(c.arrived_at) || a.id - c.id);
       return json({
-        items: await listMailboxItems(env, box.id, true),
+        items,
+        packages: pk.map((i, idx) => ({ id: i.id, note: i.note, arrived_at: i.arrived_at, ...packageState(i, idx, today) })),
         card: st.payment_method_id ? { brand: st.card_brand, last4: st.card_last4, exp: st.card_exp, added_by: st.card_added_by, added_at: st.card_added_at } : null,
         autorenew: !!st.autorenew, balance: { due: bal.due, pieces: bal.pieces, declined: bal.declined },
         charges: bal.charges.slice(0, 20), forwards: await listMailboxForwards(env, { customer_id: box.customer_id, status: 'open' }),

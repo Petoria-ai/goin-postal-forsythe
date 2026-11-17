@@ -105,6 +105,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     <div class="mb-edit-sec">
       <h3 data-i18n="st.mi.inbox">In box</h3>
       <p id="mbEditIn"></p>
+      <ul id="mbEditPkgs" class="mb-pkgs"></ul>
       <p class="btnrow"><button type="button" class="btn small" data-out="picked_up" data-i18n="st.mi.pickedup">All picked up</button> <button type="button" class="btn small kraft" data-out="forwarded" data-i18n="st.mi.forwarded">Forwarded</button> <button type="button" class="btn small kraft" data-out="returned" data-i18n="st.mi.returned">Returned to sender</button></p>
     </div>
     <div class="mb-edit-sec">
@@ -186,6 +187,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer)); cell(tr, sizeName(x.size)); cell(tr, x.paid_through);
           const st = cell(tr, ''); const badge = document.createElement('span'); badge.className = `acct-status mb-${x.state}`; badge.textContent = t(`mb.state.${x.state}`); st.appendChild(badge);
           const ib = cell(tr, `${x.inbox.pieces}/${x.inbox.capacity}`); ib.className = x.inbox.pct >= 100 ? 'mb-cap-over' : x.inbox.pct >= 80 ? 'mb-cap-near' : '';
+          if (x.inbox.packages) { const pk = document.createElement('span'); pk.className = `mb-pk${x.inbox.pkg_rts ? ' rts' : x.inbox.pkg_late ? ' late' : ''}`; pk.textContent = `${tf('st.pk.n', { n: x.inbox.packages })}${x.inbox.pkg_rts ? ` · ${t('st.pk.rts')}` : x.inbox.pkg_late ? ` · ${t('st.pk.late')}` : ''}`; ib.append(' ', pk); }
           const act = cell(tr, ''); act.className = 'mb-acts';
           act.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)), docBtn(x));
           bb.appendChild(tr);
@@ -249,7 +251,15 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       try {
         const d = await api({ action: 'box_detail', id: x.id });
         const letters = d.items.filter((i: any) => i.kind === 'letter').length, packages = d.items.length - letters;
-        $('mbEditIn').textContent = tf('st.mi.counts', { letters, packages, n: d.items.length, max: x.inbox?.capacity ?? '' });
+        $('mbEditIn').textContent = tf('st.mi.counts', { letters, packages, n: letters, max: x.inbox?.capacity ?? '' });
+        const pl = $('mbEditPkgs'); pl.innerHTML = '';
+        for (const p of d.packages) {
+          const li = document.createElement('li'); li.className = p.rts ? 'rts' : p.late ? 'late' : '';
+          li.textContent = [`${t('mbd.k.package')} · ${p.arrived_at.slice(0, 10)}${p.note ? ` · ${p.note}` : ''}`, tf('st.pk.held', { n: p.held }),
+            p.rts ? t('st.pk.rts') : p.late ? tf('st.pk.storage', { amount: money(p.storage) }) : tf('st.pk.freeuntil', { date: p.free_until }),
+            p.extra ? tf('st.pk.extrafee', { amount: money(p.extra) }) : ''].filter(Boolean).join(' · ');
+          pl.appendChild(li);
+        }
         $('mbEditCard').textContent = d.card ? `${String(d.card.brand ?? '').toUpperCase()} •••• ${d.card.last4} (${d.card.exp}) · ${tf('st.card.addedby', { who: d.card.added_by ?? '', date: String(d.card.added_at ?? '').slice(0, 10) })}` : t('st.card.none');
         $('mbEditAuto').textContent = `${t('mbd.auto')}: ${d.autorenew ? t('mbd.on') : t('mbd.off')}`;
         const ab = $('mbEditAutoBtn') as HTMLButtonElement; ab.hidden = !d.card; ab.textContent = d.autorenew ? t('mbd.turnoff') : t('mbd.turnon'); ab.dataset.on = d.autorenew ? '0' : '1';
@@ -283,7 +293,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         lastItem = { id: r.item.id, box: boxNo };
         out.hidden = false; out.className = `mb-in-out${r.over ? ' over' : ''}`; out.innerHTML = '';
         const line = document.createElement('span');
-        line.textContent = `#${r.box_no} ${r.customer.name}: ${tf('st.mi.ofcap', { n: r.pieces, max: r.capacity })}${r.over ? ` · ${t('st.mi.overcharged')}` : ''}${r.notified ? ` · ${t('st.mi.notified')}` : ''}`;
+        line.textContent = `#${r.box_no} ${r.customer.name}: ${tf('st.mi.ofcap', { n: r.pieces, max: r.capacity })} · ${tf('st.pk.n', { n: r.packages })}${r.over ? ` · ${t('st.mi.overcharged')}` : ''}${r.extra_package ? ` · ${t('st.pk.extra')}` : ''}${r.notified ? ` · ${t('st.mi.notified')}` : ''}`;
+        if (r.extra_package) out.className = 'mb-in-out near';
         out.append(line, ' ', btn(t('st.mi.undo'), 'kraft', async () => {
           if (!lastItem) return;
           try { await api({ action: 'mail_undo', item_id: lastItem.id }); out.textContent = t('st.mi.undone'); lastItem = null; load(); } catch (e: any) { say(e.message, true); }
@@ -296,7 +307,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     $('inForm').addEventListener('submit', (ev) => { ev.preventDefault(); mailIn('letter'); });
 
     $('runBilling').addEventListener('click', async () => {
-      try { const r = await api({ action: 'run_billing' }); say(tf('st.bill.ran', { renewed: r.renewed.filter((x: any) => x.ok).length, paid: r.overages.paid, total: money(r.overages.total) })); load(); }
+      try { const r = await api({ action: 'run_billing' }); say(`${tf('st.bill.ran', { renewed: r.renewed.filter((x: any) => x.ok).length, paid: r.overages.paid, total: money(r.overages.total) })} ${tf('st.pk.ran', { fees: r.packages.fees, notices: r.packages.notices })}`); load(); }
       catch (e: any) { say(e.message, true); }
     });
     if (new URLSearchParams(location.search).get('card') === '1') setTimeout(() => say(t('st.card.saved')), 0);

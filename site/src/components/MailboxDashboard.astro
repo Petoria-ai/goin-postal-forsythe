@@ -4,7 +4,7 @@
 // then rows that open: Request mail forwarding, Manage subscription, Billing history, Notification preferences,
 // Recent mail. Every button calls /api/mailbox with the session cookie; the page reloads to show the result.
 import type { MailboxRow, MailboxItem, MailboxSettings, MailboxCharge, MailboxRenewal, MailboxForward } from '../shipping/store';
-import { addressFor, fullness, OVERAGE_FEE, priceFor, money, boxStatus, day } from '../lib/mailbox';
+import { addressFor, fullness, OVERAGE_FEE, priceFor, money, boxStatus, day, PKG, packageState } from '../lib/mailbox';
 import { store } from '../data/store';
 
 interface Props {
@@ -21,7 +21,10 @@ interface Props {
 }
 const { box: b, firstName, counts, items, settings: st, balance, renewals, forwards, renewOptions, longDate } = Astro.props;
 const state = boxStatus(b, day(new Date()));
-const f = fullness(counts.letters + counts.packages, b.size);
+// Letters fill the box; packages have their own rules (2 free at a time, 5 free days, then $1 a day up to $10).
+const f = fullness(counts.letters, b.size);
+const today = day(new Date());
+const pkgs = items.filter((x) => x.kind === 'package' && x.status === 'in').sort((a, c) => a.arrived_at.localeCompare(c.arrived_at) || a.id - c.id).map((x, i) => ({ ...x, ...packageState(x, i, today) }));
 const level = f.pct >= 100 ? 'over' : f.pct >= 80 ? 'near' : 'ok';
 const price = priceFor(b.size as any, b.term as any);
 const hasCard = !!st.payment_method_id;
@@ -71,6 +74,17 @@ const svg = (k: keyof typeof icon) => `<svg viewBox="0 0 24 24" width="22" heigh
     <div class={`mbd-bar mbd-${level}`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.min(100, f.pct)}><span style={`width:${Math.min(100, f.pct)}%`}></span></div>
     <p class="muted mbd-small"><span data-i18n="mbd.ofcap" data-i18n-vars={JSON.stringify({ n: f.pieces, max: f.capacity })}>{f.pieces} of {f.capacity} pieces</span>
       {counts.last ? <> · <span data-i18n="mbd.updated">Last mail:</span> <time data-local={counts.last}>{counts.last.slice(0, 16).replace('T', ' ')}</time></> : <> · <span data-i18n="mbd.nomail">No mail waiting.</span></>}</p>
+    {pkgs.length > 0 && <ul class="mbd-pkgs">{pkgs.map((p) => (
+      <li class={p.rts ? 'rts' : p.late ? 'late' : ''}>
+        <strong data-i18n="mbd.k.package">Package</strong> <span class="muted">{p.note ?? ''}</span>
+        <span>{p.rts ? <span data-i18n="mbd.pk.rts">Being returned to the sender. Call us today if you still want it.</span>
+          : p.held >= PKG.returnNoticeDay ? <span data-i18n="mbd.pk.final" data-i18n-vars={JSON.stringify({ date: longDate(p.return_on) })}>Final notice: pick it up by {longDate(p.return_on)} or it goes back to the sender.</span>
+          : p.late ? <span data-i18n="mbd.pk.storage" data-i18n-vars={JSON.stringify({ amount: money(p.storage), cap: money(PKG.storageCap) })}>Storage so far: {money(p.storage)} (stops at {money(PKG.storageCap)}).</span>
+          : <span data-i18n="mbd.pk.free" data-i18n-vars={JSON.stringify({ date: longDate(p.free_until) })}>Free until {longDate(p.free_until)}.</span>}
+          {p.extra > 0 && <> <span data-i18n="mbd.pk.extra" data-i18n-vars={JSON.stringify({ amount: money(p.extra) })}>Extra package fee: {money(p.extra)}.</span></>}</span>
+      </li>
+    ))}</ul>}
+    <p class="muted mbd-small" data-i18n="mbd.pk.rule" data-i18n-vars={JSON.stringify({ n: PKG.freeCount, fee: money(PKG.fee), after: PKG.feeAfterDays, days: PKG.freeDays, per: money(PKG.storagePerDay), cap: money(PKG.storageCap), ret: PKG.returnNoticeDay })}>Packages: up to {PKG.freeCount} at a time are free; each one past that is {money(PKG.fee)} if it's still here after {PKG.feeAfterDays} days. Each package is free for {PKG.freeDays} days, then {money(PKG.storagePerDay)} a day, {money(PKG.storageCap)} at most. After {PKG.returnNoticeDay} days we send a final notice, then return it to the sender.</p>
     {level === 'over' && <p class="mbd-warn over" data-i18n="mbd.over" data-i18n-vars={JSON.stringify({ fee })}>Your box is over its limit: {fee} for each extra piece. Please pick up soon.</p>}
     {level === 'near' && <p class="mbd-warn" data-i18n="mbd.nearfull" data-i18n-vars={JSON.stringify({ fee, max: f.capacity })}>Almost full. Pick up soon to avoid overage fees ({fee} a piece over {f.capacity}).</p>}
   </div>

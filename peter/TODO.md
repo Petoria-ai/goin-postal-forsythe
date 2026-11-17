@@ -364,7 +364,7 @@ Virtual mail means the customer gets our street address, we receive their mail, 
 - [x] **Mail log and the customer dashboard** ✅ 2026-11-16 20:00 CST: Mail in at the counter, capacity 20/50/115, 45¢ overage, "You've got mail", card on file, automatic renewal of the same plan, forwarding requests, billing history.
 - [ ] **A one-page mailbox agreement** for a local attorney to review before automatic charges go live: automatic renewal terms, no refunds for unused time, the 45¢ overage and the limits, the 6-month mail hold, forwarding postage. Customers sign it at the counter (and the dashboard links to it).
 - [ ] **Stripe live:** the webhook must also send `checkout.session.completed` for **setup** sessions (saving a card); test a renewal and an overage with Stripe's test cards, including a declined one.
-- [ ] **Overage on packages:** today a package counts as one piece like a letter. Decide if packages should count more, or not at all, toward capacity.
+- [x] **Package rules** ✅ 2026-11-16 20:25 CST: packages don't fill the box; 2 free at a time ($2 for a 3rd still here after 2 days); 5 free days then $1 a day up to $10; notices on days 4, 6 and 30; return to sender from day 33. Put these in the mailbox agreement too.
 - [ ] Bring in the boxes already rented: they're in William's register (`physical-mailbox/`); staff can assign each to the holder's account by hand, or a one-time import.
 
 ## P11. Official carrier logos (USPS, UPS, FedEx, DHL)

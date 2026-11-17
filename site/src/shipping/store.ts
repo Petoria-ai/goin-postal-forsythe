@@ -798,19 +798,24 @@ export async function listMailboxItems(env: Env, mailboxId: number, inOnly: bool
   return mem.mbItems.filter((x) => x.mailbox_id === mailboxId && (!inOnly || x.status === 'in')).sort((a, b) => b.id - a.id).slice(0, limit);
 }
 /** Pieces in each box right now, by kind. */
-export async function countItemsIn(env: Env): Promise<Map<number, { letters: number; packages: number; last: string | null }>> {
-  const rows = env.DB ? (await env.DB.prepare("SELECT mailbox_id, kind, COUNT(*) AS n, MAX(arrived_at) AS last FROM mailbox_items WHERE status = 'in' GROUP BY mailbox_id, kind").all<{ mailbox_id: number; kind: string; n: number; last: string }>()).results
-    : Object.values(mem.mbItems.filter((x) => x.status === 'in').reduce<Record<string, { mailbox_id: number; kind: string; n: number; last: string }>>((a, x) => {
-      const k = `${x.mailbox_id}:${x.kind}`; const r = (a[k] ??= { mailbox_id: x.mailbox_id, kind: x.kind, n: 0, last: x.arrived_at }); r.n++; if (x.arrived_at > r.last) r.last = x.arrived_at; return a;
+export async function countItemsIn(env: Env): Promise<Map<number, { letters: number; packages: number; last: string | null; first_pkg: string | null }>> {
+  const rows = env.DB ? (await env.DB.prepare("SELECT mailbox_id, kind, COUNT(*) AS n, MAX(arrived_at) AS last, MIN(arrived_at) AS first FROM mailbox_items WHERE status = 'in' GROUP BY mailbox_id, kind").all<{ mailbox_id: number; kind: string; n: number; last: string; first: string }>()).results
+    : Object.values(mem.mbItems.filter((x) => x.status === 'in').reduce<Record<string, { mailbox_id: number; kind: string; n: number; last: string; first: string }>>((a, x) => {
+      const k = `${x.mailbox_id}:${x.kind}`; const r = (a[k] ??= { mailbox_id: x.mailbox_id, kind: x.kind, n: 0, last: x.arrived_at, first: x.arrived_at }); r.n++; if (x.arrived_at > r.last) r.last = x.arrived_at; if (x.arrived_at < r.first) r.first = x.arrived_at; return a;
     }, {}));
-  const out = new Map<number, { letters: number; packages: number; last: string | null }>();
+  const out = new Map<number, { letters: number; packages: number; last: string | null; first_pkg: string | null }>();
   for (const r of rows) {
-    const c = out.get(r.mailbox_id) ?? { letters: 0, packages: 0, last: null };
-    if (r.kind === 'package') c.packages += Number(r.n); else c.letters += Number(r.n);
+    const c = out.get(r.mailbox_id) ?? { letters: 0, packages: 0, last: null, first_pkg: null };
+    if (r.kind === 'package') { c.packages += Number(r.n); c.first_pkg = r.first; } else c.letters += Number(r.n);
     if (!c.last || r.last > c.last) c.last = r.last;
     out.set(r.mailbox_id, c);
   }
   return out;
+}
+/** Every piece still in any box, oldest first (for the daily package fees and reminders). */
+export async function listItemsIn(env: Env): Promise<MailboxItem[]> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailbox_items WHERE status = 'in' ORDER BY arrived_at, id").all<MailboxItem>()).results;
+  return mem.mbItems.filter((x) => x.status === 'in').sort((a, b) => a.arrived_at.localeCompare(b.arrived_at) || a.id - b.id);
 }
 export async function getMailboxItem(env: Env, id: number): Promise<MailboxItem | null> {
   if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE id = ?1').bind(id).first<MailboxItem>()) ?? null;
@@ -843,7 +848,7 @@ export async function saveMailboxSettings(env: Env, customerId: string, patch: P
   return next;
 }
 
-export interface MailboxCharge { id: number; customer_id: string; mailbox_id: number; kind: 'overage' | 'renewal'; amount: number; description: string; status: 'unbilled' | 'paid' | 'failed' | 'paid_counter' | 'waived'; payment_ref: string | null; created_at: string; paid_at: string | null }
+export interface MailboxCharge { id: number; customer_id: string; mailbox_id: number; kind: 'overage' | 'renewal' | 'package' | 'storage'; amount: number; description: string; status: 'unbilled' | 'paid' | 'failed' | 'paid_counter' | 'waived'; payment_ref: string | null; created_at: string; paid_at: string | null }
 export async function addMailboxCharge(env: Env, r: Pick<MailboxCharge, 'customer_id' | 'mailbox_id' | 'kind' | 'amount' | 'description'> & Partial<Pick<MailboxCharge, 'status' | 'payment_ref' | 'paid_at'>>): Promise<MailboxCharge> {
   const row = { status: 'unbilled' as const, payment_ref: null, paid_at: null, ...r, created_at: now() };
   if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_charges (customer_id, mailbox_id, kind, amount, description, status, payment_ref, created_at, paid_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) RETURNING id').bind(row.customer_id, row.mailbox_id, row.kind, row.amount, row.description, row.status, row.payment_ref, row.created_at, row.paid_at).first<{ id: number }>(); return { id: x!.id, ...row }; }
