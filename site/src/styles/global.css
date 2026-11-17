@@ -1099,3 +1099,8 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mbd-emptied { margin: 10px 0 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .mb-bill h4 { margin: 14px 0 6px; color: var(--navy); }
 .mb-bl-recent summary { cursor: pointer; font-weight: 700; color: var(--navy); margin-top: 14px; }
+.mb-pick { max-width: 30rem; }
+.mb-pick h2 { margin: 0 0 8px; color: var(--navy); font-size: 1.3rem; }
+.mb-pick-scroll { max-height: 55vh; overflow-y: auto; border: 1px solid var(--hair); border-radius: 10px; }
+.mb-pick-scroll table { margin: 0; }
+.mb-pick-scroll td, .mb-pick-scroll th { padding: 6px 10px; }

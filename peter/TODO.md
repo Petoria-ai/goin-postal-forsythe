@@ -13,6 +13,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P15 | [A card on file before a mailbox starts](#p15-a-card-on-file-before-a-mailbox-starts) | ⏸ Peter to decide the details | Stripe live; the mailbox agreement (attorney) |
 | P14 | [Raise mailbox prices $2 to $5 each](#p14-raise-mailbox-prices-2-to-5-each) | ⏸ Peter to pick the figure | Peter's numbers; then one file on the website and the Prices tab in William's register |
 | P13 | [Virtual mail on the website](#p13-virtual-mail-on-the-website) | ⏸ Later | What virtual mail we sell and at what price; Anytime Mailbox's rules |
 | P12 | [Automatic mailbox reminders](#p12-automatic-mailbox-reminders) | ✅ Built Nov 16 | Check the first morning run once the site is live; Twilio and Resend keys (P4) |
@@ -317,6 +318,18 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P15. A card on file before a mailbox starts
+
+**Added:** 2026-11-16 21:06 CST. **Status:** a rule to decide, then a small build. **Peter:** "im thinking of requiring customers to have a credit card or debit card on file before signing up. they can pay cash thats fine but i need one on file".
+
+Why it helps: renewals and fees (overage, extra packages, storage) can always be collected, even from someone who stops coming in, and automatic renewal works from day one.
+
+- [ ] **Decide:** does the card turn on automatic renewal (it does today when a card is saved), or can a cash customer keep a card on file only for fees, with automatic renewal off?
+- [ ] **Decide:** does an existing holder need to add one at their next renewal?
+- [ ] **Build:** on Counter → Mailboxes, **Assign** is blocked until the customer has a card on file (the Edit window's Add card, Stripe's page), with a manager-only "assign anyway" for exceptions. Online, **Reserve** asks for the card first.
+- [ ] **Say it:** in the mailbox agreement (attorney) and on the Mailboxes page ("A credit or debit card on file is required; you can still pay cash").
+- [ ] Check with the attorney that charging fees to a card kept "on file" is covered by what the customer signs.
 
 ## P14. Raise mailbox prices $2 to $5 each
 

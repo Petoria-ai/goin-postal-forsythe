@@ -842,6 +842,16 @@ export async function deleteMailboxPhotosForItem(env: Env, itemId: number): Prom
   else mem.mbPhotos = mem.mbPhotos.filter((p) => p.item_id !== itemId);
   return ids;
 }
+/** Moves a piece (and its photo) to another box, when staff logged it in the wrong one. */
+export async function moveMailboxItem(env: Env, itemId: number, to: { mailbox_id: number; customer_id: string; box_no: number }) {
+  if (env.DB) {
+    await env.DB.prepare('UPDATE mailbox_items SET mailbox_id = ?1, customer_id = ?2, box_no = ?3, over = 0 WHERE id = ?4').bind(to.mailbox_id, to.customer_id, to.box_no, itemId).run();
+    await env.DB.prepare('UPDATE mailbox_photos SET mailbox_id = ?1, customer_id = ?2 WHERE item_id = ?3').bind(to.mailbox_id, to.customer_id, itemId).run();
+    return;
+  }
+  const it = mem.mbItems.find((x) => x.id === itemId); if (it) Object.assign(it, { mailbox_id: to.mailbox_id, customer_id: to.customer_id, box_no: to.box_no, over: 0 });
+  for (const p of mem.mbPhotos) if (p.item_id === itemId) Object.assign(p, { mailbox_id: to.mailbox_id, customer_id: to.customer_id });
+}
 export async function getMailboxItem(env: Env, id: number): Promise<MailboxItem | null> {
   if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE id = ?1').bind(id).first<MailboxItem>()) ?? null;
   return mem.mbItems.find((x) => x.id === id) ?? null;

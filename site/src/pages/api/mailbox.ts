@@ -10,12 +10,13 @@ import {
   getCustomer, searchCustomers, logAudit, reserveMailbox, waitingReservation, listWaitingReservations, getReservation, setReservationStatus,
   assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
   countItemsIn, listMailboxItems, getMailboxItem, deleteMailboxItem, clearMailboxItems, getMailboxSettings, saveMailboxSettings,
-  listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox,
+  listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox, moveMailboxItem, exportTable,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs } from '../../lib/mailboxJobs';
 import { fullness, packageState, daysHeld, PKG, checkReason, pendingClaim } from '../../lib/mailbox';
 import { checkPhoto, savePiecePhoto, readPiecePhoto, deletePiecePhotos } from '../../lib/mailboxPhotos';
+import { buildMailboxReport, mailboxReportCsv, type MailboxReportData } from '../../lib/mailboxReport';
 
 // Physical mailboxes on the website (Peter, Nov 15 and 17 2026).
 // Customer (signed in): reserve {size, term}, cancel_reservation, renew_checkout {id, term} (Stripe; the box is
@@ -142,7 +143,7 @@ export const POST: APIRoute = async ({ request }) => {
       const ended = (await Promise.all(all.filter((x) => onExpiredList(x, today)).map(view)))
         .sort((a, c) => (a.mail.do === 'rts' ? 0 : 1) - (c.mail.do === 'rts' ? 0 : 1) || ((a.mail as any).until ?? '').localeCompare((c.mail as any).until ?? ''));
       return json({
-        today, hold_months: HOLD_MONTHS, keep_months: KEEP_MONTHS,
+        today, hold_months: HOLD_MONTHS, keep_months: KEEP_MONTHS, used: [...used].sort((a, c) => a - c),
         sizes: SIZES.map((s) => ({ ...s, free: Array.from({ length: s.to - s.from + 1 }, (_, i) => s.from + i).filter((n) => !used.has(n)).length })),
         reservations: await Promise.all(res.map(async (r) => ({ ...r, customer: await person(r.customer_id), price: priceFor(r.size as any, r.term as any) }))),
         boxes: views.filter((x) => x.mail.do === 'box').map((x) => ({ ...x, due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
@@ -231,6 +232,31 @@ export const POST: APIRoute = async ({ request }) => {
       await updateMailbox(env, box.id, { reminders: JSON.stringify([...keys.filter((k) => k !== `${today}:checked` && !k.startsWith('claim:')), `${today}:checked`].slice(-60)) });
       await logAudit(env, who, 'mailbox.checked', `#${box.box_no}`, (b.empty === true ? `empty: ${n} letter${n === 1 ? '' : 's'} picked up` : 'mail still there') + (claim ? ` (holder said picked up ${claim}${b.empty === true ? '' : ': DID NOT MATCH'})` : ''));
       return json({ ok: true, n });
+    }
+    // A piece logged in the wrong box: move it (its photo goes with it; any fee it caused is waived).
+    if (b.action === 'item_move') {
+      const it = await getMailboxItem(env, Number(b.item_id));
+      if (!it || it.status !== 'in') return json({ error: 'That piece is already out of the box.' }, 404);
+      const to = await activeBox(env, Number(String(b.box_no ?? '').replace(/\D/g, '')));
+      if (!to) return json({ error: `No open box #${b.box_no} on the website.` }, 404);
+      if (to.id === it.mailbox_id) return json({ error: 'It is already in that box.' }, 400);
+      const fees = (await listMailboxCharges(env, { customer_id: it.customer_id })).filter((c) => (c.status === 'unbilled' || c.status === 'failed') && (c.description.endsWith(`(piece ${it.id})`) || new RegExp(`\\(fee ${it.id}:`).test(c.description)));
+      if (fees.length) await settleMailboxCharges(env, fees.map((c) => c.id), 'waived', `moved by ${who.name}`);
+      await moveMailboxItem(env, it.id, { mailbox_id: to.id, customer_id: to.customer_id, box_no: to.box_no });
+      await logAudit(env, who, 'mailbox.item_move', `#${it.box_no} → #${to.box_no}`, `${it.kind} logged ${it.arrived_at}${fees.length ? ` · ${fees.length} fee(s) waived` : ''}`);
+      return json({ ok: true, box_no: to.box_no, customer: await person(to.customer_id) });
+    }
+    // The mailbox report for Counter → Reports: any dates; JSON for the page, or a spreadsheet (CSV).
+    if (b.action === 'report') {
+      if (!isDay(b.from) || !isDay(b.to) || b.from > b.to) return json({ error: 'Pick a from and to date.' }, 400);
+      const [boxes, items, charges, renewals, forwards, reservations] = await Promise.all(
+        (['mailboxes', 'mailbox_items', 'mailbox_charges', 'mailbox_renewals', 'mailbox_forwards', 'mailbox_reservations'] as const).map((t) => exportTable(env, t)));
+      const names = new Map<string, string>();
+      for (const id of new Set([...charges, ...renewals].map((r: any) => r.customer_id as string))) names.set(id, (await person(id)).name);
+      const data = { boxes, items, charges, renewals, forwards, reservations, names } as unknown as MailboxReportData;
+      const r = buildMailboxReport(data, b.from, b.to, today);
+      if (b.format === 'csv') return new Response(mailboxReportCsv(r), { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="mailboxes-${b.from}-to-${b.to}.csv"` } });
+      return json({ ok: true, report: r });
     }
     if (b.action === 'mail_undo') {
       const it = await getMailboxItem(env, Number(b.item_id));

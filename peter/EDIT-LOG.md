@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-16 21:06 CST · Mailbox report on the Reports page, Choose a box, Move/Remove a piece, and Check these boxes always showing
+
+- **Asked for:** "Yes add to the reports page" (the mailbox report for a month, quarter or year), "add to the to do list ... requiring customers to have a credit card or debit card on file before signing up", "where is the 'Check these boxes list'", "i want to be able to remove a package or letter from a customer just incase i accidentally assigned to the wrong person ... each customer to have a list of things checked in", and "a popup window to allow staff to choose whats available ... a table of all the numbers and a column of whether its a small/medium/large".
+- **What changed:**
+  - **Counter → Reports** has a **Mailboxes** section for the dates at the top: boxes in use (at the start, new, closed, expired, and each size rented, e.g. "Small 84 / 121"), money taken through the website (online and automatic renewals, letter overage, extra-package and storage fees, fees paid at the counter; plus owed now, waived and declined), mail handled (letters and packages in, picked up, forwarded, returned, and how long packages waited), and people (reservations, forwarding requests, boxes on hold). **Download mailbox report (CSV)** gives the same summary plus every money line, for Excel or your accountant. New date buttons for every report: **Last month**, **This quarter**, **This year**.
+  - **Choose a box:** a button next to every Box # field (reservations and Assign a box to an account) opens a window with a table of every **free** number and its size, with All / Small / Medium / Large. For a reservation it opens on the size they reserved. **Pick** fills in the number.
+  - **Every piece in a box** is listed in the **Edit** window (packages first): what it is, the day it came in, who logged it, any note, the photo, and **Move** (to another box number: its photo goes with it and any fee it caused is waived) and **Remove** (logged by mistake).
+  - **Check these boxes** now always shows on the Mailboxes page, saying "Nothing to check right now." when it's empty, so it's easy to find (it used to hide when empty).
+- **To-do:** P15, a card on file before a mailbox starts (cash is still fine to pay).
+- **Files:** new [site/src/lib/mailboxReport.ts](../site/src/lib/mailboxReport.ts), [site/src/pages/counter/reports.astro](../site/src/pages/counter/reports.astro), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/mailbox-report.test.ts](../site/tests/mailbox-report.test.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, `npm run dev`. On `/counter/reports` (PIN 1234) press **This month** and scroll to **Mailboxes**. On `/counter/mailboxes`, press **Choose a box** in Assign a box to an account; put a package in a box, then **Edit** that box and try **Move**.
+
 ## 2026-11-16 20:54 CST · A Billing card instead of the "Charge due amounts now" button
 
 - **Asked for:** "im thinking of it having a list of people who need to get charged or got charged.. i think that button is a little dangerous once i have alot of customers and say my brother accidentally presses it and charges everyone"

@@ -55,7 +55,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <details class="mb-bl-recent"><summary data-i18n="st.bl.recent">Recent charges (30 days)</summary><ul id="blRecent" class="mbd-list"></ul></details>
     </div>
 
-    <div class="card" id="chkCard" hidden>
+    <div class="card" id="chkCard">
       <h3 data-i18n="st.chk.h">Check these boxes</h3>
       <p class="muted" data-i18n="st.chk.p">Open each box and tap what you see. Boxes show up here when letters have sat 2 weeks without a check, or when the holder says they picked up.</p>
       <ul id="chkList" class="mb-check-out"></ul>
@@ -110,7 +110,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <ul id="found" class="mb-found"></ul>
       <form id="assignForm" class="hidden mb-assign">
         <p><span data-i18n="st.mb.for">For:</span> <strong id="assignWho"></strong></p>
-        <label><span data-i18n="st.mb.box">Box #</span> <input name="box_no" inputmode="numeric" required /></label>
+        <label><span data-i18n="st.mb.box">Box #</span> <input name="box_no" id="assignBoxNo" inputmode="numeric" required /></label>
+        <button type="button" class="btn small kraft" id="assignPick" data-i18n="st.pick.btn">Choose a box</button>
         <label><span data-i18n="st.mb.term">Term</span> <select name="term"><option value="6" data-i18n="st.mb.six">6 months</option><option value="12" data-i18n="st.mb.year">1 year</option></select></label>
         <label><span data-i18n="st.mb.start">Start date</span> <input name="start_date" type="date" /></label>
         <button class="btn small" type="submit" data-i18n="st.mb.assign">Assign</button>
@@ -119,6 +120,14 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
   </div>
 
   <MailboxDocs />
+
+  <dialog id="mbPick" class="hz-dialog mb-pick" aria-labelledby="mbPickH">
+    <h2 id="mbPickH" data-i18n="st.pick.h">Choose a free box</h2>
+    <p class="btnrow mb-pick-tabs"><button type="button" class="btn small" data-size="all" data-i18n="st.pick.all">All</button> <button type="button" class="btn small kraft" data-size="small" data-i18n="mb.size.small">Small</button> <button type="button" class="btn small kraft" data-size="medium" data-i18n="mb.size.medium">Medium</button> <button type="button" class="btn small kraft" data-size="large" data-i18n="mb.size.large">Large</button></p>
+    <p class="muted" id="mbPickCount"></p>
+    <div class="mb-pick-scroll"><table class="list"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.size">Size</th><th></th></tr></thead><tbody id="mbPickRows"></tbody></table></div>
+    <p class="btnrow mb-edit-foot"><span></span><button type="button" class="btn small" id="mbPickClose" data-i18n="st.mb.done">Done</button></p>
+  </dialog>
 
   <dialog id="mbEdit" class="hz-dialog mb-edit" aria-labelledby="mbEditH">
     <h2 id="mbEditH"></h2>
@@ -184,6 +193,34 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     // Documents (IDs, Form 1583): opens the shared window in components/MailboxDocs.astro.
     const docBtn = (x: any) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.dataset.mbdocs = x.customer_id; b.textContent = `${t('st.doc.btn')}${x.docs ? ` (${x.docs})` : ''}`; return b; };
     window.addEventListener('mbdocs:changed', () => { if (!$('mbMain').classList.contains('hidden')) load(); });
+    // Choose a box: every free number with its size, filtered by size; Pick fills in the Box # field.
+    let sizesInfo: any[] = []; let usedNos = new Set<number>();
+    let pickTarget: HTMLInputElement | null = null;
+    const pickDlg = () => document.getElementById('mbPick') as HTMLDialogElement;
+    function paintPicker(size: string) {
+      document.querySelectorAll<HTMLButtonElement>('#mbPick [data-size]').forEach((b) => (b.className = `btn small${b.dataset.size === size ? '' : ' kraft'}`));
+      const rows = document.getElementById('mbPickRows')!; rows.innerHTML = '';
+      let n = 0;
+      for (const s of sizesInfo) {
+        if (size !== 'all' && s.id !== size) continue;
+        for (let no = s.from; no <= s.to; no++) {
+          if (usedNos.has(no)) continue;
+          n++;
+          const tr = document.createElement('tr');
+          const a = document.createElement('td'); a.textContent = `#${no}`;
+          const b = document.createElement('td'); b.textContent = t(`mb.size.${s.id}`);
+          const c = document.createElement('td');
+          const pick = document.createElement('button'); pick.type = 'button'; pick.className = 'btn small'; pick.textContent = t('st.mb.pick');
+          pick.addEventListener('click', () => { if (pickTarget) { pickTarget.value = String(no); pickTarget.dispatchEvent(new Event('input')); } pickDlg().close(); });
+          c.appendChild(pick); tr.append(a, b, c); rows.appendChild(tr);
+        }
+      }
+      document.getElementById('mbPickCount')!.textContent = tf('st.pick.count', { n });
+    }
+    function openPicker(target: HTMLInputElement, size = 'all') { pickTarget = target; paintPicker(size); pickDlg().showModal(); }
+    document.querySelectorAll<HTMLButtonElement>('#mbPick [data-size]').forEach((b) => b.addEventListener('click', () => paintPicker(b.dataset.size!)));
+    document.getElementById('mbPickClose')!.addEventListener('click', () => pickDlg().close());
+    document.getElementById('assignPick')!.addEventListener('click', () => openPicker(document.getElementById('assignBoxNo') as HTMLInputElement));
     const contact = (c: any) => [c.phone, c.email].filter(Boolean).join(' · ');
 
     async function load() {
@@ -198,7 +235,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           const tr = document.createElement('tr');
           cell(tr, r.code); cell(tr, r.customer.name); cell(tr, contact(r.customer)); cell(tr, sizeName(r.size)); cell(tr, `${termName(r.term)} · $${r.price}`);
           const input = document.createElement('input'); input.inputMode = 'numeric'; input.size = 6; input.placeholder = String(j.sizes.find((s: any) => s.id === r.size)?.from ?? '');
-          cell(tr, '').appendChild(input);
+          const pc = cell(tr, ''); pc.append(input, ' ', btn(t('st.pick.btn'), 'kraft', () => openPicker(input, r.size)));
           cell(tr, '').appendChild(btn(t('st.mb.assign'), '', async () => {
             try { await api({ action: 'assign', customer_id: r.customer_id, box_no: Number(input.value), term: r.term, reservation_code: r.code }); say(tf('st.mb.assigned', { box: input.value, name: r.customer.name })); load(); }
             catch (e: any) { say(e.message, true); }
@@ -236,9 +273,10 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         $('rtsAlert').hidden = !rts.length;
         $('rtsAlert').textContent = rts.length ? `${tf('st.mb.rtsn', { n: rts.length })} ${rts.map((x: any) => `#${x.box_no} ${x.customer.name}`).join(' · ')}` : '';
         boxes = [...j.boxes, ...j.ended.filter((x: any) => x.status === 'active')];
+        sizesInfo = j.sizes; usedNos = new Set(j.used);
         // Boxes to look at: the holder says they emptied it, or letters have sat 2 weeks unchecked.
         const cl = $('chkList'); cl.innerHTML = '';
-        $('chkCard').hidden = !j.to_check.length;
+        if (!j.to_check.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.chk.none'); cl.appendChild(li); }
         for (const c of j.to_check) {
           const li = document.createElement('li');
           const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span class="muted"></span>';
@@ -291,18 +329,30 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         $('mbEditIn').textContent = tf('st.mi.counts', { letters, packages, n: letters, max: x.inbox?.capacity ?? '' });
         const pl = $('mbEditPkgs'); pl.innerHTML = ''; $('mbEditPhoto').hidden = true;
         const photoBtn = (id: string) => btn(t('st.mi.photo'), 'kraft', () => showPhoto(id));
-        for (const p of d.packages) {
-          const li = document.createElement('li'); li.className = p.rts ? 'rts' : p.late ? 'late' : '';
-          li.textContent = [`${t('mbd.k.package')} · ${p.arrived_at.slice(0, 10)}${p.note ? ` · ${p.note}` : ''}`, tf('st.pk.held', { n: p.held }),
-            p.rts ? t('st.pk.rts') : p.late ? tf('st.pk.storage', { amount: money(p.storage) }) : tf('st.pk.freeuntil', { date: p.free_until }),
-            p.extra ? tf('st.pk.extrafee', { amount: money(p.extra) }) : ''].filter(Boolean).join(' · ');
-          if (p.photo_id) li.append(' ', photoBtn(p.photo_id));
+        // Every piece in the box (packages first), so a wrong one can be found and moved or removed.
+        const pkgInfo = new Map(d.packages.map((p: any) => [p.id, p]));
+        const pieces = [...d.items].sort((a: any, b: any) => (a.kind === b.kind ? b.id - a.id : a.kind === 'package' ? -1 : 1));
+        for (const i of pieces) {
+          const p: any = pkgInfo.get(i.id);
+          const li = document.createElement('li'); li.className = p?.rts ? 'rts' : p?.late ? 'late' : '';
+          const txt = document.createElement('span');
+          txt.textContent = [`${t(`mbd.k.${i.kind}`)} · ${i.arrived_at.slice(0, 10)}${i.note ? ` · ${i.note}` : ''}`,
+            ...(p ? [tf('st.pk.held', { n: p.held }), p.rts ? t('st.pk.rts') : p.late ? tf('st.pk.storage', { amount: money(p.storage) }) : tf('st.pk.freeuntil', { date: p.free_until }), p.extra ? tf('st.pk.extrafee', { amount: money(p.extra) }) : ''] : []),
+            tf('st.it.by', { who: i.by_name })].filter(Boolean).join(' · ');
+          li.append(txt);
+          if (i.photo_id) li.append(photoBtn(i.photo_id));
+          li.append(btn(t('st.it.move'), 'kraft', async () => {
+            const to = prompt(tf('st.it.moveq', { what: t(`mbd.k.${i.kind}`) }));
+            if (!to) return;
+            await editDo({ action: 'item_move', item_id: i.id, box_no: to.trim() }, (r) => tf('st.it.moved', { box: r.box_no, name: r.customer.name }));
+          }));
+          li.append(btn(t('st.it.remove'), 'kraft', async () => {
+            if (!confirm(t('st.it.removeq'))) return;
+            await editDo({ action: 'mail_undo', item_id: i.id }, () => t('st.mi.undone'));
+          }));
           pl.appendChild(li);
         }
-        for (const i of d.items.filter((x: any) => x.kind === 'letter' && x.photo_id)) {
-          const li = document.createElement('li'); li.textContent = `${t('mbd.k.letter')} · ${i.arrived_at.slice(0, 10)}${i.note ? ` · ${i.note}` : ''} `;
-          li.append(photoBtn(i.photo_id)); pl.appendChild(li);
-        }
+        if (!pieces.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('mbd.nomail'); pl.appendChild(li); }
         $('mbEditCard').textContent = d.card ? `${String(d.card.brand ?? '').toUpperCase()} •••• ${d.card.last4} (${d.card.exp}) · ${tf('st.card.addedby', { who: d.card.added_by ?? '', date: String(d.card.added_at ?? '').slice(0, 10) })}` : t('st.card.none');
         $('mbEditAuto').textContent = `${t('mbd.auto')}: ${d.autorenew ? t('mbd.on') : t('mbd.off')}`;
         const ab = $('mbEditAutoBtn') as HTMLButtonElement; ab.hidden = !d.card; ab.textContent = d.autorenew ? t('mbd.turnoff') : t('mbd.turnon'); ab.dataset.on = d.autorenew ? '0' : '1';
