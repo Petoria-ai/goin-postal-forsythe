@@ -1097,3 +1097,5 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-in-ask p { margin: 4px 0; }
 .mb-in-ask p:first-child { font-weight: 700; }
 .mbd-emptied { margin: 10px 0 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mb-bill h4 { margin: 14px 0 6px; color: var(--navy); }
+.mb-bl-recent summary { cursor: pointer; font-weight: 700; color: var(--navy); margin-top: 14px; }

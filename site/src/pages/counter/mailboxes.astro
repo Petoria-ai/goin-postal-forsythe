@@ -45,6 +45,16 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <p id="inOut" class="mb-in-out" hidden></p>
     </div>
 
+    <div class="card mb-bill">
+      <h3 data-i18n="st.bl.h">Billing</h3>
+      <p class="muted" data-i18n="st.bl.p">The live site charges these by itself every morning. Nothing here is charged unless a manager or owner presses Charge now on one row and says yes.</p>
+      <h4 data-i18n="st.bl.due">Waiting to be charged</h4>
+      <ul id="blDue" class="mb-check-out"></ul>
+      <h4 data-i18n="st.bl.renew">Renewing in the next 7 days</h4>
+      <ul id="blRenew" class="mb-check-out"></ul>
+      <details class="mb-bl-recent"><summary data-i18n="st.bl.recent">Recent charges (30 days)</summary><ul id="blRecent" class="mbd-list"></ul></details>
+    </div>
+
     <div class="card" id="chkCard" hidden>
       <h3 data-i18n="st.chk.h">Check these boxes</h3>
       <p class="muted" data-i18n="st.chk.p">Open each box and tap what you see. Boxes show up here when letters have sat 2 weeks without a check, or when the holder says they picked up.</p>
@@ -70,7 +80,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <p id="free"></p>
       <p class="btnrow"><button class="btn" id="sendDue" data-i18n="st.mb.senddue">Send due reminders</button> <span class="muted" data-i18n="st.mb.senddue.p2">They also go out by themselves every morning on the live site: 2 months, 1 month and 1 week before, and the day after a box expires. Each reminder goes out once.</span></p>
       <ul id="sentList"></ul>
-      <p class="btnrow"><button class="btn small kraft" id="runBilling" data-i18n="st.bill.run">Charge due amounts now</button> <span class="muted" data-i18n="st.bill.run.p">Automatic renewals due today and overage fees, charged to cards on file. The live site does this every morning; managers and owners only.</span></p>
+
     </div>
 
     <div class="card">
@@ -180,6 +190,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       try {
         const j = await api({ action: 'list' });
         $('mbMain').classList.remove('hidden');
+        loadBilling();
         $('free').textContent = j.sizes.map((s: any) => `${sizeName(s.id)} (#${s.from}–${s.to}): ${s.free}`).join('   ·   ');
         const rb = $('resTable').querySelector('tbody')!; rb.innerHTML = '';
         $('noRes').hidden = j.reservations.length > 0;
@@ -385,10 +396,55 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     document.querySelectorAll<HTMLButtonElement>('[data-in]').forEach((b) => b.addEventListener('click', () => mailIn(b.dataset.in!)));
     $('inForm').addEventListener('submit', (ev) => { ev.preventDefault(); mailIn('letter'); });
 
-    $('runBilling').addEventListener('click', async () => {
-      try { const r = await api({ action: 'run_billing' }); say(`${tf('st.bill.ran', { renewed: r.renewed.filter((x: any) => x.ok).length, paid: r.overages.paid, total: money(r.overages.total) })} ${tf('st.pk.ran', { fees: r.packages.fees, notices: r.packages.notices })}`); load(); }
-      catch (e: any) { say(e.message, true); }
-    });
+    // Billing: a list to look at, and Charge now one customer at a time, after a yes.
+    const cardText = (c: any) => (c ? `${String(c.brand ?? '').toUpperCase()} •••• ${c.last4}` : t('st.bl.nocard'));
+    const none = (ul: HTMLElement) => { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.bl.none'); ul.appendChild(li); };
+    async function loadBilling() {
+      try {
+        const j = await api({ action: 'billing' });
+        const du = $('blDue'); du.innerHTML = '';
+        if (!j.due.length) none(du);
+        for (const d of j.due) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong><br /><span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `${d.customer.name} · #${d.boxes.join(', #')} · ${money(d.total)}${d.declined ? ` · ${t('st.bill.declined')}` : ''}`;
+          who.querySelector('.muted')!.textContent = `${d.items.map((i: any) => `${i.what} ${money(i.amount)}`).join('; ')} · ${cardText(d.card)}`;
+          li.append(who);
+          if (j.can_charge && d.card && d.total >= 0.5) li.append(btn(t('st.bl.charge'), '', async () => {
+            if (!confirm(tf('st.bl.confirm', { name: d.customer.name, amount: money(d.total), last4: d.card.last4 }))) return;
+            try { const r = await api({ action: 'charge_now', customer_id: d.customer_id }); say(r.status === 'paid' ? tf('st.bill.charged', { amount: money(r.charged) }) : r.status === 'failed' ? `${t('st.bill.declined')}: ${r.error}` : t('st.bill.toosmall')); loadBilling(); load(); }
+            catch (e: any) { say(e.message, true); }
+          }));
+          du.appendChild(li);
+        }
+        const rn = $('blRenew'); rn.innerHTML = '';
+        if (!j.renewals.length) none(rn);
+        for (const r of j.renewals) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong><br /><span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `#${r.box_no} · ${r.customer.name} · ${money(r.amount ?? 0)} (${r.term === 12 ? t('st.mb.year') : t('st.mb.six')})`;
+          who.querySelector('.muted')!.textContent = `${r.failed ? t('st.bill.declined') : r.due_now ? t('st.bl.duetoday') : tf('st.bl.on', { date: r.date })} · ${cardText(r.card)}`;
+          li.append(who);
+          if (j.can_charge && r.due_now && !r.failed) li.append(btn(t('st.bl.charge'), '', async () => {
+            if (!confirm(tf('st.bl.confirm', { name: r.customer.name, amount: money(r.amount ?? 0), last4: r.card.last4 }))) return;
+            try { const x = await api({ action: 'renew_now', id: r.id }); say(x.ok && x.paid_through ? tf('st.mb.dated', { box: r.box_no, date: x.paid_through }) : `${t('st.bill.declined')}: ${x.error ?? ''}`); loadBilling(); load(); }
+            catch (e: any) { say(e.message, true); }
+          }));
+          rn.appendChild(li);
+        }
+        const rc = $('blRecent'); rc.innerHTML = '';
+        if (!j.recent.length) none(rc);
+        for (const c of j.recent) {
+          const li = document.createElement('li');
+          li.innerHTML = '<time></time><span></span><strong></strong><span class="mbd-st"></span>';
+          li.querySelector('time')!.textContent = c.at.slice(0, 10);
+          li.querySelectorAll('span')[0].textContent = `${c.customer.name}${c.box_no ? ` #${c.box_no}` : ''} · ${c.what}`;
+          li.querySelector('strong')!.textContent = money(c.amount);
+          const st = li.querySelector('.mbd-st')!; st.className = `mbd-st mbd-st-${c.status}`; st.textContent = t(`mbd.ch.${c.status}`);
+          rc.appendChild(li);
+        }
+      } catch (e: any) { say(e.message, true); }
+    }
     if (new URLSearchParams(location.search).get('card') === '1') setTimeout(() => say(t('st.card.saved')), 0);
     async function editDo(body: Record<string, unknown>, done: (r: any) => string) {
       editErr.hidden = true;

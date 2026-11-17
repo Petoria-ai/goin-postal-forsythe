@@ -255,12 +255,42 @@ export const POST: APIRoute = async ({ request }) => {
       await logAudit(env, who, 'mailbox.forward_' + b.status, String(b.id), null);
       return json({ ok: true });
     }
-    if (b.action === 'run_billing') {
-      if (!atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can run billing.' }, 403);
-      const renewed = await autoRenewals(env, today);
-      const packages = await packageJobs(env, today);
-      const overages = await billOverages(env);
-      return json({ ok: true, renewed, packages, overages });
+    // Billing (Peter, Nov 16 2026): who owes fees, who renews soon, and what was charged lately. Looking is for any
+    // staff PIN; charging is one customer at a time (charge_now, renew_now) and only for a manager or owner. There is
+    // deliberately no "charge everyone" here: only the morning run (src/worker.ts) bills in bulk.
+    if (b.action === 'billing') {
+      const all = await listAllMailboxes(env);
+      const boxNo = (id: number) => all.find((x) => x.id === id)?.box_no ?? null;
+      const charges = await listMailboxCharges(env, {});
+      const card = async (cid: string) => { const st = await getMailboxSettings(env, cid); return { st, card: st.payment_method_id ? { brand: st.card_brand, last4: st.card_last4 } : null }; };
+      const owing = new Map<string, typeof charges>();
+      for (const c of charges) if (c.kind !== 'renewal' && (c.status === 'unbilled' || c.status === 'failed')) (owing.get(c.customer_id) ?? owing.set(c.customer_id, []).get(c.customer_id)!).push(c);
+      const due = await Promise.all([...owing].map(async ([cid, rows]) => ({
+        customer_id: cid, customer: await person(cid), boxes: [...new Set(rows.map((r) => boxNo(r.mailbox_id)))],
+        total: Math.round(rows.reduce((a, r) => a + r.amount, 0) * 100) / 100, items: rows.map((r) => ({ kind: r.kind, amount: r.amount, what: r.description.replace(/ \((piece \d+|fee [^)]+)\)$/, ''), status: r.status })),
+        declined: rows.some((r) => r.status === 'failed'), card: (await card(cid)).card,
+      })));
+      const soon = new Date(Date.parse(today + 'T00:00:00Z') + 7 * 86_400_000).toISOString().slice(0, 10);
+      const renewals = [];
+      for (const x of all) {
+        if (x.status !== 'active' || x.paid_through > soon || x.paid_through < addMonths(today, -1)) continue;
+        const { st, card: cd } = await card(x.customer_id);
+        if (!st.autorenew || !cd) continue;
+        const failed = (JSON.parse(x.reminders) as string[]).includes(`${x.paid_through}:autorenew_failed`);
+        renewals.push({ id: x.id, box_no: x.box_no, customer: await person(x.customer_id), date: x.paid_through, amount: priceFor(x.size as any, x.term as any), term: x.term, card: cd, due_now: x.paid_through <= today, failed });
+      }
+      renewals.sort((a, c) => a.date.localeCompare(c.date));
+      const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+      const recent = await Promise.all(charges.filter((c) => c.status !== 'unbilled' && (c.paid_at ?? c.created_at) >= since).slice(0, 60)
+        .map(async (c) => ({ at: c.paid_at ?? c.created_at, customer: await person(c.customer_id), box_no: boxNo(c.mailbox_id), kind: c.kind, amount: c.amount, status: c.status, what: c.description.replace(/ \((piece \d+|fee [^)]+)\)$/, ''), ref: c.payment_ref })));
+      return json({ due, renewals, recent, can_charge: atLeast(user, 'manager') });
+    }
+    if (b.action === 'renew_now') { // one box whose automatic renewal is due today (or missed), charged now
+      if (!atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can charge a card.' }, 403);
+      const r = (await autoRenewals(env, today, Number(b.id)))[0];
+      if (!r) return json({ error: 'Nothing to renew for that box today (not due yet, renewal off, no card, or already tried).' }, 400);
+      await logAudit(env, who, 'mailbox.renew_now', `#${r.box_no}`, r.ok ? `paid through ${r.paid_through}` : `declined: ${r.error}`);
+      return json(r);
     }
     // Card and charges for one holder.
     if (['card_link', 'set_autorenew', 'charge_now', 'paid_counter', 'waive'].includes(b.action)) {
@@ -285,7 +315,7 @@ export const POST: APIRoute = async ({ request }) => {
         if (!atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can charge a card.' }, 403);
         const r = await chargeOverages(env, c.id, { retryFailed: true });
         await logAudit(env, who, 'mailbox.charge_now', c.id, JSON.stringify(r));
-        return json({ ok: true, ...r });
+        return json(r);
       }
       const due = (await listMailboxCharges(env, { customer_id: c.id })).filter((x) => x.status === 'unbilled' || x.status === 'failed');
       if (b.action === 'waive' && !atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can waive fees.' }, 403);

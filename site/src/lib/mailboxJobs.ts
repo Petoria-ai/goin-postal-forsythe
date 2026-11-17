@@ -174,9 +174,10 @@ export async function billOverages(env: Env) {
  * term's price to the card on file and extend it. A declined card is tried once per paid-through date; the
  * holder and staff are emailed, and the box then runs out as usual.
  */
-export async function autoRenewals(env: Env, today = day(new Date())) {
+export async function autoRenewals(env: Env, today = day(new Date()), onlyBoxId: number | null = null) {
   const out: { box_no: number; ok: boolean; paid_through?: string; error?: string }[] = [];
   for (const b of await listActiveMailboxes(env)) {
+    if (onlyBoxId != null && b.id !== onlyBoxId) continue;
     if (b.paid_through > today || b.paid_through < addMonths(today, -1)) continue;
     const st = await getMailboxSettings(env, b.customer_id);
     if (!st.autorenew || !st.payment_method_id) continue;

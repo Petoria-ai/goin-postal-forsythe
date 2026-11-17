@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-16 20:54 CST · A Billing card instead of the "Charge due amounts now" button
+
+- **Asked for:** "im thinking of it having a list of people who need to get charged or got charged.. i think that button is a little dangerous once i have alot of customers and say my brother accidentally presses it and charges everyone"
+- **What changed** on Counter → Mailboxes:
+  - The **Charge due amounts now** button is gone, and so is the "charge everyone" action behind it. Only the live site's automatic morning run charges in bulk.
+  - A new **Billing** card shows: **Waiting to be charged** (each customer who owes fees: what for, the total, and their card or "no card: pays at the counter"); **Renewing in the next 7 days** (box, customer, amount, date, card); and **Recent charges (30 days)** (paid, declined, paid at the counter, waived).
+  - **Charge now** sits on a single row, shows only for a manager or owner PIN, and asks "Charge Ann Owes $1.45 on the card ending 1111?" before anything happens. A renewal row has Charge now only on the day it's due (or if the morning run missed it).
+  - Anyone with a staff PIN can look at the lists; only managers and owners see the Charge buttons.
+- **Files:** [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/lib/mailboxJobs.ts](../site/src/lib/mailboxJobs.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/mailbox-billing.test.ts](../site/tests/mailbox-billing.test.ts), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, `npm run dev`, open `/counter/mailboxes` with PIN 1234 and look at the **Billing** card. To see someone in it, put more than 20 letters in a small box with a card on file.
+
 ## 2026-11-16 20:43 CST · "Check these boxes" every 2 weeks, and "I picked up my mail" becomes something staff confirm
 
 - **Asked for:** "i'd atleast want to be able to track the more quiet boxes so like maybe 2 weeks is good ... so either me or the staff has something to do per 2 weeks", and "what if they tapped 'I picked up my mail' when they really didnt?"
