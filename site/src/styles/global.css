@@ -1003,3 +1003,20 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-mail-rts { background: #fbe4e3; color: #9b2420; }
 .mb-rts-alert { background: #fbe4e3; color: #9b2420; border: 1px solid #f0b4b1; border-radius: 12px; padding: 12px 16px; font-weight: 700; }
 #mbMain .card { overflow-x: auto; }
+/* Mailbox documents (Peter, Nov 16 2026) */
+.mb-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.mb-docs { max-width: 46rem; }
+.mb-docs h2 { margin: 0 0 4px; font-size: 1.35rem; color: var(--navy); }
+.mb-docs-list { list-style: none; padding: 0; display: grid; gap: 8px; margin: 12px 0; }
+.mb-docs-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 10px; }
+.mb-docs-list li > div { flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
+.mb-docs-keep { background: #fdf2d0; color: #8a5a00; border-radius: 10px; padding: 8px 12px; font-weight: 700; }
+.mb-docs-keep.past { background: #fbe4e3; color: #9b2420; }
+.mb-docs-view { border: 1px solid var(--hair); border-radius: 10px; padding: 10px; margin: 10px 0; }
+.mb-docs-view img { max-width: 100%; max-height: 60vh; display: block; margin: 0 auto; }
+.mb-docs-view iframe { width: 100%; height: 60vh; border: 0; }
+.mb-docs-form { display: grid; gap: 8px; border-top: 1px solid var(--hair); padding-top: 10px; margin-top: 10px; }
+.mb-docs-form h3 { margin: 0; font-size: 1rem; }
+.mb-docs-form label { display: grid; gap: 4px; }
+.mb-docs-safe { font-size: .9rem; margin: 0; }
+#detail .card { overflow-wrap: anywhere; }

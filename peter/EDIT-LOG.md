@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-16 19:33 CST · Mailbox Documents (IDs and Form 1583), and Mailboxes on the Customers page
+
+- **Asked for:** "a 'Document' tab for me to upload all their ID's and form 1583's", "if im going to mailbox.. i want to be able to hit the 'Documents' button on their list item and then a window pops up all of their documents or i can upload documents there", and "in the customers tab to add a mailbox section for them".
+- **What changed:**
+  - **Counter → Mailboxes:** every box (in use, expired, and in Mail check results) has a **Documents** button, with a count once there are files, e.g. "Documents (2)". It's also in the Edit pop-up.
+  - **The Documents window:** all of that person's documents (Photo ID, Second ID, PS Form 1583, Other), who added each and when, and a note. **Add a document**: pick what it is, choose a photo or PDF (on a phone or tablet this can be the camera), add a note, Upload. Big phone photos are shrunk to a size that's still easy to read. **View** shows the file inside the window, with Open full size; **Delete** removes it for good.
+  - **Who can do what:** any staff PIN can upload and see the list; **only a manager or owner can open or delete** a file, and every time someone opens one it goes in the audit log with their name.
+  - **Locked files:** each file is encrypted before it's stored, using a secret key (`DOCS_KEY`) that is kept apart from the files. On your computer it uses a built-in test key, so it works without setup; the live site won't take uploads until William sets `DOCS_KEY`.
+  - **Keep for a year:** once all of a person's boxes have ended, the window says "Their last box ended (date). Keep these until (a year later), then delete them," and turns red when that date has passed. Nothing is deleted on its own.
+  - **Counter → Customers:** opening a customer now shows a **Mailboxes** card next to their notes and addresses: every box they've had, its status, what to do with their mail, any reservation, and the **Documents** button. Their shipments are below it as before, so everything about them is in one place.
+- **Files:** new [site/src/components/MailboxDocs.astro](../site/src/components/MailboxDocs.astro), new [site/src/lib/mailboxDocs.ts](../site/src/lib/mailboxDocs.ts), new [site/src/pages/api/mailbox-docs.ts](../site/src/pages/api/mailbox-docs.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/pages/counter/customers.astro](../site/src/pages/counter/customers.astro), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/db/schema.sql](../site/db/schema.sql), [site/src/env.d.ts](../site/src/env.d.ts), [site/.dev.vars.example](../site/.dev.vars.example), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/mailbox-docs.test.ts](../site/tests/mailbox-docs.test.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, then **`npm run db:local`** (one new table), then `npm run dev`. On `/counter/mailboxes` (PIN 1234) press **Documents** on a box, upload a photo, then **View** it. On `/counter/customers`, search the same person and press **Open**: the Mailboxes card is next to Notes.
+
 ## 2026-11-16 19:09 CST · Expired mailboxes: hold the mail 6 months, then return to sender
 
 - **Asked for:** "keep track of customers who expired. that way i know to keep their mail for 6 months and also tell me to stop holding their mail after the 6 months ends", "i dont know whether i should put it in the box or do RTS", "a search feature on the admin side to find the customer for either active/expired", "hold the expired customers information up to a year?"

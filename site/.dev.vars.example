@@ -74,3 +74,8 @@ GOOGLE_PLACES_KEY=
 # With a key from console.anthropic.com each request uses Claude (about 2 cents). Set a monthly spending limit in the Anthropic console.
 ANTHROPIC_API_KEY=
 AI_DAILY_LIMIT=10
+
+# Locks mailbox holders' ID and Form 1583 files (Counter > Mailboxes > Documents). On the live site set a long random
+# secret once (wrangler secret put DOCS_KEY) and never change it: files stored with one key can't be opened with another.
+# Blank on the local dev server uses a fixed dev-only key.
+DOCS_KEY=

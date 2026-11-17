@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import Base from '../../layouts/Base.astro';
+import MailboxDocs from '../../components/MailboxDocs.astro';
 
 // Staff page: mailboxes on the website (Peter, Nov 15 2026). Reservations made online wait here until the customer
 // comes in with two IDs and the PS Form 1583; then staff assign a box number, and the holder sees it on their
@@ -76,6 +77,8 @@ import Base from '../../layouts/Base.astro';
     </div>
   </div>
 
+  <MailboxDocs />
+
   <dialog id="mbEdit" class="hz-dialog mb-edit" aria-labelledby="mbEditH">
     <h2 id="mbEditH"></h2>
     <p id="mbEditWho" class="muted"></p>
@@ -91,6 +94,7 @@ import Base from '../../layouts/Base.astro';
     <hr />
     <p class="btnrow mb-edit-foot">
       <button type="button" class="btn small kraft" id="mbEditRemind" data-i18n="st.mb.remindnow">Send a reminder now</button>
+      <button type="button" class="btn small" id="mbEditDocs" data-i18n="st.doc.btn">Documents</button>
       <button type="button" class="linkish mb-danger" id="mbEditClose" data-i18n="st.mb.closebox">Close this box</button>
       <button type="button" class="btn small" id="mbEditDone" data-i18n="st.mb.done">Done</button>
     </p>
@@ -116,6 +120,9 @@ import Base from '../../layouts/Base.astro';
     // What to do with mail for a box today: in the box, hold until a date, or return to sender.
     const mailText = (m: any) => (m.do === 'box' ? t('st.mb.do.box') : m.do === 'hold' ? tf('st.mb.do.hold', { date: m.until }) : tf('st.mb.do.rts', { date: m.since }));
     const mailBadge = (m: any) => { const b = document.createElement('span'); b.className = `mb-mail mb-mail-${m.do}`; b.textContent = mailText(m); return b; };
+    // Documents (IDs, Form 1583): opens the shared window in components/MailboxDocs.astro.
+    const docBtn = (x: any) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn small'; b.dataset.mbdocs = x.customer_id; b.textContent = `${t('st.doc.btn')}${x.docs ? ` (${x.docs})` : ''}`; return b; };
+    window.addEventListener('mbdocs:changed', () => { if (!$('mbMain').classList.contains('hidden')) load(); });
     const contact = (c: any) => [c.phone, c.email].filter(Boolean).join(' · ');
 
     async function load() {
@@ -142,7 +149,8 @@ import Base from '../../layouts/Base.astro';
           const tr = document.createElement('tr');
           cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer)); cell(tr, sizeName(x.size)); cell(tr, x.paid_through);
           const st = cell(tr, ''); const badge = document.createElement('span'); badge.className = `acct-status mb-${x.state}`; badge.textContent = t(`mb.state.${x.state}`); st.appendChild(badge);
-          cell(tr, '').appendChild(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          const act = cell(tr, ''); act.className = 'mb-acts';
+          act.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)), docBtn(x));
           bb.appendChild(tr);
         }
         // Expired and closed: what to do with their mail, return-to-sender first.
@@ -155,7 +163,9 @@ import Base from '../../layouts/Base.astro';
           cell(tr, `${x.mail.ended} · ${t(x.status === 'closed' ? 'mb.state.closed' : 'mb.state.overdue')}`);
           cell(tr, '').appendChild(mailBadge(x.mail));
           const act = cell(tr, '');
+          act.className = 'mb-acts';
           if (x.status === 'active') act.appendChild(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          act.appendChild(docBtn(x));
           eb.appendChild(tr);
         }
         const rts = j.ended.filter((x: any) => x.mail.do === 'rts');
@@ -178,6 +188,7 @@ import Base from '../../layouts/Base.astro';
       $('mbEditDate').textContent = x.paid_through;
       const st = $('mbEditState'); st.className = `acct-status mb-${x.state}`; st.textContent = t(`mb.state.${x.state}`);
       ($('mbEditNew') as HTMLInputElement).value = x.paid_through;
+      ($('mbEditDocs') as HTMLElement).dataset.mbdocs = x.customer_id;
       const mm = $('mbEditMail'); mm.innerHTML = ''; if (x.mail && x.mail.do !== 'box') mm.appendChild(mailBadge(x.mail));
     }
     function openEdit(x: any) { editErr.hidden = true; paintEdit(x); dlg.showModal(); }
@@ -216,7 +227,8 @@ import Base from '../../layouts/Base.astro';
           who.querySelector('strong')!.textContent = `#${x.box_no} · ${x.customer.name}`;
           who.querySelector('.muted')!.textContent = `${t(`mb.state.${x.state}`)} · ${t('st.mb.paidthru')} ${x.paid_through}`;
           li.append(who, mailBadge(x.mail));
-          if (x.status === 'active') li.append(' ', btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          if (x.status === 'active') li.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          li.append(docBtn(x));
           ul.appendChild(li);
         }
       } catch (e: any) { say(e.message, true); }

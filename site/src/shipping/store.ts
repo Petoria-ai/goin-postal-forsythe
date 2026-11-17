@@ -151,12 +151,13 @@ const mem = {
   mbReservations: [] as MailboxReservation[],
   mailboxes: [] as MailboxRow[],
   mbRenewals: [] as MailboxRenewal[],
+  mbDocs: [] as MailboxDocRow[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -202,6 +203,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailbox_reservations': return mem.mbReservations;
     case 'mailboxes': return mem.mailboxes;
     case 'mailbox_renewals': return mem.mbRenewals;
+    case 'mailbox_documents': return mem.mbDocs;
     default: return [];
   }
 };
@@ -745,6 +747,34 @@ export async function updateMailbox(env: Env, id: number, patch: Partial<Pick<Ma
 export async function listAllMailboxes(env: Env): Promise<MailboxRow[]> {
   if (env.DB) return (await env.DB.prepare('SELECT * FROM mailboxes ORDER BY id DESC').all<MailboxRow>()).results;
   return [...mem.mailboxes].sort((a, b) => b.id - a.id);
+}
+
+/** A mailbox holder's document (Peter, Nov 16 2026): the label only; the encrypted file is in lib/mailboxDocs.ts. */
+export interface MailboxDocRow { id: string; customer_id: string; kind: string; name: string; content_type: string; bytes: number; note: string | null; by_name: string; at: string }
+export async function addMailboxDoc(env: Env, row: Omit<MailboxDocRow, 'at'>): Promise<MailboxDocRow> {
+  const full = { ...row, at: now() };
+  if (env.DB) await env.DB.prepare('INSERT INTO mailbox_documents (id, customer_id, kind, name, content_type, bytes, note, by_name, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)').bind(full.id, full.customer_id, full.kind, full.name, full.content_type, full.bytes, full.note, full.by_name, full.at).run();
+  else mem.mbDocs.push(full);
+  return full;
+}
+/** A customer's documents, newest first. */
+export async function listMailboxDocs(env: Env, customerId: string): Promise<MailboxDocRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_documents WHERE customer_id = ?1 ORDER BY at DESC').bind(customerId).all<MailboxDocRow>()).results;
+  return mem.mbDocs.filter((d) => d.customer_id === customerId).sort((a, b) => b.at.localeCompare(a.at));
+}
+export async function getMailboxDoc(env: Env, id: string): Promise<MailboxDocRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_documents WHERE id = ?1').bind(id).first<MailboxDocRow>()) ?? null;
+  return mem.mbDocs.find((d) => d.id === id) ?? null;
+}
+export async function deleteMailboxDoc(env: Env, id: string): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('DELETE FROM mailbox_documents WHERE id = ?1').bind(id).run()).meta.changes ?? 0) > 0;
+  const n = mem.mbDocs.length; mem.mbDocs = mem.mbDocs.filter((d) => d.id !== id); return mem.mbDocs.length < n;
+}
+/** How many documents each customer has, for the staff lists. */
+export async function countMailboxDocs(env: Env): Promise<Map<string, number>> {
+  const rows = env.DB ? (await env.DB.prepare('SELECT customer_id, COUNT(*) AS n FROM mailbox_documents GROUP BY customer_id').all<{ customer_id: string; n: number }>()).results
+    : Object.entries(mem.mbDocs.reduce<Record<string, number>>((a, d) => ((a[d.customer_id] = (a[d.customer_id] ?? 0) + 1), a), {})).map(([customer_id, n]) => ({ customer_id, n }));
+  return new Map(rows.map((r) => [r.customer_id, Number(r.n)]));
 }
 
 /** Online renewals by the holder (Peter, Nov 17 2026): created before Stripe Checkout, paid once. */

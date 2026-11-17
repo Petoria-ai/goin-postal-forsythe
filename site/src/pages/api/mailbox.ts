@@ -7,7 +7,7 @@ import { readSession } from '../../lib/session';
 import { createMailboxCheckout } from '../../lib/stripe';
 import {
   getCustomer, searchCustomers, logAudit, reserveMailbox, waitingReservation, listWaitingReservations, getReservation, setReservationStatus,
-  assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, type MailboxRow,
+  assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate } from '../../lib/mailboxJobs';
@@ -20,7 +20,7 @@ import { sendReminder, sendDueReminders, holdEndNotices, extendedDate } from '..
 //   set_paid_through {id, date} (after the start date),
 //   renew {id, term} (the same as adjust with a positive term), close {id}, remind {id} (one now),
 //   send_due (every reminder due today, each once; also run every morning by src/worker.ts),
-//   search {q} (a box number or a name, email or phone: current and past boxes, with what to do with their mail).
+//   for_customer {customer_id} (their boxes, open and closed, and how many documents), search {q} (a box number or a name, email or phone: current and past boxes, with what to do with their mail).
 // Ended boxes (expired or closed): mail is held HOLD_MONTHS, then returned to sender; listed for KEEP_MONTHS.
 // Every change is audited.
 // The counter's register stays the full record (IDs, the 1583, payments); this is what the website shows and sends.
@@ -70,7 +70,11 @@ export const POST: APIRoute = async ({ request }) => {
       if (!people.has(id)) people.set(id, await getCustomer(env, id));
       const c = people.get(id); return c ? { name: c.name, email: c.email, phone: c.phone } : { name: '?', email: null, phone: null };
     };
-    const view = async (x: MailboxRow) => ({ ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today) });
+    let docCounts: Map<string, number> | null = null;
+    const view = async (x: MailboxRow) => {
+      docCounts ??= await countMailboxDocs(env);
+      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0 };
+    };
 
     if (b.action === 'list') {
       const [res, all] = await Promise.all([listWaitingReservations(env), listAllMailboxes(env)]);
@@ -87,6 +91,13 @@ export const POST: APIRoute = async ({ request }) => {
         boxes: views.filter((x) => x.mail.do === 'box').map((x) => ({ ...x, due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
         ended,
       });
+    }
+    if (b.action === 'for_customer') { // the Customers page's Mailbox section: every box they've had, newest first
+      const id = String(b.customer_id ?? '');
+      const mine = (await listAllMailboxes(env)).filter((x) => x.customer_id === id);
+      mine.sort((a, c) => (a.status === 'active' ? 0 : 1) - (c.status === 'active' ? 0 : 1) || c.id - a.id);
+      const docs = (await countMailboxDocs(env)).get(id) ?? 0;
+      return json({ boxes: await Promise.all(mine.map(view)), docs, reservation: (await listWaitingReservations(env)).find((r) => r.customer_id === id) ?? null });
     }
     if (b.action === 'search') {
       const q = String(b.q ?? '').trim().slice(0, 60);

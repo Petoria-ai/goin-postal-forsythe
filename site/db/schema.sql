@@ -622,3 +622,20 @@ CREATE TABLE IF NOT EXISTS mailbox_renewals (
   paid_at TEXT
 );
 CREATE INDEX IF NOT EXISTS mailbox_renewals_box ON mailbox_renewals(mailbox_id);
+
+-- Mailbox holders' documents (Peter, Nov 16 2026): photo IDs and the PS Form 1583, uploaded by staff on
+-- /counter/mailboxes or /counter/customers. This row is the label; the file itself is encrypted (AES-GCM, key
+-- DOCS_KEY) and kept in the ORDERS KV namespace under mbdoc:<id>. Any staff PIN can upload and list; only a
+-- manager or owner can open or delete, and every open is in the audit log.
+CREATE TABLE IF NOT EXISTS mailbox_documents (
+  id TEXT PRIMARY KEY,                  -- 32 random hex characters
+  customer_id TEXT NOT NULL,
+  kind TEXT NOT NULL,                   -- photo_id, second_id, form_1583, other
+  name TEXT NOT NULL,                   -- the file's name as uploaded
+  content_type TEXT NOT NULL,           -- image/jpeg, image/png, image/webp, application/pdf
+  bytes INTEGER NOT NULL,
+  note TEXT,
+  by_name TEXT NOT NULL,
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mailbox_documents_customer ON mailbox_documents(customer_id, at);
