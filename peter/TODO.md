@@ -361,6 +361,10 @@ Virtual mail means the customer gets our street address, we receive their mail, 
 - [x] **Expired boxes** ✅ 2026-11-16 19:09 CST: Mail check (box # or name), hold mail 6 months then return to sender, a red alert and a morning email when a hold ends, an Expired list kept a year.
 - [ ] **Check the hold and RTS rules with the postmaster:** USPS has rules for a mail center's mail after a box ends (Domestic Mail Manual 508, section 1.8, commercial mail receiving agencies), including how mail is endorsed when it goes back. The 6 months here is the store's choice; confirm it fits those rules and the wording to write on returned mail.
 - [x] **Documents** (IDs and Form 1583) ✅ 2026-11-16 19:33 CST: upload on Mailboxes and Customers, encrypted, managers and owners open them, every open logged, a keep-until-a-year note. Needs `DOCS_KEY` on the live site (D26).
+- [x] **Mail log and the customer dashboard** ✅ 2026-11-16 20:00 CST: Mail in at the counter, capacity 20/50/115, 45¢ overage, "You've got mail", card on file, automatic renewal of the same plan, forwarding requests, billing history.
+- [ ] **A one-page mailbox agreement** for a local attorney to review before automatic charges go live: automatic renewal terms, no refunds for unused time, the 45¢ overage and the limits, the 6-month mail hold, forwarding postage. Customers sign it at the counter (and the dashboard links to it).
+- [ ] **Stripe live:** the webhook must also send `checkout.session.completed` for **setup** sessions (saving a card); test a renewal and an overage with Stripe's test cards, including a declined one.
+- [ ] **Overage on packages:** today a package counts as one piece like a letter. Decide if packages should count more, or not at all, toward capacity.
 - [ ] Bring in the boxes already rented: they're in William's register (`physical-mailbox/`); staff can assign each to the holder's account by hand, or a one-time import.
 
 ## P11. Official carrier logos (USPS, UPS, FedEx, DHL)

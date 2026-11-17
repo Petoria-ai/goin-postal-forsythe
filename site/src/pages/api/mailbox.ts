@@ -2,15 +2,19 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
-import { authenticate } from '../../lib/auth';
+import { authenticate, atLeast } from '../../lib/auth';
 import { readSession } from '../../lib/session';
-import { createMailboxCheckout } from '../../lib/stripe';
+import { createMailboxCheckout, createCardSetup, ensureStripeCustomer } from '../../lib/stripe';
+import { sendEmail } from '../../shipping/notify';
 import {
   getCustomer, searchCustomers, logAudit, reserveMailbox, waitingReservation, listWaitingReservations, getReservation, setReservationStatus,
   assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
+  countItemsIn, listMailboxItems, getMailboxItem, deleteMailboxItem, clearMailboxItems, getMailboxSettings, saveMailboxSettings,
+  listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
-import { sendReminder, sendDueReminders, holdEndNotices, extendedDate } from '../../lib/mailboxJobs';
+import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor } from '../../lib/mailboxJobs';
+import { fullness } from '../../lib/mailbox';
 
 // Physical mailboxes on the website (Peter, Nov 15 and 17 2026).
 // Customer (signed in): reserve {size, term}, cancel_reservation, renew_checkout {id, term} (Stripe; the box is
@@ -31,13 +35,50 @@ export const POST: APIRoute = async ({ request }) => {
     const today = day(new Date());
 
     // ---- customer
-    if (b.action === 'reserve' || b.action === 'cancel_reservation' || b.action === 'renew_checkout') {
+    if (['reserve', 'cancel_reservation', 'renew_checkout', 'card_setup', 'card_remove', 'set_prefs', 'forward_request', 'forward_cancel'].includes(b.action)) {
       const meId = await readSession(env, request.headers.get('cookie')).catch(() => null);
       const me = meId ? await getCustomer(env, meId) : null;
       if (!me) return json({ error: 'Sign in to reserve a mailbox.', signin: true }, 401);
       if (b.action === 'cancel_reservation') {
         const r = await waitingReservation(env, me.id);
         if (r) await setReservationStatus(env, r.id, 'cancelled');
+        return json({ ok: true });
+      }
+      // The holder's dashboard (Peter, Nov 16 2026): card on file, automatic renewal, notices, forwarding.
+      if (b.action === 'card_setup') {
+        const st = await getMailboxSettings(env, me.id);
+        const sc = await ensureStripeCustomer(env, me, st.stripe_customer_id);
+        if (sc && sc !== st.stripe_customer_id) await saveMailboxSettings(env, me.id, { stripe_customer_id: sc });
+        return json({ ok: true, url: await createCardSetup(env, { customer_id: me.id, stripe_customer_id: sc, added_by: 'customer', back: 'account' }) });
+      }
+      if (b.action === 'card_remove') {
+        await saveMailboxSettings(env, me.id, { payment_method_id: null, card_brand: null, card_last4: null, card_exp: null, autorenew: 0 });
+        await logAudit(env, { id: null, name: 'Customer (online)' }, 'mailbox.card_removed', me.id, null);
+        return json({ ok: true });
+      }
+      if (b.action === 'set_prefs') {
+        const st = await getMailboxSettings(env, me.id);
+        const patch: Record<string, number> = {};
+        for (const k of ['autorenew', 'notify_sms', 'notify_email'] as const) if (typeof b[k] === 'boolean') patch[k] = b[k] ? 1 : 0;
+        if (patch.autorenew && !st.payment_method_id) return json({ error: 'Add a card first to turn on automatic renewal.' }, 400);
+        const next = await saveMailboxSettings(env, me.id, patch);
+        if ('autorenew' in patch) await logAudit(env, { id: null, name: 'Customer (online)' }, 'mailbox.autorenew_set', me.id, patch.autorenew ? 'on' : 'off');
+        return json({ ok: true, settings: { autorenew: !!next.autorenew, notify_sms: !!next.notify_sms, notify_email: !!next.notify_email } });
+      }
+      if (b.action === 'forward_request') {
+        const box = await getMailbox(env, Number(b.id));
+        if (!box || box.status !== 'active' || box.customer_id !== me.id) return json({ error: 'No such mailbox on your account.' }, 404);
+        const address = String(b.address ?? '').trim().slice(0, 300);
+        if (address.length < 10) return json({ error: 'Enter the full address to forward to.' }, 400);
+        const f = await addMailboxForward(env, { customer_id: me.id, mailbox_id: box.id, address, note: String(b.note ?? '').trim().slice(0, 300) || null });
+        await logAudit(env, { id: null, name: 'Customer (online)' }, 'mailbox.forward_request', `#${box.box_no}`, address);
+        if (env.STAFF_EMAIL) await sendEmail(env, env.STAFF_EMAIL, `Forwarding request: box #${box.box_no}`, `${me.name} asked to forward the mail in box #${box.box_no} to:\n\n${address}${f.note ? `\n\nNote: ${f.note}` : ''}\n\n${env.SITE_URL}/counter/mailboxes`).catch(() => {});
+        return json({ ok: true, forward: f });
+      }
+      if (b.action === 'forward_cancel') {
+        const f = (await listMailboxForwards(env, { customer_id: me.id, status: 'open' })).find((x) => x.id === Number(b.id));
+        if (!f) return json({ error: 'No such request' }, 404);
+        await setMailboxForward(env, f.id, 'cancelled', 'customer');
         return json({ ok: true });
       }
       if (b.action === 'renew_checkout') {
@@ -71,9 +112,12 @@ export const POST: APIRoute = async ({ request }) => {
       const c = people.get(id); return c ? { name: c.name, email: c.email, phone: c.phone } : { name: '?', email: null, phone: null };
     };
     let docCounts: Map<string, number> | null = null;
+    let inBox: Awaited<ReturnType<typeof countItemsIn>> | null = null;
     const view = async (x: MailboxRow) => {
       docCounts ??= await countMailboxDocs(env);
-      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0 };
+      inBox ??= await countItemsIn(env);
+      const n = inBox.get(x.id) ?? { letters: 0, packages: 0, last: null };
+      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0, inbox: { ...n, ...fullness(n.letters + n.packages, x.size) } };
     };
 
     if (b.action === 'list') {
@@ -89,6 +133,7 @@ export const POST: APIRoute = async ({ request }) => {
         sizes: SIZES.map((s) => ({ ...s, free: Array.from({ length: s.to - s.from + 1 }, (_, i) => s.from + i).filter((n) => !used.has(n)).length })),
         reservations: await Promise.all(res.map(async (r) => ({ ...r, customer: await person(r.customer_id), price: priceFor(r.size as any, r.term as any) }))),
         boxes: views.filter((x) => x.mail.do === 'box').map((x) => ({ ...x, due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
+        forwards: await Promise.all((await listMailboxForwards(env, { status: 'open' })).map(async (f) => ({ ...f, box_no: all.find((x) => x.id === f.mailbox_id)?.box_no ?? null, customer: await person(f.customer_id) }))),
         ended,
       });
     }
@@ -133,6 +178,74 @@ export const POST: APIRoute = async ({ request }) => {
       await logAudit(env, who, 'mailbox.assign', `#${boxNo}`, `${customer.name} · ${size.name} · ${term} months · paid through ${paid_through}`);
       return json({ ok: true, box });
     }
+    // ---- the mail log (Peter, Nov 16 2026)
+    if (b.action === 'mail_in') {
+      const box = await activeBox(env, Number(String(b.box_no ?? '').replace(/\D/g, '')));
+      if (!box) return json({ error: `No open box #${b.box_no} on the website.` }, 404);
+      const kind = b.kind === 'package' ? 'package' : 'letter';
+      const r = await logMail(env, who, box, kind, String(b.note ?? '').trim().slice(0, 120) || null, today);
+      await logAudit(env, who, 'mailbox.mail_in', `#${box.box_no}`, `${kind}${r.over ? ' · OVER CAPACITY' : ''}${r.notified ? ' · holder notified' : ''}`);
+      return json({ ok: true, ...r, box_no: box.box_no, customer: await person(box.customer_id) });
+    }
+    if (b.action === 'mail_undo') {
+      const it = await getMailboxItem(env, Number(b.item_id));
+      if (!it || it.status !== 'in') return json({ error: 'That piece is already out of the box.' }, 404);
+      await deleteMailboxItem(env, it.id);
+      const fee = (await listMailboxCharges(env, { customer_id: it.customer_id, status: 'unbilled' })).find((c) => c.description.endsWith(`(piece ${it.id})`));
+      if (fee) await settleMailboxCharges(env, [fee.id], 'waived', `undo by ${who.name}`);
+      await logAudit(env, who, 'mailbox.mail_undo', `#${it.box_no}`, `${it.kind} logged ${it.arrived_at}`);
+      return json({ ok: true });
+    }
+    if (b.action === 'forward_set') {
+      if (!['done', 'cancelled'].includes(b.status)) return json({ error: 'Pick done or cancelled' }, 400);
+      await setMailboxForward(env, Number(b.id), b.status, who.name);
+      await logAudit(env, who, 'mailbox.forward_' + b.status, String(b.id), null);
+      return json({ ok: true });
+    }
+    if (b.action === 'run_billing') {
+      if (!atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can run billing.' }, 403);
+      const renewed = await autoRenewals(env, today);
+      const overages = await billOverages(env);
+      return json({ ok: true, renewed, overages });
+    }
+    // Card and charges for one holder.
+    if (['card_link', 'set_autorenew', 'charge_now', 'paid_counter', 'waive'].includes(b.action)) {
+      const c = await getCustomer(env, String(b.customer_id ?? ''));
+      if (!c) return json({ error: 'No such customer' }, 404);
+      if (b.action === 'card_link') {
+        if (b.agreed !== true) return json({ error: 'The customer has to agree to automatic charges first.' }, 400);
+        const st = await getMailboxSettings(env, c.id);
+        const sc = await ensureStripeCustomer(env, c, st.stripe_customer_id);
+        if (sc && sc !== st.stripe_customer_id) await saveMailboxSettings(env, c.id, { stripe_customer_id: sc });
+        await logAudit(env, who, 'mailbox.card_link', c.id, 'customer agreed to automatic charges');
+        return json({ ok: true, url: await createCardSetup(env, { customer_id: c.id, stripe_customer_id: sc, added_by: who.name, back: 'counter' }) });
+      }
+      if (b.action === 'set_autorenew') {
+        const st = await getMailboxSettings(env, c.id);
+        if (b.on && !st.payment_method_id) return json({ error: 'Add a card first.' }, 400);
+        await saveMailboxSettings(env, c.id, { autorenew: b.on ? 1 : 0 });
+        await logAudit(env, who, 'mailbox.autorenew_set', c.id, b.on ? 'on' : 'off');
+        return json({ ok: true });
+      }
+      if (b.action === 'charge_now') {
+        if (!atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can charge a card.' }, 403);
+        const r = await chargeOverages(env, c.id, { retryFailed: true });
+        await logAudit(env, who, 'mailbox.charge_now', c.id, JSON.stringify(r));
+        return json({ ok: true, ...r });
+      }
+      const due = (await listMailboxCharges(env, { customer_id: c.id })).filter((x) => x.status === 'unbilled' || x.status === 'failed');
+      if (b.action === 'waive' && !atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can waive fees.' }, 403);
+      await settleMailboxCharges(env, due.map((x) => x.id), b.action === 'waive' ? 'waived' : 'paid_counter', who.name);
+      const total = Math.round(due.reduce((a, x) => a + x.amount, 0) * 100) / 100;
+      await logAudit(env, who, `mailbox.${b.action}`, c.id, `$${total.toFixed(2)}, ${due.length} charge${due.length === 1 ? '' : 's'}`);
+      return json({ ok: true, total });
+    }
+    if (b.action === 'forwards') {
+      const open = await listMailboxForwards(env, { status: 'open' });
+      const all = await listAllMailboxes(env);
+      return json({ forwards: await Promise.all(open.map(async (f) => ({ ...f, box_no: all.find((x) => x.id === f.mailbox_id)?.box_no ?? null, customer: await person(f.customer_id) }))) });
+    }
+
     if (b.action === 'send_due') {
       const sent = await sendDueReminders(env, who, today);
       const holds_ended = await holdEndNotices(env, today);
@@ -159,6 +272,23 @@ export const POST: APIRoute = async ({ request }) => {
       await updateMailbox(env, box.id, { paid_through: b.date });
       await logAudit(env, who, 'mailbox.set_date', `#${box.box_no}`, `paid through ${box.paid_through} → ${b.date}`);
       return json({ ok: true, paid_through: b.date });
+    }
+    if (b.action === 'box_detail') { // the Edit window: what's in the box, the card, money owed, forwarding
+      const st = await getMailboxSettings(env, box.customer_id);
+      const bal = await balanceFor(env, box.customer_id);
+      return json({
+        items: await listMailboxItems(env, box.id, true),
+        card: st.payment_method_id ? { brand: st.card_brand, last4: st.card_last4, exp: st.card_exp, added_by: st.card_added_by, added_at: st.card_added_at } : null,
+        autorenew: !!st.autorenew, balance: { due: bal.due, pieces: bal.pieces, declined: bal.declined },
+        charges: bal.charges.slice(0, 20), forwards: await listMailboxForwards(env, { customer_id: box.customer_id, status: 'open' }),
+        can_charge: atLeast(user, 'manager'),
+      });
+    }
+    if (b.action === 'pickup') {
+      const how = ['picked_up', 'forwarded', 'returned'].includes(b.how) ? b.how : 'picked_up';
+      const n = await clearMailboxItems(env, box.id, how);
+      await logAudit(env, who, 'mailbox.pickup', `#${box.box_no}`, `${n} piece${n === 1 ? '' : 's'} ${how.replace('_', ' ')}`);
+      return json({ ok: true, n });
     }
     if (b.action === 'close') {
       await updateMailbox(env, box.id, { status: 'closed', closed_at: new Date().toISOString() });

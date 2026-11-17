@@ -6,7 +6,7 @@ import cfg from '../data/mailboxes.json';
 
 export type SizeId = 'small' | 'medium' | 'large';
 export type Term = 6 | 12;
-export interface MailboxSize { id: SizeId; name: string; from: number; to: number; price6: number; price12: number }
+export interface MailboxSize { id: SizeId; name: string; from: number; to: number; price6: number; price12: number; capacity: number }
 export const SIZES = cfg.sizes as MailboxSize[];
 export const TERMS: Term[] = [6, 12];
 export const REMINDER_DAYS: number[] = [...cfg.reminder_days].sort((a, b) => b - a); // e.g. [60, 30, 7]
@@ -59,13 +59,28 @@ export function dueReminder(b: { status: string; paid_through: string; reminders
 }
 
 /** The words of a reminder, for a text and an email. Plain English; the store's phone number, and the renew-online link when there is one. */
-export function reminderText(b: { box_no: number; paid_through: string }, key: string, store: { name: string; phone: string }, renewUrl: string | null = null) {
+export function reminderText(b: { box_no: number; paid_through: string }, key: string, store: { name: string; phone: string }, renewUrl: string | null = null, auto: { amount: number; last4: string; term: number } | null = null) {
   const stage = key.split(':')[1];
   const when = new Date(b.paid_through + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   const holdUntil = new Date(addMonths(b.paid_through, HOLD_MONTHS) + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   const sms = stage === 'over'
     ? `${store.name}: your mailbox #${b.box_no} expired on ${when}. We'll hold your mail until ${holdUntil}, then return it to sender. Renew ${renewUrl ? `online at ${renewUrl} or ` : ''}at the counter. Questions: ${store.phone}`
     : `${store.name}: your mailbox #${b.box_no} is paid through ${when}. Renew ${renewUrl ? `online at ${renewUrl} or ` : ''}at the counter any time before then. Questions: ${store.phone}`;
+  if (auto && stage !== 'over') {
+    // Peter, Nov 16 2026: spell out that it renews unless they turn it off, so there's a clear paper trail.
+    const plan = `${auto.term === 12 ? '1 year' : '6 months'}`;
+    const line = `unless you turn it off, your mailbox #${b.box_no} renews automatically on ${when} for $${auto.amount.toFixed(2)} (${plan}, the same plan as now), charged to your card ending ${auto.last4}.`;
+    return {
+      sms: `${store.name}: ${line[0].toUpperCase()}${line.slice(1)} To stop it: ${renewUrl ?? 'tell us at the counter'}. Questions: ${store.phone}`,
+      subject: `Your mailbox #${b.box_no} renews automatically on ${when}`,
+      email: [
+        `Hi! ${line[0].toUpperCase()}${line.slice(1)}`, '',
+        'To keep your box, there is nothing to do.', '',
+        `If you do NOT want it to renew, turn off automatic renewal before ${when} on your mailbox dashboard${renewUrl ? ` (${renewUrl})` : ''} or tell us at the counter. Mail for a box that isn't renewed is held for 6 months and then returned to the sender.`, '',
+        `Questions? Call us at ${store.phone}.`,
+      ].join('\n'),
+    };
+  }
   const subject = stage === 'over' ? `Your mailbox #${b.box_no} has expired` : `Your mailbox #${b.box_no} renews soon`;
   const email = [
     stage === 'over' ? `Your mailbox #${b.box_no} at ${store.name} expired on ${when}.` : `Your mailbox #${b.box_no} at ${store.name} is paid through ${when}.`,
@@ -107,3 +122,17 @@ export const onExpiredList = (b: { status: string; paid_through: string; closed_
   const ended = endedOn(b, today);
   return !!ended && today <= addMonths(ended, KEEP_MONTHS);
 };
+
+// ---- The mail log: capacity and overage (Peter, Nov 16 2026) -------------------------------------------
+/** Each piece that arrives while a box is already full costs this much. */
+export const OVERAGE_FEE: number = (cfg as any).overage_fee ?? 0.45;
+/** Overages are charged to the card once they add up to this (Stripe's smallest charge is 50 cents). */
+export const MIN_CHARGE: number = (cfg as any).min_charge ?? 0.5;
+export const capacityFor = (size: string) => sizeById(size)?.capacity ?? 0;
+/** How full a box is: pieces in it, its capacity, the percent (can pass 100), and whether a new piece is an overage. */
+export function fullness(pieces: number, size: string) {
+  const cap = capacityFor(size);
+  const pct = cap ? Math.round((pieces / cap) * 100) : 0;
+  return { pieces, capacity: cap, pct, full: cap > 0 && pieces >= cap, over: cap > 0 ? Math.max(0, pieces - cap) : 0 };
+}
+export const money = (n: number) => `$${n.toFixed(2)}`;

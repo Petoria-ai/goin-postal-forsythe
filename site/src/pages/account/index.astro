@@ -11,9 +11,10 @@ import { recordConsent } from '../../shipping/store';
 import { listSavedDesigns } from '../../shipping/store';
 import { renderCard, sanitizeDesign, CARD_OPTIONS } from '../../lib/cards';
 import { listCardOrdersFor, cardTotal } from '../../lib/cardOrders';
-import { mailboxesFor, waitingReservation, getRenewal } from '../../shipping/store';
+import { mailboxesFor, waitingReservation, getRenewal, countItemsIn, listMailboxItems, getMailboxSettings, paidRenewalsFor, listMailboxForwards } from '../../shipping/store';
+import MailboxDashboard from '../../components/MailboxDashboard.astro';
 import { sizeById, addressFor, boxStatus, day, priceFor } from '../../lib/mailbox';
-import { extendedDate } from '../../lib/mailboxJobs';
+import { extendedDate, balanceFor } from '../../lib/mailboxJobs';
 import { findCustomer, getCustomer, customerQuotes, listCustomerAddresses, accountForContact, accountOpenShipments, accountOpenFees, listStatements, pickupsForAccount, listReturnLinks, listProducts, listFulfillmentOrders, listApiKeys } from '../../shipping/store';
 
 // Customer account (T20): sign in by magic link, see saved addresses and past orders, ship again.
@@ -69,6 +70,14 @@ const myRes = me ? await waitingReservation(env, me.id) : null;
 const renewedCode = Astro.url.searchParams.get('renewed');
 const renewal = me && renewedCode ? await getRenewal(env, renewedCode).then((r) => (r && r.customer_id === me.id ? r : null)) : null;
 const renewOptions = (b: { size: string; paid_through: string }) => ([6, 12] as const).map((term) => ({ term, price: priceFor(b.size as any, term), until: extendedDate(b, term) })).filter((o) => o.price != null);
+// The mailbox dashboard (Peter, Nov 16 2026): what's in the box, capacity, card, automatic renewal, history.
+const mbCounts = myBoxes.length ? await countItemsIn(env) : new Map();
+const mbSettings = me && myBoxes.length ? await getMailboxSettings(env, me.id) : null;
+const mbBalance = me && myBoxes.length ? await balanceFor(env, me.id) : null;
+const mbRenewals = me && myBoxes.length ? await paidRenewalsFor(env, me.id) : [];
+const mbForwards = me && myBoxes.length ? await listMailboxForwards(env, { customer_id: me.id, status: 'open' }) : [];
+const mbItems = new Map(await Promise.all(myBoxes.map(async (b) => [b.id, await listMailboxItems(env, b.id, false, 10)] as const)));
+const cardSaved = Astro.url.searchParams.get('card') === '1';
 const longDate = (ymd: string) => new Date(ymd + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 // Business card orders on this account (newest first), for My orders.
 const cardOrders = me ? await listCardOrdersFor(env, me.id) : [];
@@ -214,27 +223,11 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
       {renewal && (renewal.status === 'paid' && renewal.paid_through
         ? <p class="ok-msg mb-thanks" data-i18n="mb.renewed.ok" data-i18n-vars={JSON.stringify({ date: longDate(renewal.paid_through) })}>Thank you! Your mailbox is now paid through {longDate(renewal.paid_through)}.</p>
         : <p class="ok-msg mb-thanks" data-i18n="mb.renewed.wait">Thank you! We are confirming your payment. Your new date will show here in a minute.</p>)}
+      {cardSaved && <p class="ok-msg mb-thanks" data-i18n="mbd.cardsaved">Card saved. Automatic renewal is on.</p>}
       {myBoxes.map((b) => (
-        <div class="card mb-mine">
-          <h3><span data-i18n="mb.box">Mailbox</span> #{b.box_no} <span class={`acct-status mb-${b.state}`} data-i18n={`mb.state.${b.state}`}>{b.state}</span></h3>
-          <p><span data-i18n="mb.youraddr">Your address:</span><br /><strong class="mb-address">{b.address}</strong> <button type="button" class="linkish" data-copy={b.address} data-i18n="mb.copy">Copy</button></p>
-          <dl class="mb-facts">
-            <dt data-i18n="mb.pick.size">Size</dt><dd data-i18n={`mb.size.${b.size}`}>{b.sizeName}</dd>
-            <dt data-i18n="mb.paidthru">Paid through</dt><dd>{longDate(b.paid_through)}</dd>
-            <dt data-i18n="mb.term">Term</dt><dd>{b.term === 12 ? <span data-i18n="mb.year">1 year</span> : <span data-i18n="mb.six">6 months</span>}</dd>
-          </dl>
-          <div class="mb-renew">
-            <h4 data-i18n="mb.renewonline">Renew online</h4>
-            <p class="btnrow">
-              {renewOptions(b).map((o) => (
-                <button type="button" class="btn small" data-renew={b.id} data-term={o.term}><span data-i18n={o.term === 12 ? 'mb.addyear' : 'mb.addsix'}>{o.term === 12 ? 'Add 1 year' : 'Add 6 months'}</span> · ${o.price}</button>
-              ))}
-            </p>
-            {renewOptions(b).map((o) => <p class="muted mb-until"><span data-i18n={o.term === 12 ? 'mb.addyear' : 'mb.addsix'}>{o.term === 12 ? 'Add 1 year' : 'Add 6 months'}</span>: <span data-i18n="mb.newdate">New paid-through date:</span> {longDate(o.until)}</p>)}
-            <p class="err" data-renew-err hidden></p>
-            <p class="muted" data-i18n="mb.renew.p2">Renew online here or at the counter. We'll text and email you 2 months, 1 month and 1 week before it's due.</p>
-          </div>
-        </div>
+        <MailboxDashboard box={b} firstName={me!.name.split(' ')[0]} counts={mbCounts.get(b.id) ?? { letters: 0, packages: 0, last: null }} items={mbItems.get(b.id) ?? []}
+          settings={mbSettings!} balance={mbBalance!} renewals={mbRenewals.filter((r) => r.mailbox_id === b.id)} forwards={mbForwards.filter((f) => f.mailbox_id === b.id)}
+          renewOptions={renewOptions(b)} longDate={longDate} />
       ))}
       {myRes && <div class="card">
         <h3 data-i18n="mb.reserve.h">Reserve a mailbox</h3>

@@ -152,12 +152,16 @@ const mem = {
   mailboxes: [] as MailboxRow[],
   mbRenewals: [] as MailboxRenewal[],
   mbDocs: [] as MailboxDocRow[],
+  mbItems: [] as MailboxItem[],
+  mbSettings: new Map<string, MailboxSettings>(),
+  mbCharges: [] as MailboxCharge[],
+  mbForwards: [] as MailboxForward[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -204,6 +208,10 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailboxes': return mem.mailboxes;
     case 'mailbox_renewals': return mem.mbRenewals;
     case 'mailbox_documents': return mem.mbDocs;
+    case 'mailbox_items': return mem.mbItems;
+    case 'mailbox_settings': return [...mem.mbSettings.values()];
+    case 'mailbox_charges': return mem.mbCharges;
+    case 'mailbox_forwards': return mem.mbForwards;
     default: return [];
   }
 };
@@ -775,6 +783,114 @@ export async function countMailboxDocs(env: Env): Promise<Map<string, number>> {
   const rows = env.DB ? (await env.DB.prepare('SELECT customer_id, COUNT(*) AS n FROM mailbox_documents GROUP BY customer_id').all<{ customer_id: string; n: number }>()).results
     : Object.entries(mem.mbDocs.reduce<Record<string, number>>((a, d) => ((a[d.customer_id] = (a[d.customer_id] ?? 0) + 1), a), {})).map(([customer_id, n]) => ({ customer_id, n }));
   return new Map(rows.map((r) => [r.customer_id, Number(r.n)]));
+}
+
+// ---- the mail log, card on file, charges and forwarding (Peter, Nov 16 2026) -----------------------------
+export interface MailboxItem { id: number; mailbox_id: number; customer_id: string; box_no: number; kind: 'letter' | 'package'; note: string | null; status: 'in' | 'picked_up' | 'forwarded' | 'returned'; over: number; by_name: string; arrived_at: string; out_at: string | null }
+export async function addMailboxItem(env: Env, r: Omit<MailboxItem, 'id' | 'status' | 'arrived_at' | 'out_at'>): Promise<MailboxItem> {
+  const row = { ...r, status: 'in' as const, arrived_at: now(), out_at: null };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_items (mailbox_id, customer_id, box_no, kind, note, status, over, by_name, arrived_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) RETURNING id').bind(r.mailbox_id, r.customer_id, r.box_no, r.kind, r.note, 'in', r.over, r.by_name, row.arrived_at).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mbItems.push(full); return full;
+}
+/** A box's pieces, newest first: only those still in the box, or the most recent ones of any status. */
+export async function listMailboxItems(env: Env, mailboxId: number, inOnly: boolean, limit = 200): Promise<MailboxItem[]> {
+  if (env.DB) return (await env.DB.prepare(`SELECT * FROM mailbox_items WHERE mailbox_id = ?1 ${inOnly ? "AND status = 'in'" : ''} ORDER BY id DESC LIMIT ?2`).bind(mailboxId, limit).all<MailboxItem>()).results;
+  return mem.mbItems.filter((x) => x.mailbox_id === mailboxId && (!inOnly || x.status === 'in')).sort((a, b) => b.id - a.id).slice(0, limit);
+}
+/** Pieces in each box right now, by kind. */
+export async function countItemsIn(env: Env): Promise<Map<number, { letters: number; packages: number; last: string | null }>> {
+  const rows = env.DB ? (await env.DB.prepare("SELECT mailbox_id, kind, COUNT(*) AS n, MAX(arrived_at) AS last FROM mailbox_items WHERE status = 'in' GROUP BY mailbox_id, kind").all<{ mailbox_id: number; kind: string; n: number; last: string }>()).results
+    : Object.values(mem.mbItems.filter((x) => x.status === 'in').reduce<Record<string, { mailbox_id: number; kind: string; n: number; last: string }>>((a, x) => {
+      const k = `${x.mailbox_id}:${x.kind}`; const r = (a[k] ??= { mailbox_id: x.mailbox_id, kind: x.kind, n: 0, last: x.arrived_at }); r.n++; if (x.arrived_at > r.last) r.last = x.arrived_at; return a;
+    }, {}));
+  const out = new Map<number, { letters: number; packages: number; last: string | null }>();
+  for (const r of rows) {
+    const c = out.get(r.mailbox_id) ?? { letters: 0, packages: 0, last: null };
+    if (r.kind === 'package') c.packages += Number(r.n); else c.letters += Number(r.n);
+    if (!c.last || r.last > c.last) c.last = r.last;
+    out.set(r.mailbox_id, c);
+  }
+  return out;
+}
+export async function getMailboxItem(env: Env, id: number): Promise<MailboxItem | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE id = ?1').bind(id).first<MailboxItem>()) ?? null;
+  return mem.mbItems.find((x) => x.id === id) ?? null;
+}
+export async function deleteMailboxItem(env: Env, id: number) {
+  if (env.DB) { await env.DB.prepare('DELETE FROM mailbox_items WHERE id = ?1').bind(id).run(); return; }
+  mem.mbItems = mem.mbItems.filter((x) => x.id !== id);
+}
+/** Marks every piece still in a box as gone (picked up, forwarded or returned). Returns how many. */
+export async function clearMailboxItems(env: Env, mailboxId: number, status: 'picked_up' | 'forwarded' | 'returned'): Promise<number> {
+  const t = now();
+  if (env.DB) return (await env.DB.prepare("UPDATE mailbox_items SET status = ?1, out_at = ?2 WHERE mailbox_id = ?3 AND status = 'in'").bind(status, t, mailboxId).run()).meta.changes ?? 0;
+  let n = 0; for (const x of mem.mbItems) if (x.mailbox_id === mailboxId && x.status === 'in') { x.status = status; x.out_at = t; n++; } return n;
+}
+
+export interface MailboxSettings { customer_id: string; stripe_customer_id: string | null; payment_method_id: string | null; card_brand: string | null; card_last4: string | null; card_exp: string | null; card_added_by: string | null; card_added_at: string | null; autorenew: number; notify_sms: number; notify_email: number; updated_at: string }
+const DEFAULT_SETTINGS = (customer_id: string): MailboxSettings => ({ customer_id, stripe_customer_id: null, payment_method_id: null, card_brand: null, card_last4: null, card_exp: null, card_added_by: null, card_added_at: null, autorenew: 0, notify_sms: 1, notify_email: 1, updated_at: now() });
+export async function getMailboxSettings(env: Env, customerId: string): Promise<MailboxSettings> {
+  const row = env.DB ? await env.DB.prepare('SELECT * FROM mailbox_settings WHERE customer_id = ?1').bind(customerId).first<MailboxSettings>() : mem.mbSettings.get(customerId);
+  return row ? { ...row } : DEFAULT_SETTINGS(customerId);
+}
+export async function saveMailboxSettings(env: Env, customerId: string, patch: Partial<Omit<MailboxSettings, 'customer_id' | 'updated_at'>>): Promise<MailboxSettings> {
+  const next = { ...(await getMailboxSettings(env, customerId)), ...patch, updated_at: now() };
+  if (env.DB) await env.DB.prepare(`INSERT INTO mailbox_settings (customer_id, stripe_customer_id, payment_method_id, card_brand, card_last4, card_exp, card_added_by, card_added_at, autorenew, notify_sms, notify_email, updated_at)
+    VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+    ON CONFLICT(customer_id) DO UPDATE SET stripe_customer_id = ?2, payment_method_id = ?3, card_brand = ?4, card_last4 = ?5, card_exp = ?6, card_added_by = ?7, card_added_at = ?8, autorenew = ?9, notify_sms = ?10, notify_email = ?11, updated_at = ?12`)
+    .bind(customerId, next.stripe_customer_id, next.payment_method_id, next.card_brand, next.card_last4, next.card_exp, next.card_added_by, next.card_added_at, next.autorenew, next.notify_sms, next.notify_email, next.updated_at).run();
+  else mem.mbSettings.set(customerId, next);
+  return next;
+}
+
+export interface MailboxCharge { id: number; customer_id: string; mailbox_id: number; kind: 'overage' | 'renewal'; amount: number; description: string; status: 'unbilled' | 'paid' | 'failed' | 'paid_counter' | 'waived'; payment_ref: string | null; created_at: string; paid_at: string | null }
+export async function addMailboxCharge(env: Env, r: Pick<MailboxCharge, 'customer_id' | 'mailbox_id' | 'kind' | 'amount' | 'description'> & Partial<Pick<MailboxCharge, 'status' | 'payment_ref' | 'paid_at'>>): Promise<MailboxCharge> {
+  const row = { status: 'unbilled' as const, payment_ref: null, paid_at: null, ...r, created_at: now() };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_charges (customer_id, mailbox_id, kind, amount, description, status, payment_ref, created_at, paid_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9) RETURNING id').bind(row.customer_id, row.mailbox_id, row.kind, row.amount, row.description, row.status, row.payment_ref, row.created_at, row.paid_at).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mbCharges.push(full); return full;
+}
+export async function listMailboxCharges(env: Env, filter: { customer_id?: string; status?: string }): Promise<MailboxCharge[]> {
+  if (env.DB) {
+    const where: string[] = []; const args: unknown[] = [];
+    if (filter.customer_id) { args.push(filter.customer_id); where.push(`customer_id = ?${args.length}`); }
+    if (filter.status) { args.push(filter.status); where.push(`status = ?${args.length}`); }
+    return (await env.DB.prepare(`SELECT * FROM mailbox_charges ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY id DESC`).bind(...args).all<MailboxCharge>()).results;
+  }
+  return mem.mbCharges.filter((c) => (!filter.customer_id || c.customer_id === filter.customer_id) && (!filter.status || c.status === filter.status)).sort((a, b) => b.id - a.id);
+}
+/** Settles charges: only rows still unbilled (or failed) change, so a charge is never settled twice. */
+export async function settleMailboxCharges(env: Env, ids: number[], status: MailboxCharge['status'], ref: string | null) {
+  const t = now();
+  for (const id of ids) {
+    if (env.DB) await env.DB.prepare("UPDATE mailbox_charges SET status = ?1, payment_ref = ?2, paid_at = ?3 WHERE id = ?4 AND status IN ('unbilled', 'failed')").bind(status, ref, status === 'failed' ? null : t, id).run();
+    else { const c = mem.mbCharges.find((x) => x.id === id && (x.status === 'unbilled' || x.status === 'failed')); if (c) Object.assign(c, { status, payment_ref: ref, paid_at: status === 'failed' ? null : t }); }
+  }
+}
+
+export interface MailboxForward { id: number; customer_id: string; mailbox_id: number; address: string; note: string | null; status: 'open' | 'done' | 'cancelled'; created_at: string; done_at: string | null; done_by: string | null }
+export async function addMailboxForward(env: Env, r: Pick<MailboxForward, 'customer_id' | 'mailbox_id' | 'address' | 'note'>): Promise<MailboxForward> {
+  const row = { ...r, status: 'open' as const, created_at: now(), done_at: null, done_by: null };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_forwards (customer_id, mailbox_id, address, note, status, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING id').bind(r.customer_id, r.mailbox_id, r.address, r.note, 'open', row.created_at).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mbForwards.push(full); return full;
+}
+export async function listMailboxForwards(env: Env, filter: { customer_id?: string; status?: string }): Promise<MailboxForward[]> {
+  if (env.DB) {
+    const where: string[] = []; const args: unknown[] = [];
+    if (filter.customer_id) { args.push(filter.customer_id); where.push(`customer_id = ?${args.length}`); }
+    if (filter.status) { args.push(filter.status); where.push(`status = ?${args.length}`); }
+    return (await env.DB.prepare(`SELECT * FROM mailbox_forwards ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY id DESC`).bind(...args).all<MailboxForward>()).results;
+  }
+  return mem.mbForwards.filter((f) => (!filter.customer_id || f.customer_id === filter.customer_id) && (!filter.status || f.status === filter.status)).sort((a, b) => b.id - a.id);
+}
+export async function setMailboxForward(env: Env, id: number, status: 'done' | 'cancelled', by: string) {
+  const t = now();
+  if (env.DB) { await env.DB.prepare("UPDATE mailbox_forwards SET status = ?1, done_at = ?2, done_by = ?3 WHERE id = ?4 AND status = 'open'").bind(status, t, by, id).run(); return; }
+  const f = mem.mbForwards.find((x) => x.id === id && x.status === 'open'); if (f) Object.assign(f, { status, done_at: t, done_by: by });
+}
+/** Online renewals a holder paid, for their billing history. */
+export async function paidRenewalsFor(env: Env, customerId: string): Promise<MailboxRenewal[]> {
+  if (env.DB) return (await env.DB.prepare("SELECT * FROM mailbox_renewals WHERE customer_id = ?1 AND status = 'paid' ORDER BY id DESC").bind(customerId).all<MailboxRenewal>()).results;
+  return mem.mbRenewals.filter((r) => r.customer_id === customerId && r.status === 'paid').sort((a, b) => b.id - a.id);
 }
 
 /** Online renewals by the holder (Peter, Nov 17 2026): created before Stripe Checkout, paid once. */

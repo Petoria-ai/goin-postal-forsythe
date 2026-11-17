@@ -639,3 +639,66 @@ CREATE TABLE IF NOT EXISTS mailbox_documents (
   at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS mailbox_documents_customer ON mailbox_documents(customer_id, at);
+
+-- The mail log (Peter, Nov 16 2026): every letter and package staff put in a box, until it's picked up.
+-- The pieces still in the box count against the size's capacity (src/data/mailboxes.json).
+CREATE TABLE IF NOT EXISTS mailbox_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mailbox_id INTEGER NOT NULL,
+  customer_id TEXT NOT NULL,
+  box_no INTEGER NOT NULL,
+  kind TEXT NOT NULL,                   -- letter, package
+  note TEXT,                            -- e.g. "Amazon", "certified letter"
+  status TEXT NOT NULL DEFAULT 'in',    -- in, picked_up, forwarded, returned
+  over INTEGER NOT NULL DEFAULT 0,      -- 1 when it arrived with the box already full (an overage was charged)
+  by_name TEXT NOT NULL,
+  arrived_at TEXT NOT NULL,
+  out_at TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_items_box ON mailbox_items(mailbox_id, status);
+
+-- A holder's settings: card on file (Stripe; only the brand, last 4 and expiry are kept here), automatic renewal,
+-- and how they want to hear about new mail. One row per customer.
+CREATE TABLE IF NOT EXISTS mailbox_settings (
+  customer_id TEXT PRIMARY KEY,
+  stripe_customer_id TEXT,
+  payment_method_id TEXT,
+  card_brand TEXT,
+  card_last4 TEXT,
+  card_exp TEXT,                        -- MM/YY
+  card_added_by TEXT,                   -- "customer" or the staff member's name
+  card_added_at TEXT,
+  autorenew INTEGER NOT NULL DEFAULT 0,
+  notify_sms INTEGER NOT NULL DEFAULT 1,
+  notify_email INTEGER NOT NULL DEFAULT 1,
+  updated_at TEXT NOT NULL
+);
+
+-- Money a holder owes or paid besides online renewals: overage fees (one row per extra piece) and automatic
+-- renewals. Unbilled rows are charged together to the card on file, or marked paid at the counter.
+CREATE TABLE IF NOT EXISTS mailbox_charges (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL,
+  mailbox_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,                   -- overage, renewal
+  amount REAL NOT NULL,
+  description TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'unbilled', -- unbilled, paid, failed, paid_counter, waived
+  payment_ref TEXT,                     -- Stripe PaymentIntent id, or who took it at the counter
+  created_at TEXT NOT NULL,
+  paid_at TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_charges_customer ON mailbox_charges(customer_id, status);
+
+-- A holder asking the store to forward their mail (from their dashboard); staff mark it done.
+CREATE TABLE IF NOT EXISTS mailbox_forwards (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL,
+  mailbox_id INTEGER NOT NULL,
+  address TEXT NOT NULL,
+  note TEXT,
+  status TEXT NOT NULL DEFAULT 'open',  -- open, done, cancelled
+  created_at TEXT NOT NULL,
+  done_at TEXT,
+  done_by TEXT
+);

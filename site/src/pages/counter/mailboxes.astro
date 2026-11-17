@@ -26,6 +26,23 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
   </div>
 
   <div id="mbMain" class="hidden">
+    <div class="card mb-in">
+      <h3 data-i18n="st.mi.h">Mail in</h3>
+      <p class="muted" data-i18n="st.mi.p">Putting mail in a box? Type the box number and tap Letter or Package for each piece. The holder gets one "You've got mail" text and email a day.</p>
+      <form id="inForm" class="mb-in-row" autocomplete="off">
+        <label><span data-i18n="st.mb.box">Box #</span> <input id="inBox" inputmode="numeric" size="6" required /></label>
+        <label><span data-i18n="st.mi.note">Note (optional)</span> <input id="inNote" maxlength="120" data-i18n-ph="st.mi.note.ph" placeholder="Amazon, certified letter" /></label>
+        <button type="button" class="btn" data-in="letter" data-i18n="st.mi.letter">+ Letter</button>
+        <button type="button" class="btn kraft" data-in="package" data-i18n="st.mi.package">+ Package</button>
+      </form>
+      <p id="inOut" class="mb-in-out" hidden></p>
+    </div>
+
+    <div class="card" id="fwdCard" hidden>
+      <h3 data-i18n="st.fw.h">Forwarding requests</h3>
+      <ul id="fwdList" class="mb-check-out"></ul>
+    </div>
+
     <div class="card mb-check">
       <h3 data-i18n="st.mb.check.h">Mail check</h3>
       <p class="muted" data-i18n="st.mb.check.p">Got mail for a box? Type the box number or the name on the mail to see whether it goes in the box, gets held, or goes back to the sender.</p>
@@ -40,6 +57,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <p id="free"></p>
       <p class="btnrow"><button class="btn" id="sendDue" data-i18n="st.mb.senddue">Send due reminders</button> <span class="muted" data-i18n="st.mb.senddue.p2">They also go out by themselves every morning on the live site: 2 months, 1 month and 1 week before, and the day after a box expires. Each reminder goes out once.</span></p>
       <ul id="sentList"></ul>
+      <p class="btnrow"><button class="btn small kraft" id="runBilling" data-i18n="st.bill.run">Charge due amounts now</button> <span class="muted" data-i18n="st.bill.run.p">Automatic renewals due today and overage fees, charged to cards on file. The live site does this every morning; managers and owners only.</span></p>
     </div>
 
     <div class="card">
@@ -51,7 +69,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
 
     <div class="card">
       <h3 data-i18n="st.mb.boxes">Boxes on the website</h3>
-      <table class="list" id="boxTable"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.holder">Holder</th><th data-i18n="st.mb.contact">Contact</th><th data-i18n="st.mb.size">Size</th><th data-i18n="st.mb.paidthru">Paid through</th><th data-i18n="st.mb.status">Status</th><th></th></tr></thead><tbody></tbody></table>
+      <table class="list" id="boxTable"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.holder">Holder</th><th data-i18n="st.mb.contact">Contact</th><th data-i18n="st.mb.size">Size</th><th data-i18n="st.mb.paidthru">Paid through</th><th data-i18n="st.mb.status">Status</th><th data-i18n="st.mi.inbox">In box</th><th></th></tr></thead><tbody></tbody></table>
       <p class="muted" id="noBoxes" hidden data-i18n="st.mb.noboxes">No boxes assigned on the website yet.</p>
     </div>
 
@@ -84,6 +102,24 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     <p id="mbEditWho" class="muted"></p>
     <p><span data-i18n="st.mb.paidthru">Paid through</span>: <strong id="mbEditDate"></strong> <span id="mbEditState"></span></p>
     <p id="mbEditMail"></p>
+    <div class="mb-edit-sec">
+      <h3 data-i18n="st.mi.inbox">In box</h3>
+      <p id="mbEditIn"></p>
+      <p class="btnrow"><button type="button" class="btn small" data-out="picked_up" data-i18n="st.mi.pickedup">All picked up</button> <button type="button" class="btn small kraft" data-out="forwarded" data-i18n="st.mi.forwarded">Forwarded</button> <button type="button" class="btn small kraft" data-out="returned" data-i18n="st.mi.returned">Returned to sender</button></p>
+    </div>
+    <div class="mb-edit-sec">
+      <h3 data-i18n="st.card.h">Card and automatic renewal</h3>
+      <p id="mbEditCard"></p>
+      <p class="btnrow"><span id="mbEditAuto"></span> <button type="button" class="btn small kraft" id="mbEditAutoBtn"></button></p>
+      <label class="check"><input type="checkbox" id="mbEditAgree" /> <span data-i18n="st.card.agree">The customer read and agreed: automatic renewal at their price each term until they turn it off, and 45 cents per piece over the box's limit.</span></label>
+      <p class="btnrow"><button type="button" class="btn small" id="mbEditCardBtn" data-i18n="st.card.add">Add card (Stripe's secure page)</button></p>
+      <p class="muted mb-small" data-i18n="st.card.p">The card is typed on Stripe's page, never on ours. Hand the screen to the customer, or type it with them.</p>
+    </div>
+    <div class="mb-edit-sec">
+      <h3 data-i18n="st.bill.h">Balance</h3>
+      <p id="mbEditBal"></p>
+      <p class="btnrow" id="mbEditBalBtns"><button type="button" class="btn small" id="mbEditCharge" data-i18n="st.bill.charge">Charge card now</button> <button type="button" class="btn small kraft" id="mbEditCounter" data-i18n="st.bill.counter">Paid at the counter</button> <button type="button" class="linkish" id="mbEditWaive" data-i18n="st.bill.waive">Waive</button></p>
+    </div>
     <p class="err" id="mbEditErr" hidden></p>
     <h3 data-i18n="st.mb.addtime">Add time</h3>
     <p class="btnrow"><button type="button" class="btn small" data-months="6" data-i18n="st.mb.renew6">+6 months</button> <button type="button" class="btn small" data-months="12" data-i18n="st.mb.renew12">+1 year</button></p>
@@ -149,6 +185,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           const tr = document.createElement('tr');
           cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer)); cell(tr, sizeName(x.size)); cell(tr, x.paid_through);
           const st = cell(tr, ''); const badge = document.createElement('span'); badge.className = `acct-status mb-${x.state}`; badge.textContent = t(`mb.state.${x.state}`); st.appendChild(badge);
+          const ib = cell(tr, `${x.inbox.pieces}/${x.inbox.capacity}`); ib.className = x.inbox.pct >= 100 ? 'mb-cap-over' : x.inbox.pct >= 80 ? 'mb-cap-near' : '';
           const act = cell(tr, ''); act.className = 'mb-acts';
           act.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)), docBtn(x));
           bb.appendChild(tr);
@@ -172,6 +209,19 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         $('rtsAlert').hidden = !rts.length;
         $('rtsAlert').textContent = rts.length ? `${tf('st.mb.rtsn', { n: rts.length })} ${rts.map((x: any) => `#${x.box_no} ${x.customer.name}`).join(' · ')}` : '';
         boxes = [...j.boxes, ...j.ended.filter((x: any) => x.status === 'active')];
+        // Forwarding requests from holders' dashboards.
+        const fl = $('fwdList'); fl.innerHTML = '';
+        $('fwdCard').hidden = !j.forwards.length;
+        for (const f of j.forwards) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong><br /><span></span> <span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `#${f.box_no ?? '?'} · ${f.customer.name} · ${f.created_at.slice(0, 10)}`;
+          who.querySelectorAll('span')[0].textContent = f.address; who.querySelectorAll('span')[1].textContent = f.note ?? '';
+          li.append(who,
+            btn(t('st.fw.done'), '', async () => { try { await api({ action: 'forward_set', id: f.id, status: 'done' }); load(); } catch (e: any) { say(e.message, true); } }),
+            btn(t('st.fw.cancel'), 'kraft', async () => { try { await api({ action: 'forward_set', id: f.id, status: 'cancelled' }); load(); } catch (e: any) { say(e.message, true); } }));
+          fl.appendChild(li);
+        }
         if (editing) { const fresh = boxes.find((x: any) => x.id === editing!.id); if (fresh) paintEdit(fresh); else dlg.close(); }
       } catch (e: any) { say(e.message, true); }
     }
@@ -190,8 +240,66 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       ($('mbEditNew') as HTMLInputElement).value = x.paid_through;
       ($('mbEditDocs') as HTMLElement).dataset.mbdocs = x.customer_id;
       const mm = $('mbEditMail'); mm.innerHTML = ''; if (x.mail && x.mail.do !== 'box') mm.appendChild(mailBadge(x.mail));
+      loadDetail(x);
     }
-    function openEdit(x: any) { editErr.hidden = true; paintEdit(x); dlg.showModal(); }
+    function openEdit(x: any) { editErr.hidden = true; ($('mbEditAgree') as HTMLInputElement).checked = false; paintEdit(x); dlg.showModal(); }
+    // The Edit window's lower half: what's in the box, the card, the balance (loaded each time it's painted).
+    const money = (n: number) => `$${Number(n).toFixed(2)}`;
+    async function loadDetail(x: any) {
+      try {
+        const d = await api({ action: 'box_detail', id: x.id });
+        const letters = d.items.filter((i: any) => i.kind === 'letter').length, packages = d.items.length - letters;
+        $('mbEditIn').textContent = tf('st.mi.counts', { letters, packages, n: d.items.length, max: x.inbox?.capacity ?? '' });
+        $('mbEditCard').textContent = d.card ? `${String(d.card.brand ?? '').toUpperCase()} •••• ${d.card.last4} (${d.card.exp}) · ${tf('st.card.addedby', { who: d.card.added_by ?? '', date: String(d.card.added_at ?? '').slice(0, 10) })}` : t('st.card.none');
+        $('mbEditAuto').textContent = `${t('mbd.auto')}: ${d.autorenew ? t('mbd.on') : t('mbd.off')}`;
+        const ab = $('mbEditAutoBtn') as HTMLButtonElement; ab.hidden = !d.card; ab.textContent = d.autorenew ? t('mbd.turnoff') : t('mbd.turnon'); ab.dataset.on = d.autorenew ? '0' : '1';
+        ($('mbEditCardBtn') as HTMLButtonElement).textContent = d.card ? t('st.card.replace') : t('st.card.add');
+        $('mbEditBal').textContent = d.balance.due > 0 ? `${money(d.balance.due)} · ${tf('st.bill.pieces', { n: d.balance.pieces })}${d.balance.declined ? ` · ${t('st.bill.declined')}` : ''}` : t('st.bill.none');
+        $('mbEditBalBtns').hidden = !(d.balance.due > 0);
+        $('mbEditCharge').hidden = !d.can_charge || !d.card; $('mbEditWaive').hidden = !d.can_charge;
+      } catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
+    }
+    dlg.querySelectorAll<HTMLButtonElement>('[data-out]').forEach((b) => b.addEventListener('click', () =>
+      editDo({ action: 'pickup', how: b.dataset.out }, (r) => tf('st.mi.out', { n: r.n, box: editing.box_no }))));
+    $('mbEditAutoBtn').addEventListener('click', () => editDo({ action: 'set_autorenew', customer_id: editing.customer_id, on: ($('mbEditAutoBtn') as HTMLElement).dataset.on === '1' }, () => t('mbd.saved')));
+    $('mbEditCardBtn').addEventListener('click', async () => {
+      editErr.hidden = true;
+      if (!($('mbEditAgree') as HTMLInputElement).checked) { editErr.textContent = t('st.card.mustagree'); editErr.hidden = false; return; }
+      try { const r = await api({ action: 'card_link', customer_id: editing.customer_id, agreed: true }); location.href = r.url; }
+      catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
+    });
+    $('mbEditCharge').addEventListener('click', () => editDo({ action: 'charge_now', customer_id: editing.customer_id }, (r) => r.status === 'paid' ? tf('st.bill.charged', { amount: money(r.charged) }) : r.status === 'too_small' ? t('st.bill.toosmall') : r.status === 'failed' ? `${t('st.bill.declined')}: ${r.error}` : t('st.bill.none')));
+    $('mbEditCounter').addEventListener('click', () => editDo({ action: 'paid_counter', customer_id: editing.customer_id }, (r) => tf('st.bill.paidcounter', { amount: money(r.total) })));
+    $('mbEditWaive').addEventListener('click', () => { if (confirm(t('st.bill.waiveq'))) editDo({ action: 'waive', customer_id: editing.customer_id }, (r) => tf('st.bill.waived', { amount: money(r.total) })); });
+
+    // Mail in: one tap per piece; the last one can be undone.
+    let lastItem: { id: number; box: string } | null = null;
+    async function mailIn(kind: string) {
+      const boxNo = ($('inBox') as HTMLInputElement).value.trim();
+      const out = $('inOut');
+      if (!boxNo) { ($('inBox') as HTMLInputElement).focus(); return; }
+      try {
+        const r = await api({ action: 'mail_in', box_no: boxNo, kind, note: ($('inNote') as HTMLInputElement).value });
+        lastItem = { id: r.item.id, box: boxNo };
+        out.hidden = false; out.className = `mb-in-out${r.over ? ' over' : ''}`; out.innerHTML = '';
+        const line = document.createElement('span');
+        line.textContent = `#${r.box_no} ${r.customer.name}: ${tf('st.mi.ofcap', { n: r.pieces, max: r.capacity })}${r.over ? ` · ${t('st.mi.overcharged')}` : ''}${r.notified ? ` · ${t('st.mi.notified')}` : ''}`;
+        out.append(line, ' ', btn(t('st.mi.undo'), 'kraft', async () => {
+          if (!lastItem) return;
+          try { await api({ action: 'mail_undo', item_id: lastItem.id }); out.textContent = t('st.mi.undone'); lastItem = null; load(); } catch (e: any) { say(e.message, true); }
+        }));
+        ($('inNote') as HTMLInputElement).value = '';
+        load();
+      } catch (e: any) { out.hidden = false; out.className = 'mb-in-out over'; out.textContent = e.message; }
+    }
+    document.querySelectorAll<HTMLButtonElement>('[data-in]').forEach((b) => b.addEventListener('click', () => mailIn(b.dataset.in!)));
+    $('inForm').addEventListener('submit', (ev) => { ev.preventDefault(); mailIn('letter'); });
+
+    $('runBilling').addEventListener('click', async () => {
+      try { const r = await api({ action: 'run_billing' }); say(tf('st.bill.ran', { renewed: r.renewed.filter((x: any) => x.ok).length, paid: r.overages.paid, total: money(r.overages.total) })); load(); }
+      catch (e: any) { say(e.message, true); }
+    });
+    if (new URLSearchParams(location.search).get('card') === '1') setTimeout(() => say(t('st.card.saved')), 0);
     async function editDo(body: Record<string, unknown>, done: (r: any) => string) {
       editErr.hidden = true;
       try { const r = await api({ id: editing.id, ...body }); say(done(r)); await load(); }
