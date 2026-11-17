@@ -605,3 +605,20 @@ CREATE TABLE IF NOT EXISTS mailboxes (
 );
 CREATE INDEX IF NOT EXISTS mailboxes_customer ON mailboxes(customer_id);
 CREATE INDEX IF NOT EXISTS mailboxes_box ON mailboxes(box_no, status);
+
+-- A holder renewing their own box online (Peter, Nov 17 2026): one row per Stripe checkout. The box is
+-- extended once, when the row goes from pending to paid (the Stripe webhook, or /api/mock-paid in demo mode).
+CREATE TABLE IF NOT EXISTS mailbox_renewals (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,            -- MRN-XXXXX, Stripe's client_reference_id
+  mailbox_id INTEGER NOT NULL,
+  customer_id TEXT NOT NULL,
+  term INTEGER NOT NULL,                -- 6 or 12 months
+  amount REAL NOT NULL,                 -- dollars charged
+  status TEXT NOT NULL DEFAULT 'pending', -- pending, paid
+  stripe_session_id TEXT,
+  paid_through TEXT,                    -- the box's new paid-through date, once paid
+  created_at TEXT NOT NULL,
+  paid_at TEXT
+);
+CREATE INDEX IF NOT EXISTS mailbox_renewals_box ON mailbox_renewals(mailbox_id);

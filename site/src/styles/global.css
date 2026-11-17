@@ -983,3 +983,13 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-assign { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
 .mb-assign p { flex-basis: 100%; margin: 0; }
 .mb-assign.hidden { display: none; }
+/* Mailboxes: renew online and the staff Edit pop-up (Peter, Nov 17 2026) */
+.mb-renew { border-top: 1px solid var(--hair); margin-top: 14px; padding-top: 10px; }
+.mb-renew h4 { margin: 0 0 6px; color: var(--navy); }
+.mb-until { margin: 2px 0; font-size: .95rem; }
+.mb-thanks { padding: 12px 16px; border-radius: 10px; }
+.mb-edit h2 { margin: 0 0 4px; font-size: 1.35rem; color: var(--navy); }
+.mb-edit h3 { font-size: 1rem; }
+.mb-edit hr { border: 0; border-top: 1px solid var(--hair); margin: 16px 0 10px; }
+.mb-edit-foot { justify-content: space-between; align-items: center; }
+.mb-danger { color: #9b2420; }

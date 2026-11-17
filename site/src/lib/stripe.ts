@@ -69,6 +69,22 @@ export async function createCardCheckout(env: Env, order: CardOrder): Promise<st
 }
 
 
+/** A mailbox holder renewing online (Peter, Nov 17 2026). The box is extended when the payment comes back (lib/mailboxJobs.ts). */
+export async function createMailboxCheckout(env: Env, r: { code: string; email: string | null; amount: number; box_no: number; term: number; new_paid_through: string }): Promise<string> {
+  const stripe = stripeClient(env);
+  const site = env.SITE_URL;
+  if (!stripe) return `${site}/api/mock-paid?order=${r.code}`;
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    ...(r.email ? { customer_email: r.email } : {}),
+    client_reference_id: r.code,
+    line_items: [{ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(r.amount * 100), product_data: { name: `Mailbox #${r.box_no}, ${r.term === 12 ? '1 year' : '6 months'}`, description: `${store.name}. Paid through ${r.new_paid_through}.` } } }],
+    success_url: `${site}/account?renewed=${r.code}#mailbox`,
+    cancel_url: `${site}/account#mailbox`,
+  });
+  return session.url!;
+}
+
 /** A Stripe invoice for a business account's monthly statement, sent by email with a hosted pay link. Null in mock mode. */
 export async function createInvoice(env: Env, inv: { email: string | null; name: string; amount: number; description: string }): Promise<{ id: string; url: string | null } | null> {
   const stripe = stripeClient(env);

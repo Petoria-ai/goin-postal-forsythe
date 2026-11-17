@@ -4,11 +4,16 @@ import { env } from '../../lib/env';
 import { getOrder } from '../../lib/orders';
 import { fulfil } from '../../lib/fulfil';
 import { getCardOrder, saveCardOrder } from '../../lib/cardOrders';
+import { payRenewal } from '../../lib/mailboxJobs';
 
 // Only active when Stripe is not configured. Stands in for a successful Checkout.
 export const GET: APIRoute = async ({ url, redirect }) => {
   if (env.STRIPE_SECRET_KEY) return new Response('Not available', { status: 404 });
   const ref = url.searchParams.get('order') ?? '';
+  if (ref.startsWith('MRN-')) { // a mailbox renewal (Peter, Nov 17 2026)
+    await payRenewal(env, ref, null);
+    return redirect(`/account?renewed=${encodeURIComponent(ref)}#mailbox`);
+  }
   if (ref.startsWith('CD-')) {
     const c = await getCardOrder(env, ref);
     if (!c) return new Response('No such order', { status: 404 });

@@ -150,12 +150,13 @@ const mem = {
   savedDesigns: [] as SavedDesignRow[],
   mbReservations: [] as MailboxReservation[],
   mailboxes: [] as MailboxRow[],
+  mbRenewals: [] as MailboxRenewal[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -200,6 +201,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'saved_designs': return mem.savedDesigns;
     case 'mailbox_reservations': return mem.mbReservations;
     case 'mailboxes': return mem.mailboxes;
+    case 'mailbox_renewals': return mem.mbRenewals;
     default: return [];
   }
 };
@@ -737,6 +739,31 @@ export async function updateMailbox(env: Env, id: number, patch: Partial<Pick<Ma
   const next = { ...b, ...patch, updated_at: t };
   if (env.DB) { await env.DB.prepare('UPDATE mailboxes SET term = ?1, paid_through = ?2, status = ?3, reminders = ?4, closed_at = ?5, updated_at = ?6 WHERE id = ?7').bind(next.term, next.paid_through, next.status, next.reminders, next.closed_at, t, id).run(); return; }
   Object.assign(mem.mailboxes.find((x) => x.id === id)!, next);
+}
+
+/** Online renewals by the holder (Peter, Nov 17 2026): created before Stripe Checkout, paid once. */
+export interface MailboxRenewal { id: number; code: string; mailbox_id: number; customer_id: string; term: number; amount: number; status: 'pending' | 'paid'; stripe_session_id: string | null; paid_through: string | null; created_at: string; paid_at: string | null }
+export async function createRenewal(env: Env, r: { mailbox_id: number; customer_id: string; term: number; amount: number }): Promise<MailboxRenewal> {
+  const t = now();
+  const row = { code: 'MRN-' + mbCode().slice(3), ...r, status: 'pending' as const, stripe_session_id: null, paid_through: null, created_at: t, paid_at: null };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_renewals (code, mailbox_id, customer_id, term, amount, status, created_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) RETURNING id').bind(row.code, r.mailbox_id, r.customer_id, r.term, r.amount, 'pending', t).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mbRenewals.push(full); return full;
+}
+export async function getRenewal(env: Env, code: string): Promise<MailboxRenewal | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_renewals WHERE code = ?1').bind(code).first<MailboxRenewal>()) ?? null;
+  return mem.mbRenewals.find((r) => r.code === code) ?? null;
+}
+/** Marks a renewal paid. True only for the call that moved it from pending, so a box is never extended twice. */
+export async function claimRenewal(env: Env, code: string, sessionId: string | null): Promise<boolean> {
+  const t = now();
+  if (env.DB) { const x = await env.DB.prepare("UPDATE mailbox_renewals SET status = 'paid', stripe_session_id = ?1, paid_at = ?2 WHERE code = ?3 AND status = 'pending'").bind(sessionId, t, code).run(); return (x.meta?.changes ?? 0) > 0; }
+  const r = mem.mbRenewals.find((x) => x.code === code && x.status === 'pending');
+  if (!r) return false;
+  Object.assign(r, { status: 'paid', stripe_session_id: sessionId, paid_at: t }); return true;
+}
+export async function setRenewalPaidThrough(env: Env, code: string, paidThrough: string) {
+  if (env.DB) { await env.DB.prepare('UPDATE mailbox_renewals SET paid_through = ?1 WHERE code = ?2').bind(paidThrough, code).run(); return; }
+  const r = mem.mbRenewals.find((x) => x.code === code); if (r) r.paid_through = paidThrough;
 }
 
 // ---- saved designs (Peter, Nov 15 2026) ---------------------------------------------------------------

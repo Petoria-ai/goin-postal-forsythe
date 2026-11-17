@@ -1,10 +1,10 @@
 {
-  "_note": "Physical mailboxes on the website (Peter, Nov 15 2026). Owners edit prices, box number ranges and the address here. Terms are 6 months or a year. reminder_days: how many days before the paid-through date a renewal reminder goes out; one more goes out the day after it lapses.",
+  "_note": "Physical mailboxes on the website (Peter, Nov 15 2026). Owners edit prices, box number ranges and the address here. Terms are 6 months or a year. reminder_days: how many days before the paid-through date a renewal reminder goes out (60 = the last two months, 30 = the last month, 7 = the last week, Peter Nov 17 2026); one more goes out the day after it lapses. They go out by text and email every morning on the live site (src/worker.ts), or when staff press Send due reminders.",
   "sizes": [
     { "id": "small", "name": "Small", "from": 1100, "to": 1220, "price6": 90, "price12": 180 },
     { "id": "medium", "name": "Medium", "from": 1221, "to": 1284, "price6": 120, "price12": 240 },
     { "id": "large", "name": "Large", "from": 1300, "to": 1323, "price6": 180, "price12": 360 }
   ],
   "address": "1800 Forsythe Ave, Suite 2 #{box}, Monroe, LA 71201",
-  "reminder_days": [30, 7]
+  "reminder_days": [60, 30, 7]
 }

@@ -4,35 +4,31 @@ import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate } from '../../lib/auth';
 import { readSession } from '../../lib/session';
-import { store } from '../../data/store';
-import { sendEmail, sendSms } from '../../shipping/notify';
+import { createMailboxCheckout } from '../../lib/stripe';
 import {
   getCustomer, searchCustomers, logAudit, reserveMailbox, waitingReservation, listWaitingReservations, getReservation, setReservationStatus,
-  assignMailbox, getMailbox, listActiveMailboxes, updateMailbox, type MailboxRow,
+  assignMailbox, getMailbox, listActiveMailboxes, updateMailbox, createRenewal,
 } from '../../shipping/store';
-import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, reminderText, addressFor } from '../../lib/mailbox';
+import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder } from '../../lib/mailbox';
+import { sendReminder, sendDueReminders, extendedDate } from '../../lib/mailboxJobs';
 
-// Physical mailboxes on the website (Peter, Nov 15 2026).
-// Customer (signed in): reserve {size, term}, cancel_reservation.
-// Staff (PIN): list, find {q}, assign {customer_id, box_no, term, start_date?, reservation_code?}, renew {id, term},
-//   close {id}, remind {id} (one now), send_due (every reminder due today, each once). Every change is audited.
+// Physical mailboxes on the website (Peter, Nov 15 and 17 2026).
+// Customer (signed in): reserve {size, term}, cancel_reservation, renew_checkout {id, term} (Stripe; the box is
+//   extended when the payment comes back, in lib/mailboxJobs.ts payRenewal).
+// Staff (PIN): list, find {q}, assign {customer_id, box_no, term, start_date?, reservation_code?},
+//   adjust {id, months: 6, 12, -6 or -12} (add time, or take it back off; never to on or before the start date),
+//   set_paid_through {id, date} (after the start date),
+//   renew {id, term} (the same as adjust with a positive term), close {id}, remind {id} (one now),
+//   send_due (every reminder due today, each once; also run every morning by src/worker.ts). Every change is audited.
 // The counter's register stays the full record (IDs, the 1583, payments); this is what the website shows and sends.
-
-async function sendReminder(b: MailboxRow, key: string): Promise<{ sms: boolean; email: boolean; to: string }> {
-  const c = await getCustomer(env, b.customer_id);
-  const msg = reminderText(b, key, store);
-  // sendSms/sendEmail return true only in mock mode, so "sent" here means "we had a number/address and it went".
-  const sms = c?.phone ? (await sendSms(env, c.phone, msg.sms), true) : false;
-  const email = c?.email ? (await sendEmail(env, c.email, msg.subject, msg.email + `\n\nYour mailbox address: ${addressFor(b.box_no)}`), true) : false;
-  return { sms, email, to: c?.name ?? '' };
-}
 
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json().catch(() => ({}));
+    const today = day(new Date());
 
     // ---- customer
-    if (b.action === 'reserve' || b.action === 'cancel_reservation') {
+    if (b.action === 'reserve' || b.action === 'cancel_reservation' || b.action === 'renew_checkout') {
       const meId = await readSession(env, request.headers.get('cookie')).catch(() => null);
       const me = meId ? await getCustomer(env, meId) : null;
       if (!me) return json({ error: 'Sign in to reserve a mailbox.', signin: true }, 401);
@@ -40,6 +36,17 @@ export const POST: APIRoute = async ({ request }) => {
         const r = await waitingReservation(env, me.id);
         if (r) await setReservationStatus(env, r.id, 'cancelled');
         return json({ ok: true });
+      }
+      if (b.action === 'renew_checkout') {
+        const box = await getMailbox(env, Number(b.id));
+        if (!box || box.status !== 'active' || box.customer_id !== me.id) return json({ error: 'No such mailbox on your account.' }, 404);
+        const term = Number(b.term);
+        if (!isTerm(term)) return json({ error: 'Pick 6 months or a year.' }, 400);
+        const amount = priceFor(box.size as any, term);
+        if (amount == null) return json({ error: 'This box has no online price. Renew at the counter.' }, 400);
+        const r = await createRenewal(env, { mailbox_id: box.id, customer_id: me.id, term, amount });
+        const url = await createMailboxCheckout(env, { code: r.code, email: me.email, amount, box_no: box.box_no, term, new_paid_through: extendedDate(box, term, today) });
+        return json({ ok: true, url, code: r.code });
       }
       const size = sizeById(String(b.size ?? ''));
       const term = Number(b.term);
@@ -53,7 +60,6 @@ export const POST: APIRoute = async ({ request }) => {
     const user = await authenticate(env, b.pin);
     if (!user) return json({ error: 'Wrong PIN' }, 401);
     const who = { id: user.id, name: user.name };
-    const today = day(new Date());
 
     if (b.action === 'list') {
       const [res, boxes] = await Promise.all([listWaitingReservations(env), listActiveMailboxes(env)]);
@@ -87,43 +93,41 @@ export const POST: APIRoute = async ({ request }) => {
       await logAudit(env, who, 'mailbox.assign', `#${boxNo}`, `${customer.name} · ${size.name} · ${term} months · paid through ${paid_through}`);
       return json({ ok: true, box });
     }
+    if (b.action === 'send_due') {
+      return json({ ok: true, sent: await sendDueReminders(env, who, today) });
+    }
+
     const box = b.id != null ? await getMailbox(env, Number(b.id)) : null;
-    if (b.action === 'renew') {
-      if (!box || box.status !== 'active') return json({ error: 'No such open box' }, 404);
-      const term = Number(b.term);
-      if (!isTerm(term)) return json({ error: 'Term must be 6 or 12 months.' }, 400);
-      // Renewing on time adds to the paid-through date; renewing after it lapsed starts again from today.
-      const from = box.paid_through >= today ? box.paid_through : today;
-      const paid_through = addMonths(from, term);
-      await updateMailbox(env, box.id, { term, paid_through });
-      await logAudit(env, who, 'mailbox.renew', `#${box.box_no}`, `${term} months · paid through ${paid_through}`);
+    if (!box || box.status !== 'active') return json({ error: 'No such open box' }, 404);
+
+    if (b.action === 'renew' || b.action === 'adjust') {
+      const months = Number(b.action === 'renew' ? b.term : b.months);
+      if (![6, 12, -6, -12].includes(months)) return json({ error: 'Add or take off 6 or 12 months.' }, 400);
+      // Adding time on a box that's still paid adds to its date; on a lapsed box it starts again from today.
+      // Taking time off counts back from the current date, never to before the box started.
+      const paid_through = months > 0 ? extendedDate(box, months, today) : addMonths(box.paid_through, months);
+      if (paid_through <= box.start_date) return json({ error: `That would end before the box started (${box.start_date}). Set the date instead, or close the box.` }, 400);
+      await updateMailbox(env, box.id, { paid_through, ...(months > 0 ? { term: months } : {}) });
+      await logAudit(env, who, months > 0 ? 'mailbox.renew' : 'mailbox.undo', `#${box.box_no}`, `${months > 0 ? '+' : ''}${months} months · paid through ${box.paid_through} → ${paid_through}`);
       return json({ ok: true, paid_through });
     }
+    if (b.action === 'set_paid_through') {
+      if (!isDay(b.date)) return json({ error: 'Pick a date.' }, 400);
+      if (b.date <= box.start_date) return json({ error: `Pick a date after the box started (${box.start_date}).` }, 400);
+      await updateMailbox(env, box.id, { paid_through: b.date });
+      await logAudit(env, who, 'mailbox.set_date', `#${box.box_no}`, `paid through ${box.paid_through} → ${b.date}`);
+      return json({ ok: true, paid_through: b.date });
+    }
     if (b.action === 'close') {
-      if (!box || box.status !== 'active') return json({ error: 'No such open box' }, 404);
       await updateMailbox(env, box.id, { status: 'closed', closed_at: new Date().toISOString() });
       await logAudit(env, who, 'mailbox.close', `#${box.box_no}`, null);
       return json({ ok: true });
     }
     if (b.action === 'remind') {
-      if (!box || box.status !== 'active') return json({ error: 'No such open box' }, 404);
-      const stage = boxStatus(box, today) === 'overdue' ? 'over' : String(Math.max(0, Math.round((Date.parse(box.paid_through) - Date.parse(today)) / 86_400_000)));
-      const sent = await sendReminder(box, `${box.paid_through}:${stage}`);
+      const left = Math.round((Date.parse(box.paid_through) - Date.parse(today)) / 86_400_000);
+      const sent = await sendReminder(env, box, `${box.paid_through}:${left < 0 ? 'over' : String(left)}`);
       await logAudit(env, who, 'mailbox.remind', `#${box.box_no}`, `by hand · text ${sent.sms ? 'sent' : 'no phone'} · email ${sent.email ? 'sent' : 'no email'}`);
       return json({ ok: true, ...sent });
-    }
-    if (b.action === 'send_due') {
-      const out: { box_no: number; name: string; key: string; sms: boolean; email: boolean }[] = [];
-      for (const x of await listActiveMailboxes(env)) {
-        const reminders: string[] = JSON.parse(x.reminders);
-        const key = dueReminder({ ...x, reminders }, today);
-        if (!key) continue;
-        const sent = await sendReminder(x, key);
-        await updateMailbox(env, x.id, { reminders: JSON.stringify([...reminders, key].slice(-20)) });
-        out.push({ box_no: x.box_no, name: sent.to, key, sms: sent.sms, email: sent.email });
-      }
-      await logAudit(env, who, 'mailbox.send_due', null, out.length ? out.map((o) => `#${o.box_no} (${o.key.split(':')[1]})`).join(', ') : 'none due');
-      return json({ ok: true, sent: out });
     }
     return json({ error: 'Unknown action' }, 400);
   } catch (e: any) {

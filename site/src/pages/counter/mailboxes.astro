@@ -4,8 +4,9 @@ import Base from '../../layouts/Base.astro';
 
 // Staff page: mailboxes on the website (Peter, Nov 15 2026). Reservations made online wait here until the customer
 // comes in with two IDs and the PS Form 1583; then staff assign a box number, and the holder sees it on their
-// account. Boxes in use show their paid-through date and status; Renew adds 6 or 12 months; Send due reminders
-// texts and emails everyone whose box is due (each reminder goes out once). The counter's register is still where
+// account. Boxes in use show their paid-through date and status; Edit opens a pop-up to add or take off time, set
+// the date, send a reminder or close the box (Peter, Nov 17 2026). Send due reminders texts and emails everyone whose
+// box is due (each reminder goes out once); the live site also does it every morning (src/worker.ts). The counter's register is still where
 // the IDs, the 1583 and the payments are kept.
 ---
 <Base title="Counter · Mailboxes">
@@ -27,7 +28,7 @@ import Base from '../../layouts/Base.astro';
     <div class="card">
       <h3 data-i18n="st.mb.free">Free boxes</h3>
       <p id="free"></p>
-      <p class="btnrow"><button class="btn" id="sendDue" data-i18n="st.mb.senddue">Send due reminders</button> <span class="muted" data-i18n="st.mb.senddue.p">Texts and emails everyone whose box is due within 30 or 7 days, or lapsed. Each reminder goes out once.</span></p>
+      <p class="btnrow"><button class="btn" id="sendDue" data-i18n="st.mb.senddue">Send due reminders</button> <span class="muted" data-i18n="st.mb.senddue.p2">They also go out by themselves every morning on the live site: 2 months, 1 month and 1 week before, and the day after a box expires. Each reminder goes out once.</span></p>
       <ul id="sentList"></ul>
     </div>
 
@@ -59,6 +60,25 @@ import Base from '../../layouts/Base.astro';
     </div>
   </div>
 
+  <dialog id="mbEdit" class="hz-dialog mb-edit" aria-labelledby="mbEditH">
+    <h2 id="mbEditH"></h2>
+    <p id="mbEditWho" class="muted"></p>
+    <p><span data-i18n="st.mb.paidthru">Paid through</span>: <strong id="mbEditDate"></strong> <span id="mbEditState"></span></p>
+    <p class="err" id="mbEditErr" hidden></p>
+    <h3 data-i18n="st.mb.addtime">Add time</h3>
+    <p class="btnrow"><button type="button" class="btn small" data-months="6" data-i18n="st.mb.renew6">+6 months</button> <button type="button" class="btn small" data-months="12" data-i18n="st.mb.renew12">+1 year</button></p>
+    <h3 data-i18n="st.mb.taketime">Take time off (to undo a mistake)</h3>
+    <p class="btnrow"><button type="button" class="btn small kraft" data-months="-6" data-i18n="st.mb.minus6">−6 months</button> <button type="button" class="btn small kraft" data-months="-12" data-i18n="st.mb.minus12">−1 year</button></p>
+    <h3 data-i18n="st.mb.setdate">Or set the paid-through date</h3>
+    <p class="btnrow"><input type="date" id="mbEditNew" /> <button type="button" class="btn small kraft" id="mbEditSave" data-i18n="st.mb.save">Save</button></p>
+    <hr />
+    <p class="btnrow mb-edit-foot">
+      <button type="button" class="btn small kraft" id="mbEditRemind" data-i18n="st.mb.remindnow">Send a reminder now</button>
+      <button type="button" class="linkish mb-danger" id="mbEditClose" data-i18n="st.mb.closebox">Close this box</button>
+      <button type="button" class="btn small" id="mbEditDone" data-i18n="st.mb.done">Done</button>
+    </p>
+  </dialog>
+
   <script>
     import { t, tf } from '../../i18n';
     const $ = (id: string) => document.getElementById(id)!;
@@ -75,6 +95,7 @@ import Base from '../../layouts/Base.astro';
     const btn = (label: string, cls: string, fn: () => void) => { const b = document.createElement('button'); b.type = 'button'; b.className = `btn small ${cls}`; b.textContent = label; b.addEventListener('click', fn); return b; };
     const sizeName = (id: string) => t(`mb.size.${id}`);
     const termName = (n: number) => (n === 12 ? t('st.mb.year') : t('st.mb.six'));
+    const stageName = (st: string) => (st === 'over' ? t('st.mb.lapsed') : ['60', '30', '7'].includes(st) ? t(`st.mb.stage.${st}`) : tf('st.mb.daysleft', { n: st }));
     const contact = (c: any) => [c.phone, c.email].filter(Boolean).join(' · ');
 
     async function load() {
@@ -101,17 +122,46 @@ import Base from '../../layouts/Base.astro';
           const tr = document.createElement('tr');
           cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer)); cell(tr, sizeName(x.size)); cell(tr, x.paid_through);
           const st = cell(tr, ''); const badge = document.createElement('span'); badge.className = `acct-status mb-${x.state}`; badge.textContent = t(`mb.state.${x.state}`); st.appendChild(badge);
-          const act = cell(tr, '');
-          act.append(
-            btn(t('st.mb.renew6'), '', async () => { try { const r = await api({ action: 'renew', id: x.id, term: 6 }); say(tf('st.mb.renewed', { box: x.box_no, date: r.paid_through })); load(); } catch (e: any) { say(e.message, true); } }), ' ',
-            btn(t('st.mb.renew12'), '', async () => { try { const r = await api({ action: 'renew', id: x.id, term: 12 }); say(tf('st.mb.renewed', { box: x.box_no, date: r.paid_through })); load(); } catch (e: any) { say(e.message, true); } }), ' ',
-            btn(t('st.mb.remind'), 'kraft', async () => { try { const r = await api({ action: 'remind', id: x.id }); say(tf('st.mb.reminded', { box: x.box_no, how: [r.sms ? t('st.mb.text') : '', r.email ? t('st.mb.email') : ''].filter(Boolean).join(' + ') || '—' })); } catch (e: any) { say(e.message, true); } }), ' ',
-            btn(t('st.mb.close'), 'kraft', async () => { if (!confirm(tf('st.mb.closeq', { box: x.box_no }))) return; try { await api({ action: 'close', id: x.id }); load(); } catch (e: any) { say(e.message, true); } }),
-          );
+          cell(tr, '').appendChild(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
           bb.appendChild(tr);
         }
+        boxes = j.boxes;
+        if (editing) { const fresh = boxes.find((x: any) => x.id === editing!.id); if (fresh) paintEdit(fresh); else dlg.close(); }
       } catch (e: any) { say(e.message, true); }
     }
+
+    // The Edit pop-up for one box: add or take off time, set the date, remind, close.
+    const dlg = $('mbEdit') as HTMLDialogElement;
+    const editErr = $('mbEditErr');
+    let boxes: any[] = [];
+    let editing: any = null;
+    function paintEdit(x: any) {
+      editing = x;
+      $('mbEditH').textContent = `${t('st.mb.box').replace(/\s*#$/, '')} #${x.box_no} · ${sizeName(x.size)}`;
+      $('mbEditWho').textContent = `${x.customer.name} · ${contact(x.customer)}`;
+      $('mbEditDate').textContent = x.paid_through;
+      const st = $('mbEditState'); st.className = `acct-status mb-${x.state}`; st.textContent = t(`mb.state.${x.state}`);
+      ($('mbEditNew') as HTMLInputElement).value = x.paid_through;
+    }
+    function openEdit(x: any) { editErr.hidden = true; paintEdit(x); dlg.showModal(); }
+    async function editDo(body: Record<string, unknown>, done: (r: any) => string) {
+      editErr.hidden = true;
+      try { const r = await api({ id: editing.id, ...body }); say(done(r)); await load(); }
+      catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
+    }
+    dlg.querySelectorAll<HTMLButtonElement>('[data-months]').forEach((b) => b.addEventListener('click', () =>
+      editDo({ action: 'adjust', months: Number(b.dataset.months) }, (r) => tf('st.mb.dated', { box: editing.box_no, date: r.paid_through }))));
+    $('mbEditSave').addEventListener('click', () =>
+      editDo({ action: 'set_paid_through', date: ($('mbEditNew') as HTMLInputElement).value }, (r) => tf('st.mb.dated', { box: editing.box_no, date: r.paid_through })));
+    $('mbEditRemind').addEventListener('click', () =>
+      editDo({ action: 'remind' }, (r) => tf('st.mb.reminded', { box: editing.box_no, how: [r.sms ? t('st.mb.text') : '', r.email ? t('st.mb.email') : ''].filter(Boolean).join(' + ') || '—' })));
+    $('mbEditClose').addEventListener('click', async () => {
+      if (!confirm(tf('st.mb.closeq', { box: editing.box_no }))) return;
+      await editDo({ action: 'close' }, () => '');
+      if (!boxes.some((x) => x.id === editing?.id)) { editing = null; dlg.close(); }
+    });
+    $('mbEditDone').addEventListener('click', () => { editing = null; dlg.close(); });
+    dlg.addEventListener('close', () => { editing = null; });
     $('load').addEventListener('click', load);
     $('pin').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') load(); });
 
@@ -121,7 +171,7 @@ import Base from '../../layouts/Base.astro';
         const ul = $('sentList'); ul.innerHTML = '';
         if (!j.sent.length) { say(t('st.mb.nonedue')); return; }
         say(tf('st.mb.sentn', { n: j.sent.length }));
-        for (const s of j.sent) { const li = document.createElement('li'); li.textContent = `#${s.box_no} ${s.name} · ${s.key.split(':')[1] === 'over' ? t('st.mb.lapsed') : tf('st.mb.daysleft', { n: s.key.split(':')[1] })}`; ul.appendChild(li); }
+        for (const s of j.sent) { const li = document.createElement('li'); li.textContent = `#${s.box_no} ${s.name} · ${stageName(s.key.split(':')[1])}`; ul.appendChild(li); }
         load();
       } catch (e: any) { say(e.message, true); }
     });

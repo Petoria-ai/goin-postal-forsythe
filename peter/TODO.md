@@ -15,7 +15,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
 | P14 | [Raise mailbox prices $2 to $5 each](#p14-raise-mailbox-prices-2-to-5-each) | ⏸ Peter to pick the figure | Peter's numbers; then one file on the website and the Prices tab in William's register |
 | P13 | [Virtual mail on the website](#p13-virtual-mail-on-the-website) | ⏸ Later | What virtual mail we sell and at what price; Anytime Mailbox's rules |
-| P12 | [Automatic mailbox reminders](#p12-automatic-mailbox-reminders) | ⏳ Next for mailboxes | A daily scheduled job on Cloudflare; Peter's revision of the mailbox pages |
+| P12 | [Automatic mailbox reminders](#p12-automatic-mailbox-reminders) | ✅ Built Nov 16 | Check the first morning run once the site is live; Twilio and Resend keys (P4) |
 | P11 | [Official carrier logos (USPS, UPS, FedEx, DHL)](#p11-official-carrier-logos-usps-ups-fedex-dhl) | ✅ Done Nov 15 | A larger UPS file would be sharper | Goin' Postal corporate or each carrier's retail program |
 | P10 | [Is real AI design worth about 2 cents a try?](#p10-is-real-ai-design-worth-about-2-cents-a-try) | ⏸ Decide later | Peter and Rin try the demo; then the key and a monthly cap (D22) |
 
@@ -354,10 +354,10 @@ Virtual mail means the customer gets our street address, we receive their mail, 
 
 **Added:** 2026-11-15 15:38 CST. **Status:** next for mailboxes. Today the reminders (30 days, 7 days, the day after it expires) go out when staff press **Send due reminders** on Counter → Mailboxes. Each goes once, so pressing it every morning is safe.
 
-- [ ] A daily **scheduled job** on Cloudflare (a Cron Trigger) that does the same thing at, say, 10 am, so nobody has to remember. William's site has no scheduled jobs yet, so this is a small piece of new setup (D25).
+- [x] A daily **scheduled job** on Cloudflare that sends them every morning. ✅ 2026-11-16 19:03 CST: 9 am Central (10 am in summer); reminders at **2 months, 1 month and 1 week** (Peter, Nov 16) and the day after it expires. Check the first run in Cloudflare's logs once the site is live (D25).
 - [ ] Real texts need the Twilio keys and real emails need the Resend key (P4); until then they're logged, not sent.
-- [ ] Peter's revision pass on the Mailboxes page, the staff page and My mailbox.
-- [ ] Later: renew and pay online (Stripe), so a holder can renew from the reminder link.
+- [x] Peter's revision pass, round 1 ✅ 2026-11-16 19:03 CST: one **Edit** button with a pop-up (add or take off time, set the date, remind, close).
+- [x] Renew and pay online (Stripe) from My mailbox and the reminder link. ✅ 2026-11-16 19:03 CST. Needs the Stripe keys and webhook live (FOR-WILLIAM section 3).
 - [ ] Bring in the boxes already rented: they're in William's register (`physical-mailbox/`); staff can assign each to the holder's account by hand, or a one-time import.
 
 ## P11. Official carrier logos (USPS, UPS, FedEx, DHL)

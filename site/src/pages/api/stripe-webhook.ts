@@ -5,6 +5,7 @@ import { verifyWebhook } from '../../lib/stripe';
 import { getOrder, saveOrder } from '../../lib/orders';
 import { fulfil } from '../../lib/fulfil';
 import { getCardOrder, saveCardOrder } from '../../lib/cardOrders';
+import { payRenewal } from '../../lib/mailboxJobs';
 
 // Stripe calls this when a Checkout session is paid. Point the webhook at /api/stripe-webhook
 // with the event checkout.session.completed.
@@ -18,6 +19,10 @@ export const POST: APIRoute = async ({ request }) => {
   if (event.type === 'checkout.session.completed') {
     const session: any = event.data.object;
     const ref: string = session.client_reference_id ?? '';
+    if (ref.startsWith('MRN-')) { // a mailbox renewal: extends the box once (Peter, Nov 17 2026)
+      await payRenewal(env, ref, session.id);
+      return new Response('ok');
+    }
     if (ref.startsWith('CD-')) {
       const c = await getCardOrder(env, ref);
       if (c && c.status === 'awaiting_payment') await saveCardOrder(env, { ...c, status: 'paid', stripe_session_id: session.id, paid_at: new Date().toISOString() });

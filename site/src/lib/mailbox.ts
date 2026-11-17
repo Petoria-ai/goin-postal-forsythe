@@ -9,7 +9,7 @@ export type Term = 6 | 12;
 export interface MailboxSize { id: SizeId; name: string; from: number; to: number; price6: number; price12: number }
 export const SIZES = cfg.sizes as MailboxSize[];
 export const TERMS: Term[] = [6, 12];
-export const REMINDER_DAYS: number[] = [...cfg.reminder_days].sort((a, b) => b - a); // e.g. [30, 7]
+export const REMINDER_DAYS: number[] = [...cfg.reminder_days].sort((a, b) => b - a); // e.g. [60, 30, 7]
 
 export const sizeById = (id: string) => SIZES.find((s) => s.id === id) ?? null;
 /** Which size a box number belongs to, or null when it's in no range. */
@@ -58,18 +58,19 @@ export function dueReminder(b: { status: string; paid_through: string; reminders
   return sent.has(key) ? null : key;
 }
 
-/** The words of a reminder, for a text and an email. Plain English; the store's phone number for questions. */
-export function reminderText(b: { box_no: number; paid_through: string }, key: string, store: { name: string; phone: string }) {
+/** The words of a reminder, for a text and an email. Plain English; the store's phone number, and the renew-online link when there is one. */
+export function reminderText(b: { box_no: number; paid_through: string }, key: string, store: { name: string; phone: string }, renewUrl: string | null = null) {
   const stage = key.split(':')[1];
   const when = new Date(b.paid_through + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   const sms = stage === 'over'
     ? `${store.name}: your mailbox #${b.box_no} expired on ${when}. Renew at the counter to keep your mail coming. Questions: ${store.phone}`
-    : `${store.name}: your mailbox #${b.box_no} is paid through ${when}. Renew at the counter any time before then. Questions: ${store.phone}`;
+    : `${store.name}: your mailbox #${b.box_no} is paid through ${when}. Renew ${renewUrl ? `online at ${renewUrl} or ` : ''}at the counter any time before then. Questions: ${store.phone}`;
   const subject = stage === 'over' ? `Your mailbox #${b.box_no} has expired` : `Your mailbox #${b.box_no} renews soon`;
   const email = [
     stage === 'over' ? `Your mailbox #${b.box_no} at ${store.name} expired on ${when}.` : `Your mailbox #${b.box_no} at ${store.name} is paid through ${when}.`,
     '',
-    stage === 'over' ? 'Stop by the counter to renew so your mail and packages keep coming to your box.' : 'Stop by the counter any time before then to renew for 6 months or a year.',
+    stage === 'over' ? 'Stop by the counter to renew so your mail and packages keep coming to your box.' : 'Renew for 6 months or a year any time before then, at the counter or online.',
+    ...(renewUrl ? ['', `Renew online: ${renewUrl}`] : []),
     '',
     `Questions? Call us at ${store.phone}.`,
   ].join('\n');
