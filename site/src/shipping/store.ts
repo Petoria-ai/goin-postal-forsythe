@@ -741,6 +741,12 @@ export async function updateMailbox(env: Env, id: number, patch: Partial<Pick<Ma
   Object.assign(mem.mailboxes.find((x) => x.id === id)!, next);
 }
 
+/** Every box, open or closed, for the staff Expired list and search (Peter, Nov 16 2026). Newest first. */
+export async function listAllMailboxes(env: Env): Promise<MailboxRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailboxes ORDER BY id DESC').all<MailboxRow>()).results;
+  return [...mem.mailboxes].sort((a, b) => b.id - a.id);
+}
+
 /** Online renewals by the holder (Peter, Nov 17 2026): created before Stripe Checkout, paid once. */
 export interface MailboxRenewal { id: number; code: string; mailbox_id: number; customer_id: string; term: number; amount: number; status: 'pending' | 'paid'; stripe_session_id: string | null; paid_through: string | null; created_at: string; paid_at: string | null }
 export async function createRenewal(env: Env, r: { mailbox_id: number; customer_id: string; term: number; amount: number }): Promise<MailboxRenewal> {

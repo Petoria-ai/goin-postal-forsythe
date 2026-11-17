@@ -6,5 +6,8 @@
     { "id": "large", "name": "Large", "from": 1300, "to": 1323, "price6": 180, "price12": 360 }
   ],
   "address": "1800 Forsythe Ave, Suite 2 #{box}, Monroe, LA 71201",
-  "reminder_days": [60, 30, 7]
+  "reminder_days": [60, 30, 7],
+  "_hold_note": "After a box ends (it expired, or staff closed it), keep the holder's mail for hold_months, then return it to sender. Ended boxes stay on the staff Expired list for keep_months; search finds them after that too (Peter, Nov 16 2026).",
+  "hold_months": 6,
+  "keep_months": 12
 }

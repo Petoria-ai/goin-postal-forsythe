@@ -4,8 +4,8 @@
 // Everything takes env as an argument (no cloudflare:workers import) so the scheduled run can call it too.
 import { store } from '../data/store';
 import { sendEmail, sendSms } from '../shipping/notify';
-import { getCustomer, listActiveMailboxes, updateMailbox, getMailbox, logAudit, claimRenewal, getRenewal, setRenewalPaidThrough, type MailboxRow } from '../shipping/store';
-import { addMonths, addressFor, day, dueReminder, reminderText } from './mailbox';
+import { getCustomer, listActiveMailboxes, listAllMailboxes, updateMailbox, getMailbox, logAudit, claimRenewal, getRenewal, setRenewalPaidThrough, type MailboxRow } from '../shipping/store';
+import { addMonths, addressFor, day, dueReminder, reminderText, mailAction, onExpiredList, HOLD_MONTHS as HOLD } from './mailbox';
 
 /** Text and email one reminder. "sms"/"email" say whether the holder had a number/address to send to. */
 export async function sendReminder(env: Env, b: MailboxRow, key: string): Promise<{ sms: boolean; email: boolean; to: string }> {
@@ -62,4 +62,31 @@ export async function payRenewal(env: Env, code: string, sessionId: string | nul
     if (c?.email) await sendEmail(env, c.email, `Mailbox #${box.box_no} renewed`, `Thank you! Your mailbox #${box.box_no} at ${store.name} is now paid through ${when}.\n\nAmount paid: $${r.amount.toFixed(2)} (${r.term === 12 ? '1 year' : '6 months'}). Receipt number ${code}.\n\nYour mailbox address: ${addressFor(box.box_no)}\n\nQuestions? Call us at ${store.phone}.`);
   } catch (e) { console.error('renewal email:', e); }
   return paid_through;
+}
+
+/**
+ * Holds that are over (Peter, Nov 16 2026): a box ended HOLD_MONTHS ago, so its mail now goes back to the sender.
+ * Emails STAFF_EMAIL once per box (the key "<ended>:holdend" is recorded on the box) and audits it. Without
+ * STAFF_EMAIL nothing is sent or recorded; the staff Mailboxes page shows the same list in red either way.
+ */
+export async function holdEndNotices(env: Env, today = day(new Date())) {
+  if (!env.STAFF_EMAIL) return [];
+  const due: { box: MailboxRow; ended: string; key: string }[] = [];
+  for (const b of await listAllMailboxes(env)) {
+    const m = mailAction(b, today);
+    if (m.do !== 'rts' || !onExpiredList(b, today)) continue;
+    const key = `${m.ended}:holdend`;
+    if (!(JSON.parse(b.reminders) as string[]).includes(key)) due.push({ box: b, ended: m.ended, key });
+  }
+  if (!due.length) return [];
+  const lines: string[] = [];
+  for (const d of due) {
+    const c = await getCustomer(env, d.box.customer_id);
+    lines.push(`#${d.box.box_no}  ${c?.name ?? '?'}  (ended ${d.ended})`);
+  }
+  await sendEmail(env, env.STAFF_EMAIL, `Stop holding mail: ${due.length} mailbox${due.length === 1 ? '' : 'es'}`,
+    `The ${HOLD}-month hold is over for these mailboxes. From today, return their mail to sender:\n\n${lines.join('\n')}\n\n${env.SITE_URL}/counter/mailboxes`);
+  for (const d of due) await updateMailbox(env, d.box.id, { reminders: JSON.stringify([...(JSON.parse(d.box.reminders) as string[]), d.key].slice(-20)) });
+  await logAudit(env, { id: null, name: 'Daily reminders (automatic)' }, 'mailbox.hold_end', null, due.map((d) => `#${d.box.box_no}`).join(', '));
+  return due.map((d) => d.box.box_no);
 }

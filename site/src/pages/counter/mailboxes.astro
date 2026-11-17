@@ -25,6 +25,15 @@ import Base from '../../layouts/Base.astro';
   </div>
 
   <div id="mbMain" class="hidden">
+    <div class="card mb-check">
+      <h3 data-i18n="st.mb.check.h">Mail check</h3>
+      <p class="muted" data-i18n="st.mb.check.p">Got mail for a box? Type the box number or the name on the mail to see whether it goes in the box, gets held, or goes back to the sender.</p>
+      <form id="checkForm" class="btnrow"><input id="checkQ" data-i18n-ph="st.mb.check.ph" placeholder="Box # or name" autocomplete="off" /> <button class="btn small" type="submit" data-i18n="st.mb.check">Check</button></form>
+      <ul id="checkOut" class="mb-check-out"></ul>
+    </div>
+
+    <p id="rtsAlert" class="mb-rts-alert" hidden></p>
+
     <div class="card">
       <h3 data-i18n="st.mb.free">Free boxes</h3>
       <p id="free"></p>
@@ -46,6 +55,13 @@ import Base from '../../layouts/Base.astro';
     </div>
 
     <div class="card">
+      <h3 data-i18n="st.mb.ended.h">Expired and closed boxes</h3>
+      <p class="muted" id="endedP"></p>
+      <table class="list" id="endedTable"><thead><tr><th data-i18n="st.mb.box">Box #</th><th data-i18n="st.mb.holder">Holder</th><th data-i18n="st.mb.contact">Contact</th><th data-i18n="st.mb.endedon">Ended</th><th data-i18n="st.mb.mail">Mail</th><th></th></tr></thead><tbody></tbody></table>
+      <p class="muted" id="noEnded" hidden data-i18n="st.mb.noended">No expired or closed boxes.</p>
+    </div>
+
+    <div class="card">
       <h3 data-i18n="st.mb.assign.h">Assign a box to an account</h3>
       <p class="muted" data-i18n="st.mb.assign.p">For a customer who signed up at the counter: find their website account, then give them their box.</p>
       <p class="btnrow"><input id="findQ" data-i18n-ph="st.mb.find.ph" placeholder="Name, email or phone" /> <button class="btn small" id="findBtn" data-i18n="st.mb.find">Find</button></p>
@@ -64,6 +80,7 @@ import Base from '../../layouts/Base.astro';
     <h2 id="mbEditH"></h2>
     <p id="mbEditWho" class="muted"></p>
     <p><span data-i18n="st.mb.paidthru">Paid through</span>: <strong id="mbEditDate"></strong> <span id="mbEditState"></span></p>
+    <p id="mbEditMail"></p>
     <p class="err" id="mbEditErr" hidden></p>
     <h3 data-i18n="st.mb.addtime">Add time</h3>
     <p class="btnrow"><button type="button" class="btn small" data-months="6" data-i18n="st.mb.renew6">+6 months</button> <button type="button" class="btn small" data-months="12" data-i18n="st.mb.renew12">+1 year</button></p>
@@ -96,6 +113,9 @@ import Base from '../../layouts/Base.astro';
     const sizeName = (id: string) => t(`mb.size.${id}`);
     const termName = (n: number) => (n === 12 ? t('st.mb.year') : t('st.mb.six'));
     const stageName = (st: string) => (st === 'over' ? t('st.mb.lapsed') : ['60', '30', '7'].includes(st) ? t(`st.mb.stage.${st}`) : tf('st.mb.daysleft', { n: st }));
+    // What to do with mail for a box today: in the box, hold until a date, or return to sender.
+    const mailText = (m: any) => (m.do === 'box' ? t('st.mb.do.box') : m.do === 'hold' ? tf('st.mb.do.hold', { date: m.until }) : tf('st.mb.do.rts', { date: m.since }));
+    const mailBadge = (m: any) => { const b = document.createElement('span'); b.className = `mb-mail mb-mail-${m.do}`; b.textContent = mailText(m); return b; };
     const contact = (c: any) => [c.phone, c.email].filter(Boolean).join(' · ');
 
     async function load() {
@@ -125,7 +145,23 @@ import Base from '../../layouts/Base.astro';
           cell(tr, '').appendChild(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
           bb.appendChild(tr);
         }
-        boxes = j.boxes;
+        // Expired and closed: what to do with their mail, return-to-sender first.
+        $('endedP').textContent = tf('st.mb.ended.p', { hold: j.hold_months, keep: j.keep_months });
+        const eb = $('endedTable').querySelector('tbody')!; eb.innerHTML = '';
+        $('noEnded').hidden = j.ended.length > 0;
+        for (const x of j.ended) {
+          const tr = document.createElement('tr');
+          cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer));
+          cell(tr, `${x.mail.ended} · ${t(x.status === 'closed' ? 'mb.state.closed' : 'mb.state.overdue')}`);
+          cell(tr, '').appendChild(mailBadge(x.mail));
+          const act = cell(tr, '');
+          if (x.status === 'active') act.appendChild(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          eb.appendChild(tr);
+        }
+        const rts = j.ended.filter((x: any) => x.mail.do === 'rts');
+        $('rtsAlert').hidden = !rts.length;
+        $('rtsAlert').textContent = rts.length ? `${tf('st.mb.rtsn', { n: rts.length })} ${rts.map((x: any) => `#${x.box_no} ${x.customer.name}`).join(' · ')}` : '';
+        boxes = [...j.boxes, ...j.ended.filter((x: any) => x.status === 'active')];
         if (editing) { const fresh = boxes.find((x: any) => x.id === editing!.id); if (fresh) paintEdit(fresh); else dlg.close(); }
       } catch (e: any) { say(e.message, true); }
     }
@@ -142,6 +178,7 @@ import Base from '../../layouts/Base.astro';
       $('mbEditDate').textContent = x.paid_through;
       const st = $('mbEditState'); st.className = `acct-status mb-${x.state}`; st.textContent = t(`mb.state.${x.state}`);
       ($('mbEditNew') as HTMLInputElement).value = x.paid_through;
+      const mm = $('mbEditMail'); mm.innerHTML = ''; if (x.mail && x.mail.do !== 'box') mm.appendChild(mailBadge(x.mail));
     }
     function openEdit(x: any) { editErr.hidden = true; paintEdit(x); dlg.showModal(); }
     async function editDo(body: Record<string, unknown>, done: (r: any) => string) {
@@ -164,6 +201,26 @@ import Base from '../../layouts/Base.astro';
     dlg.addEventListener('close', () => { editing = null; });
     $('load').addEventListener('click', load);
     $('pin').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') load(); });
+
+    // Mail check: a box number or a name; current holder first, then past holders of that box.
+    $('checkForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const ul = $('checkOut'); ul.innerHTML = '';
+      try {
+        const j = await api({ action: 'search', q: ($('checkQ') as HTMLInputElement).value });
+        if (!j.boxes.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nomatch'); ul.appendChild(li); return; }
+        for (const x of j.boxes) {
+          const li = document.createElement('li');
+          const who = document.createElement('div');
+          who.innerHTML = '<strong></strong> <span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `#${x.box_no} · ${x.customer.name}`;
+          who.querySelector('.muted')!.textContent = `${t(`mb.state.${x.state}`)} · ${t('st.mb.paidthru')} ${x.paid_through}`;
+          li.append(who, mailBadge(x.mail));
+          if (x.status === 'active') li.append(' ', btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          ul.appendChild(li);
+        }
+      } catch (e: any) { say(e.message, true); }
+    });
 
     $('sendDue').addEventListener('click', async () => {
       try {

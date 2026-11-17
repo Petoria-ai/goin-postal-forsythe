@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { env } from 'cloudflare:workers';
-import { sizeForBox, priceFor, addressFor, addMonths, boxStatus, dueReminder, day, reminderText } from '../src/lib/mailbox';
+import { sizeForBox, priceFor, addressFor, addMonths, boxStatus, dueReminder, day, reminderText, mailAction, endedOn, onExpiredList } from '../src/lib/mailbox';
+import { holdEndNotices } from '../src/lib/mailboxJobs';
 import { upsertCustomer, assignMailbox, mailboxesFor, listAudit, exportTable } from '../src/shipping/store';
 import { signSession } from '../src/lib/session';
 import { POST } from '../src/pages/api/mailbox';
@@ -177,5 +178,50 @@ describe('mailbox API', () => {
   it('both tables are in the export', async () => {
     expect((await exportTable(env as any, 'mailboxes')).length).toBeGreaterThan(0);
     expect((await exportTable(env as any, 'mailbox_reservations')).length).toBeGreaterThan(0);
+  });
+});
+
+describe('expired boxes: hold the mail 6 months, then return to sender', () => {
+  const t = '2026-11-17';
+  it('says what to do with the mail', () => {
+    expect(mailAction({ status: 'active', paid_through: '2027-01-01', closed_at: null }, t)).toEqual({ do: 'box' });
+    expect(mailAction({ status: 'active', paid_through: '2026-11-01', closed_at: null }, t)).toEqual({ do: 'hold', ended: '2026-11-01', until: '2027-05-01' });
+    expect(mailAction({ status: 'active', paid_through: '2026-05-01', closed_at: null }, t)).toEqual({ do: 'rts', ended: '2026-05-01', since: '2026-11-02' });
+    expect(mailAction({ status: 'active', paid_through: '2026-05-17', closed_at: null }, t)).toMatchObject({ do: 'hold', until: '2026-11-17' }); // last day of the hold
+  });
+  it('a closed box ends the day it closed (or its paid-through date, if earlier)', () => {
+    expect(endedOn({ status: 'closed', paid_through: '2027-03-01', closed_at: '2026-10-05T15:00:00Z' }, t)).toBe('2026-10-05');
+    expect(endedOn({ status: 'closed', paid_through: '2026-09-01', closed_at: '2026-10-05T15:00:00Z' }, t)).toBe('2026-09-01');
+    expect(mailAction({ status: 'closed', paid_through: '2027-03-01', closed_at: '2026-10-05T15:00:00Z' }, t)).toMatchObject({ do: 'hold', until: '2027-04-05' });
+  });
+  it('stays on the Expired list for a year', () => {
+    expect(onExpiredList({ status: 'active', paid_through: '2026-01-01', closed_at: null }, t)).toBe(true);
+    expect(onExpiredList({ status: 'active', paid_through: '2025-11-01', closed_at: null }, t)).toBe(false);
+    expect(onExpiredList({ status: 'active', paid_through: '2027-01-01', closed_at: null }, t)).toBe(false); // still paid
+  });
+  it('the expired text tells the holder how long mail is held', () => {
+    expect(reminderText({ box_no: 1105, paid_through: '2026-11-01' }, '2026-11-01:over', { name: 'GP', phone: '1' }).sms).toContain('hold your mail until May 1, 2027');
+  });
+
+  it('staff see expired boxes, search past and present holders, and get one "stop holding" email', async () => {
+    Object.assign(env as any, { COUNTER_PIN: '1234', SITE_URL: 'http://x', STAFF_EMAIL: 'staff@example.com' });
+    const today = day(new Date());
+    const ago = (m: number) => addMonths(today, -m);
+    const who = (await upsertCustomer(env as any, { name: 'Lapsed Larry', email: 'larry@example.com', phone: '318-555-0123' }))!;
+    await assignMailbox(env as any, { box_no: 1310, customer_id: who, size: 'large', term: 6, start_date: ago(8), paid_through: ago(2) }); // holding
+    await assignMailbox(env as any, { box_no: 1311, customer_id: who, size: 'large', term: 6, start_date: ago(14), paid_through: ago(8) }); // hold over
+    await assignMailbox(env as any, { box_no: 1312, customer_id: who, size: 'large', term: 6, start_date: ago(20), paid_through: ago(14) }); // off the list
+    const list = (await call({ action: 'list', pin: '1234' })).body;
+    expect(list.boxes.map((x: any) => x.box_no)).not.toContain(1310);
+    const ended = list.ended.filter((x: any) => x.customer.name === 'Lapsed Larry');
+    expect(ended.map((x: any) => [x.box_no, x.mail.do])).toEqual([[1311, 'rts'], [1310, 'hold']]);
+    const byNo = (await call({ action: 'search', pin: '1234', q: '#1312' })).body.boxes;
+    expect(byNo.map((x: any) => [x.box_no, x.mail.do])).toEqual([[1312, 'rts']]);
+    const byName = (await call({ action: 'search', pin: '1234', q: 'larry' })).body.boxes;
+    expect(byName.map((x: any) => x.box_no).sort()).toEqual([1310, 1311, 1312]);
+    expect((await call({ action: 'search', pin: '1234', q: '' })).body.boxes).toEqual([]);
+    expect(await holdEndNotices(env as any)).toEqual([1311]);
+    expect(await holdEndNotices(env as any)).toEqual([]); // once only
+    expect((await listAudit(env as any)).some((a) => a.action === 'mailbox.hold_end' && a.detail === '#1311')).toBe(true);
   });
 });

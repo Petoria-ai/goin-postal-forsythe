@@ -358,6 +358,8 @@ Virtual mail means the customer gets our street address, we receive their mail, 
 - [ ] Real texts need the Twilio keys and real emails need the Resend key (P4); until then they're logged, not sent.
 - [x] Peter's revision pass, round 1 ✅ 2026-11-16 19:03 CST: one **Edit** button with a pop-up (add or take off time, set the date, remind, close).
 - [x] Renew and pay online (Stripe) from My mailbox and the reminder link. ✅ 2026-11-16 19:03 CST. Needs the Stripe keys and webhook live (FOR-WILLIAM section 3).
+- [x] **Expired boxes** ✅ 2026-11-16 19:09 CST: Mail check (box # or name), hold mail 6 months then return to sender, a red alert and a morning email when a hold ends, an Expired list kept a year.
+- [ ] **Check the hold and RTS rules with the postmaster:** USPS has rules for a mail center's mail after a box ends (Domestic Mail Manual 508, section 1.8, commercial mail receiving agencies), including how mail is endorsed when it goes back. The 6 months here is the store's choice; confirm it fits those rules and the wording to write on returned mail.
 - [ ] Bring in the boxes already rented: they're in William's register (`physical-mailbox/`); staff can assign each to the holder's account by hand, or a one-time import.
 
 ## P11. Official carrier logos (USPS, UPS, FedEx, DHL)

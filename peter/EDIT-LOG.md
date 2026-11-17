@@ -4,6 +4,22 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-16 19:09 CST · Expired mailboxes: hold the mail 6 months, then return to sender
+
+- **Asked for:** "keep track of customers who expired. that way i know to keep their mail for 6 months and also tell me to stop holding their mail after the 6 months ends", "i dont know whether i should put it in the box or do RTS", "a search feature on the admin side to find the customer for either active/expired", "hold the expired customers information up to a year?"
+- **What changed** on **Counter → Mailboxes**:
+  - **Mail check** at the top: type a box number or the name on the mail. It shows every box that matches, current holder first, then past holders, and in color what to do today: **Put it in the box** (green), **HOLD the mail until (date)** (yellow), or **RETURN TO SENDER (since date)** (red).
+  - A **red alert** when a hold is over: "Stop holding mail for 2: return their mail to sender", with the box numbers and names.
+  - A new **Expired and closed boxes** list: box, holder, contact, the day it ended, and the mail instruction, return-to-sender first. Boxes stay on it for **a year** after they end; Mail check still finds them after that. Nothing is deleted.
+  - **Boxes in use** now shows only paid boxes; an expired one moves to the Expired list (its **Edit** button is still there to renew or close it).
+  - The Edit pop-up shows the hold line for an expired box.
+  - **Rules:** a box ends on its paid-through date if it isn't renewed, or the day staff close it. Mail is held for **6 months** after that (through the same day 6 months later), then returned to sender. Both numbers are in `site/src/data/mailboxes.json` (`hold_months`, `keep_months`).
+  - The morning job also **emails you** (the `STAFF_EMAIL` address) the list of boxes whose hold ended, once each.
+  - The customer's "expired" text and email now say "We'll hold your mail until (date), then return it to sender."
+- **Fixed while testing:** on a phone, the staff tables made the page wider than the screen; they now scroll sideways inside their card.
+- **Files:** [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/lib/mailbox.ts](../site/src/lib/mailbox.ts), [site/src/lib/mailboxJobs.ts](../site/src/lib/mailboxJobs.ts), [site/src/worker.ts](../site/src/worker.ts), [site/src/data/mailboxes.json](../site/src/data/mailboxes.json), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/mailbox.test.ts](../site/tests/mailbox.test.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, `npm run dev`, open `/counter/mailboxes` (PIN 1234). To make an expired box, use **Assign a box to an account** with a **Start date** in the past: 12/01/2025 and 6 months gives one still on hold; 11/01/2025 gives one past its hold (return to sender). Then try **Mail check** with the box number or the name. To get the "stop holding" email in PowerShell, add `STAFF_EMAIL=you@example.com` to `.dev.vars`, restart, and press **Send due reminders**.
+
 ## 2026-11-16 19:03 CST · Mailboxes: Edit pop-up with undo, automatic reminders, renew online with Stripe
 
 - **Asked for:** "i like the +6 month or +12 month button but i want to be able to reverse it as well ... can we have like a edit button and a pop up comes up to send reminders, add months or year", "send automatic reminders when they get to their last two months and last month ... a reminder when its their last week", and "the customer to be able to login to their own account and extend their service as well that will collect payment via stripe".

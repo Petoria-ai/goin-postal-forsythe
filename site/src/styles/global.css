@@ -993,3 +993,13 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-edit hr { border: 0; border-top: 1px solid var(--hair); margin: 16px 0 10px; }
 .mb-edit-foot { justify-content: space-between; align-items: center; }
 .mb-danger { color: #9b2420; }
+/* Mailboxes: Mail check, hold / return-to-sender (Peter, Nov 16 2026) */
+.mb-check-out { list-style: none; padding: 0; display: grid; gap: 8px; }
+.mb-check-out li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 10px; }
+.mb-check-out li > div { flex: 1 1 220px; }
+.mb-mail { display: inline-block; padding: 4px 10px; border-radius: 999px; font-weight: 800; font-size: .92rem; }
+.mb-mail-box { background: #e6f4ea; color: #17602a; }
+.mb-mail-hold { background: #fdf2d0; color: #8a5a00; }
+.mb-mail-rts { background: #fbe4e3; color: #9b2420; }
+.mb-rts-alert { background: #fbe4e3; color: #9b2420; border: 1px solid #f0b4b1; border-radius: 12px; padding: 12px 16px; font-weight: 700; }
+#mbMain .card { overflow-x: auto; }

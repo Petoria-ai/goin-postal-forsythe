@@ -7,10 +7,10 @@ import { readSession } from '../../lib/session';
 import { createMailboxCheckout } from '../../lib/stripe';
 import {
   getCustomer, searchCustomers, logAudit, reserveMailbox, waitingReservation, listWaitingReservations, getReservation, setReservationStatus,
-  assignMailbox, getMailbox, listActiveMailboxes, updateMailbox, createRenewal,
+  assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, type MailboxRow,
 } from '../../shipping/store';
-import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder } from '../../lib/mailbox';
-import { sendReminder, sendDueReminders, extendedDate } from '../../lib/mailboxJobs';
+import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
+import { sendReminder, sendDueReminders, holdEndNotices, extendedDate } from '../../lib/mailboxJobs';
 
 // Physical mailboxes on the website (Peter, Nov 15 and 17 2026).
 // Customer (signed in): reserve {size, term}, cancel_reservation, renew_checkout {id, term} (Stripe; the box is
@@ -19,7 +19,10 @@ import { sendReminder, sendDueReminders, extendedDate } from '../../lib/mailboxJ
 //   adjust {id, months: 6, 12, -6 or -12} (add time, or take it back off; never to on or before the start date),
 //   set_paid_through {id, date} (after the start date),
 //   renew {id, term} (the same as adjust with a positive term), close {id}, remind {id} (one now),
-//   send_due (every reminder due today, each once; also run every morning by src/worker.ts). Every change is audited.
+//   send_due (every reminder due today, each once; also run every morning by src/worker.ts),
+//   search {q} (a box number or a name, email or phone: current and past boxes, with what to do with their mail).
+// Ended boxes (expired or closed): mail is held HOLD_MONTHS, then returned to sender; listed for KEEP_MONTHS.
+// Every change is audited.
 // The counter's register stays the full record (IDs, the 1583, payments); this is what the website shows and sends.
 
 export const POST: APIRoute = async ({ request }) => {
@@ -61,18 +64,44 @@ export const POST: APIRoute = async ({ request }) => {
     if (!user) return json({ error: 'Wrong PIN' }, 401);
     const who = { id: user.id, name: user.name };
 
+    // One box for the staff page: its holder, status, and what to do with its mail today.
+    const people = new Map<string, any>();
+    const person = async (id: string) => {
+      if (!people.has(id)) people.set(id, await getCustomer(env, id));
+      const c = people.get(id); return c ? { name: c.name, email: c.email, phone: c.phone } : { name: '?', email: null, phone: null };
+    };
+    const view = async (x: MailboxRow) => ({ ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today) });
+
     if (b.action === 'list') {
-      const [res, boxes] = await Promise.all([listWaitingReservations(env), listActiveMailboxes(env)]);
-      const people = new Map<string, any>();
-      for (const id of new Set([...res.map((r) => r.customer_id), ...boxes.map((x) => x.customer_id)])) people.set(id, await getCustomer(env, id));
-      const person = (id: string) => { const c = people.get(id); return c ? { name: c.name, email: c.email, phone: c.phone } : { name: '?', email: null, phone: null }; };
-      const used = new Set(boxes.map((x) => x.box_no));
+      const [res, all] = await Promise.all([listWaitingReservations(env), listAllMailboxes(env)]);
+      const open = all.filter((x) => x.status === 'active').sort((a, c) => a.box_no - c.box_no);
+      const used = new Set(open.map((x) => x.box_no));
+      const views = await Promise.all(open.map(view));
+      // Ended boxes: the hold that's over first (return to sender), then the hold that ends soonest.
+      const ended = (await Promise.all(all.filter((x) => onExpiredList(x, today)).map(view)))
+        .sort((a, c) => (a.mail.do === 'rts' ? 0 : 1) - (c.mail.do === 'rts' ? 0 : 1) || ((a.mail as any).until ?? '').localeCompare((c.mail as any).until ?? ''));
       return json({
-        today,
+        today, hold_months: HOLD_MONTHS, keep_months: KEEP_MONTHS,
         sizes: SIZES.map((s) => ({ ...s, free: Array.from({ length: s.to - s.from + 1 }, (_, i) => s.from + i).filter((n) => !used.has(n)).length })),
-        reservations: res.map((r) => ({ ...r, customer: person(r.customer_id), price: priceFor(r.size as any, r.term as any) })),
-        boxes: boxes.map((x) => ({ ...x, customer: person(x.customer_id), state: boxStatus(x, today), due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
+        reservations: await Promise.all(res.map(async (r) => ({ ...r, customer: await person(r.customer_id), price: priceFor(r.size as any, r.term as any) }))),
+        boxes: views.filter((x) => x.mail.do === 'box').map((x) => ({ ...x, due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
+        ended,
       });
+    }
+    if (b.action === 'search') {
+      const q = String(b.q ?? '').trim().slice(0, 60);
+      if (!q) return json({ boxes: [] });
+      const all = await listAllMailboxes(env);
+      const num = /^#?\s*(\d{3,5})$/.exec(q);
+      let hits: MailboxRow[];
+      if (num) hits = all.filter((x) => x.box_no === Number(num[1]));
+      else {
+        const ids = new Set((await searchCustomers(env, q, 20)).customers.map((c) => c.id));
+        hits = all.filter((x) => ids.has(x.customer_id));
+      }
+      // The box's current holder first, then past holders, newest first.
+      hits.sort((a, c) => (a.status === 'active' ? 0 : 1) - (c.status === 'active' ? 0 : 1) || c.id - a.id);
+      return json({ boxes: await Promise.all(hits.slice(0, 20).map(view)) });
     }
     if (b.action === 'find') {
       const { customers } = await searchCustomers(env, String(b.q ?? '').slice(0, 60), 10);
@@ -94,7 +123,9 @@ export const POST: APIRoute = async ({ request }) => {
       return json({ ok: true, box });
     }
     if (b.action === 'send_due') {
-      return json({ ok: true, sent: await sendDueReminders(env, who, today) });
+      const sent = await sendDueReminders(env, who, today);
+      const holds_ended = await holdEndNotices(env, today);
+      return json({ ok: true, sent, holds_ended });
     }
 
     const box = b.id != null ? await getMailbox(env, Number(b.id)) : null;

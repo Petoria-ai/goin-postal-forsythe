@@ -62,17 +62,48 @@ export function dueReminder(b: { status: string; paid_through: string; reminders
 export function reminderText(b: { box_no: number; paid_through: string }, key: string, store: { name: string; phone: string }, renewUrl: string | null = null) {
   const stage = key.split(':')[1];
   const when = new Date(b.paid_through + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+  const holdUntil = new Date(addMonths(b.paid_through, HOLD_MONTHS) + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   const sms = stage === 'over'
-    ? `${store.name}: your mailbox #${b.box_no} expired on ${when}. Renew at the counter to keep your mail coming. Questions: ${store.phone}`
+    ? `${store.name}: your mailbox #${b.box_no} expired on ${when}. We'll hold your mail until ${holdUntil}, then return it to sender. Renew ${renewUrl ? `online at ${renewUrl} or ` : ''}at the counter. Questions: ${store.phone}`
     : `${store.name}: your mailbox #${b.box_no} is paid through ${when}. Renew ${renewUrl ? `online at ${renewUrl} or ` : ''}at the counter any time before then. Questions: ${store.phone}`;
   const subject = stage === 'over' ? `Your mailbox #${b.box_no} has expired` : `Your mailbox #${b.box_no} renews soon`;
   const email = [
     stage === 'over' ? `Your mailbox #${b.box_no} at ${store.name} expired on ${when}.` : `Your mailbox #${b.box_no} at ${store.name} is paid through ${when}.`,
     '',
-    stage === 'over' ? 'Stop by the counter to renew so your mail and packages keep coming to your box.' : 'Renew for 6 months or a year any time before then, at the counter or online.',
+    stage === 'over' ? `We'll hold your mail and packages until ${holdUntil}. After that they go back to the sender. Renew to keep them coming to your box.` : 'Renew for 6 months or a year any time before then, at the counter or online.',
     ...(renewUrl ? ['', `Renew online: ${renewUrl}`] : []),
     '',
     `Questions? Call us at ${store.phone}.`,
   ].join('\n');
   return { sms, subject, email };
 }
+
+// ---- After a box ends (Peter, Nov 16 2026) ---------------------------------------------------------------
+// A box ends when it expires (not renewed by its paid-through date) or when staff close it. The store keeps that
+// holder's mail for HOLD_MONTHS, then returns it to sender; the box stays on the staff Expired list for KEEP_MONTHS.
+export const HOLD_MONTHS: number = (cfg as any).hold_months ?? 6;
+export const KEEP_MONTHS: number = (cfg as any).keep_months ?? 12;
+
+/** The day a box's service ended: the day it was closed, or its paid-through date if it lapsed. Null while paid. */
+export function endedOn(b: { status: string; paid_through: string; closed_at: string | null }, today: string): string | null {
+  if (b.status === 'closed') return b.closed_at ? b.closed_at.slice(0, 10) < b.paid_through ? b.closed_at.slice(0, 10) : b.paid_through : b.paid_through;
+  return b.paid_through < today ? b.paid_through : null;
+}
+
+export type MailAction = { do: 'box' } | { do: 'hold'; ended: string; until: string } | { do: 'rts'; ended: string; since: string };
+/**
+ * What to do with mail for this box today: put it in the box (paid), hold it (ended less than HOLD_MONTHS ago;
+ * "until" is the last day to hold), or return to sender (the hold is over; "since" is the first RTS day).
+ */
+export function mailAction(b: { status: string; paid_through: string; closed_at: string | null }, today: string): MailAction {
+  const ended = endedOn(b, today);
+  if (!ended) return { do: 'box' };
+  const until = addMonths(ended, HOLD_MONTHS);
+  if (today <= until) return { do: 'hold', ended, until };
+  return { do: 'rts', ended, since: day(new Date(Date.parse(until + 'T00:00:00Z') + 86_400_000)) };
+}
+/** Whether an ended box still belongs on the staff Expired list (KEEP_MONTHS after it ended). */
+export const onExpiredList = (b: { status: string; paid_through: string; closed_at: string | null }, today: string) => {
+  const ended = endedOn(b, today);
+  return !!ended && today <= addMonths(ended, KEEP_MONTHS);
+};
