@@ -181,3 +181,21 @@ export function packageState(p: { arrived_at: string }, indexInBox: number, toda
   const extra = indexInBox >= PKG.freeCount && held >= PKG.feeAfterDays ? PKG.fee : 0;
   return { held, free_until: freeUntil(p.arrived_at), storage, extra, return_on: returnOn(p.arrived_at), rts: today >= returnOn(p.arrived_at), late: held > PKG.freeDays };
 }
+
+// ---- Keeping the letter count right (Peter, Nov 16 2026) ------------------------------------------------
+// Staff answer "is it empty?" on the first letter of the day (key "<day>:checked"), from the Check these boxes list
+// for quiet boxes, or after the holder taps "I picked up my mail" (key "claim:<day>", which never clears anything
+// by itself: staff confirm it).
+export const CHECK_EVERY_DAYS: number = (cfg as any).check_every_days ?? 14;
+export const lastChecked = (keys: string[]) => keys.filter((k) => k.endsWith(':checked')).map((k) => k.slice(0, 10)).sort().at(-1) ?? null;
+export const pendingClaim = (keys: string[]) => keys.filter((k) => k.startsWith('claim:')).map((k) => k.slice(6)).sort().at(-1) ?? null;
+/** Why a box with letters should be looked at today, or null: the holder says they emptied it, or it's been quiet a while. */
+export function checkReason(letters: number, firstLetter: string | null, keys: string[], today: string): { why: 'claim'; since: string } | { why: 'quiet'; since: string } | null {
+  if (letters <= 0) return null;
+  const claim = pendingClaim(keys);
+  if (claim) return { why: 'claim', since: claim };
+  const last = lastChecked(keys);
+  const oldest = firstLetter ? firstLetter.slice(0, 10) : null;
+  if (oldest && daysBetween(oldest, today) >= CHECK_EVERY_DAYS && (!last || daysBetween(last, today) >= CHECK_EVERY_DAYS)) return { why: 'quiet', since: oldest };
+  return null;
+}

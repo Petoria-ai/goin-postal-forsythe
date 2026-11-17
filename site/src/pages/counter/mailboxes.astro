@@ -45,6 +45,12 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <p id="inOut" class="mb-in-out" hidden></p>
     </div>
 
+    <div class="card" id="chkCard" hidden>
+      <h3 data-i18n="st.chk.h">Check these boxes</h3>
+      <p class="muted" data-i18n="st.chk.p">Open each box and tap what you see. Boxes show up here when letters have sat 2 weeks without a check, or when the holder says they picked up.</p>
+      <ul id="chkList" class="mb-check-out"></ul>
+    </div>
+
     <div class="card" id="fwdCard" hidden>
       <h3 data-i18n="st.fw.h">Forwarding requests</h3>
       <ul id="fwdList" class="mb-check-out"></ul>
@@ -219,6 +225,18 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         $('rtsAlert').hidden = !rts.length;
         $('rtsAlert').textContent = rts.length ? `${tf('st.mb.rtsn', { n: rts.length })} ${rts.map((x: any) => `#${x.box_no} ${x.customer.name}`).join(' · ')}` : '';
         boxes = [...j.boxes, ...j.ended.filter((x: any) => x.status === 'active')];
+        // Boxes to look at: the holder says they emptied it, or letters have sat 2 weeks unchecked.
+        const cl = $('chkList'); cl.innerHTML = '';
+        $('chkCard').hidden = !j.to_check.length;
+        for (const c of j.to_check) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `#${c.box_no} · ${c.customer.name}`;
+          who.querySelector('.muted')!.textContent = c.why === 'claim' ? tf('st.chk.claim', { date: c.since, n: c.letters }) : tf('st.chk.quiet', { date: c.since, n: c.letters });
+          const ans = (empty: boolean) => async () => { try { await api({ action: 'box_checked', box_no: c.box_no, empty }); say(empty ? tf('st.chk.cleared', { box: c.box_no }) : tf('st.chk.kept', { box: c.box_no })); load(); } catch (e: any) { say(e.message, true); } };
+          li.append(who, btn(t('st.mi.empty'), '', ans(true)), btn(t('st.mi.still'), 'kraft', ans(false)));
+          cl.appendChild(li);
+        }
         // Forwarding requests from holders' dashboards.
         const fl = $('fwdList'); fl.innerHTML = '';
         $('fwdCard').hidden = !j.forwards.length;
@@ -345,7 +363,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       if (!checked && kind === 'letter') {
         try {
           const pk = await api({ action: 'box_peek', box_no: boxNo });
-          if (pk.ask) { pendingKind = kind; $('inAskQ').textContent = tf('st.mi.ask', { box: pk.box_no, n: pk.letters }); $('inAsk').hidden = false; return; }
+          if (pk.ask) { pendingKind = kind; $('inAskQ').textContent = pk.claim ? tf('st.mi.askclaim', { box: pk.box_no, date: pk.claim, n: pk.letters }) : tf('st.mi.ask', { box: pk.box_no, n: pk.letters }); $('inAsk').hidden = false; return; }
         } catch (e: any) { out.hidden = false; out.className = 'mb-in-out over'; out.textContent = e.message; return; }
       }
       try {

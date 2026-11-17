@@ -4,7 +4,7 @@
 // then rows that open: Request mail forwarding, Manage subscription, Billing history, Notification preferences,
 // Recent mail. Every button calls /api/mailbox with the session cookie; the page reloads to show the result.
 import type { MailboxRow, MailboxItem, MailboxSettings, MailboxCharge, MailboxRenewal, MailboxForward } from '../shipping/store';
-import { addressFor, fullness, OVERAGE_FEE, priceFor, money, boxStatus, day, PKG, packageState } from '../lib/mailbox';
+import { addressFor, fullness, OVERAGE_FEE, priceFor, money, boxStatus, day, PKG, packageState, pendingClaim } from '../lib/mailbox';
 import { store } from '../data/store';
 
 interface Props {
@@ -25,6 +25,7 @@ const photoUrl = (itemId: number) => (photos[itemId] ? `/api/mailbox-photo?id=${
 const state = boxStatus(b, day(new Date()));
 // Letters fill the box; packages have their own rules (2 free at a time, 5 free days, then $1 a day up to $10).
 const f = fullness(counts.letters, b.size);
+const claim = pendingClaim(JSON.parse(b.reminders));
 const today = day(new Date());
 const pkgs = items.filter((x) => x.kind === 'package' && x.status === 'in').sort((a, c) => a.arrived_at.localeCompare(c.arrived_at) || a.id - c.id).map((x, i) => ({ ...x, ...packageState(x, i, today) }));
 const level = f.pct >= 100 ? 'over' : f.pct >= 80 ? 'near' : 'ok';
@@ -74,7 +75,8 @@ const svg = (k: keyof typeof icon) => `<svg viewBox="0 0 24 24" width="22" heigh
   <div class="mbd-cap">
     <p class="mbd-row-line"><span class="muted" data-i18n="mbd.capacity">Mailbox capacity</span> <strong>{f.pct}%</strong></p>
     <div class={`mbd-bar mbd-${level}`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.min(100, f.pct)}><span style={`width:${Math.min(100, f.pct)}%`}></span></div>
-    {counts.letters > 0 && <p class="mbd-emptied"><button type="button" class="btn small kraft" data-emptied={b.id} data-i18n="mbd.emptied">I picked up my mail</button> <span class="muted mbd-small" data-i18n="mbd.emptied.p">Tap after you empty your box so the count stays right.</span></p>}
+    {counts.letters > 0 && claim && <p class="mbd-emptied muted mbd-small" data-i18n="mbd.claimed">Thanks! We'll confirm next time we check your box, and update your count.</p>}
+    {counts.letters > 0 && !claim && <p class="mbd-emptied"><button type="button" class="btn small kraft" data-emptied={b.id} data-i18n="mbd.emptied">I picked up my mail</button> <span class="muted mbd-small" data-i18n="mbd.emptied.p">Tap after you empty your box so the count stays right.</span></p>}
     <p class="muted mbd-small"><span data-i18n="mbd.ofcap" data-i18n-vars={JSON.stringify({ n: f.pieces, max: f.capacity })}>{f.pieces} of {f.capacity} pieces</span>
       {counts.last ? <> · <span data-i18n="mbd.updated">Last mail:</span> <time data-local={counts.last}>{counts.last.slice(0, 16).replace('T', ' ')}</time></> : <> · <span data-i18n="mbd.nomail">No mail waiting.</span></>}</p>
     {pkgs.length > 0 && <ul class="mbd-pkgs">{pkgs.map((p) => (

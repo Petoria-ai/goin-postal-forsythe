@@ -68,11 +68,30 @@ describe('photos and pickup', () => {
     expect((await call({ pin: '1234', action: 'box_peek', box_no: 1177 })).body.ask).toBe(false); // already checked today
   });
 
-  it('the holder can say they emptied their box', async () => {
+  it("the holder's \"I picked up\" clears nothing until staff confirm it", async () => {
     const box = (await call({ pin: '1234', action: 'list' })).body.boxes.find((x: any) => x.box_no === 1177);
     expect((await call({ action: 'emptied', id: box.id }, other)).status).toBe(404);
-    expect((await call({ action: 'emptied', id: box.id }, cookie)).body.n).toBe(1);
-    const after = (await call({ pin: '1234', action: 'list' })).body.boxes.find((x: any) => x.box_no === 1177);
-    expect([after.inbox.letters, after.inbox.packages]).toEqual([0, 1]);
+    expect((await call({ action: 'emptied', id: box.id }, cookie)).body.claim).toBe(day(new Date()));
+    const list = (await call({ pin: '1234', action: 'list' })).body;
+    expect(list.boxes.find((x: any) => x.box_no === 1177).inbox.letters).toBe(1); // still counted
+    expect(list.to_check.find((x: any) => x.box_no === 1177)).toMatchObject({ why: 'claim', letters: 1 });
+    // Staff are asked even though the box was already checked today.
+    expect((await call({ pin: '1234', action: 'box_peek', box_no: 1177 })).body).toMatchObject({ ask: true, claim: day(new Date()) });
+    // "Still there": the count stays, the claim is settled, and the audit log notes it didn't match.
+    await call({ pin: '1234', action: 'box_checked', box_no: 1177, empty: false });
+    const after = (await call({ pin: '1234', action: 'list' })).body;
+    expect(after.boxes.find((x: any) => x.box_no === 1177).inbox.letters).toBe(1);
+    expect(after.to_check.find((x: any) => x.box_no === 1177)).toBeUndefined();
+    const { listAudit } = await import('../src/shipping/store');
+    expect((await listAudit(env as any)).some((a) => a.action === 'mailbox.checked' && /DID NOT MATCH/.test(a.detail ?? ''))).toBe(true);
+  });
+
+  it('quiet boxes go on the check list after 2 weeks, and come off for 2 weeks once checked', async () => {
+    const { checkReason } = await import('../src/lib/mailbox');
+    expect(checkReason(3, '2026-11-01T15:00:00Z', [], '2026-11-14')).toBeNull(); // 13 days
+    expect(checkReason(3, '2026-11-01T15:00:00Z', [], '2026-11-15')).toEqual({ why: 'quiet', since: '2026-11-01' });
+    expect(checkReason(3, '2026-11-01T15:00:00Z', ['2026-11-15:checked'], '2026-11-20')).toBeNull();
+    expect(checkReason(3, '2026-11-01T15:00:00Z', ['2026-11-15:checked'], '2026-11-29')).toEqual({ why: 'quiet', since: '2026-11-01' });
+    expect(checkReason(0, null, ['claim:2026-11-20'], '2026-11-20')).toBeNull(); // nothing in it, nothing to check
   });
 });

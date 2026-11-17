@@ -14,7 +14,7 @@ import {
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs } from '../../lib/mailboxJobs';
-import { fullness, packageState, daysHeld, PKG } from '../../lib/mailbox';
+import { fullness, packageState, daysHeld, PKG, checkReason, pendingClaim } from '../../lib/mailbox';
 import { checkPhoto, savePiecePhoto, readPiecePhoto, deletePiecePhotos } from '../../lib/mailboxPhotos';
 
 // Physical mailboxes on the website (Peter, Nov 15 and 17 2026).
@@ -79,9 +79,11 @@ export const POST: APIRoute = async ({ request }) => {
       if (b.action === 'emptied') { // "I picked up my mail": the holder emptied their wall box (letters only)
         const box = await getMailbox(env, Number(b.id));
         if (!box || box.status !== 'active' || box.customer_id !== me.id) return json({ error: 'No such mailbox on your account.' }, 404);
-        const n = await clearMailboxItems(env, box.id, 'picked_up', 'letter');
-        await logAudit(env, { id: null, name: 'Customer (online)' }, 'mailbox.emptied', `#${box.box_no}`, `${n} letter${n === 1 ? '' : 's'}, by the holder`);
-        return json({ ok: true, n });
+        // Nothing is cleared: staff confirm it next time they look (the box goes on Check these boxes right away).
+        const keys: string[] = JSON.parse(box.reminders);
+        if (!pendingClaim(keys)) await updateMailbox(env, box.id, { reminders: JSON.stringify([...keys, `claim:${today}`].slice(-60)) });
+        await logAudit(env, { id: null, name: 'Customer (online)' }, 'mailbox.emptied_claim', `#${box.box_no}`, 'holder says they picked up their mail; staff to confirm');
+        return json({ ok: true, claim: today });
       }
       if (b.action === 'forward_cancel') {
         const f = (await listMailboxForwards(env, { customer_id: me.id, status: 'open' })).find((x) => x.id === Number(b.id));
@@ -124,7 +126,7 @@ export const POST: APIRoute = async ({ request }) => {
     const view = async (x: MailboxRow) => {
       docCounts ??= await countMailboxDocs(env);
       inBox ??= await countItemsIn(env);
-      const n = inBox.get(x.id) ?? { letters: 0, packages: 0, last: null, first_pkg: null };
+      const n = inBox.get(x.id) ?? { letters: 0, packages: 0, last: null, first_pkg: null, first_letter: null };
       // Letters fill the box; packages are flagged when the oldest is past its free days or due back to the sender.
       const oldest = n.first_pkg ? daysHeld(n.first_pkg, today) : 0;
       return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0,
@@ -144,6 +146,8 @@ export const POST: APIRoute = async ({ request }) => {
         sizes: SIZES.map((s) => ({ ...s, free: Array.from({ length: s.to - s.from + 1 }, (_, i) => s.from + i).filter((n) => !used.has(n)).length })),
         reservations: await Promise.all(res.map(async (r) => ({ ...r, customer: await person(r.customer_id), price: priceFor(r.size as any, r.term as any) }))),
         boxes: views.filter((x) => x.mail.do === 'box').map((x) => ({ ...x, due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
+        to_check: views.filter((x) => x.status === 'active').map((x) => ({ x, r: checkReason(x.inbox.letters, x.inbox.first_letter, JSON.parse(x.reminders), today) })).filter((c) => c.r)
+          .map(({ x, r }) => ({ id: x.id, box_no: x.box_no, customer: x.customer, letters: x.inbox.letters, ...r! })).sort((a, c) => (a.why === 'claim' ? 0 : 1) - (c.why === 'claim' ? 0 : 1) || a.since.localeCompare(c.since)),
         forwards: await Promise.all((await listMailboxForwards(env, { status: 'open' })).map(async (f) => ({ ...f, box_no: all.find((x) => x.id === f.mailbox_id)?.box_no ?? null, customer: await person(f.customer_id) }))),
         ended,
       });
@@ -213,16 +217,19 @@ export const POST: APIRoute = async ({ request }) => {
       const box = await activeBox(env, Number(String(b.box_no ?? '').replace(/\D/g, '')));
       if (!box) return json({ error: `No open box #${b.box_no} on the website.` }, 404);
       const n = (await countItemsIn(env)).get(box.id);
-      const checked = (JSON.parse(box.reminders) as string[]).includes(`${today}:checked`);
-      return json({ ok: true, box_no: box.box_no, letters: n?.letters ?? 0, ask: (n?.letters ?? 0) > 0 && !checked });
+      const keys = JSON.parse(box.reminders) as string[];
+      const claim = pendingClaim(keys);
+      return json({ ok: true, box_no: box.box_no, letters: n?.letters ?? 0, claim, ask: (n?.letters ?? 0) > 0 && (!keys.includes(`${today}:checked`) || !!claim) });
     }
     if (b.action === 'box_checked') {
       const box = await activeBox(env, Number(String(b.box_no ?? '').replace(/\D/g, '')));
       if (!box) return json({ error: `No open box #${b.box_no} on the website.` }, 404);
       const n = b.empty === true ? await clearMailboxItems(env, box.id, 'picked_up', 'letter') : 0;
       const keys: string[] = JSON.parse(box.reminders);
-      await updateMailbox(env, box.id, { reminders: JSON.stringify([...keys.filter((k) => k !== `${today}:checked`), `${today}:checked`].slice(-60)) });
-      await logAudit(env, who, 'mailbox.checked', `#${box.box_no}`, b.empty === true ? `empty: ${n} letter${n === 1 ? '' : 's'} picked up` : 'mail still there');
+      const claim = pendingClaim(keys);
+      // Answering settles the holder's claim either way; a claim that didn't match is noted in the audit log.
+      await updateMailbox(env, box.id, { reminders: JSON.stringify([...keys.filter((k) => k !== `${today}:checked` && !k.startsWith('claim:')), `${today}:checked`].slice(-60)) });
+      await logAudit(env, who, 'mailbox.checked', `#${box.box_no}`, (b.empty === true ? `empty: ${n} letter${n === 1 ? '' : 's'} picked up` : 'mail still there') + (claim ? ` (holder said picked up ${claim}${b.empty === true ? '' : ': DID NOT MATCH'})` : ''));
       return json({ ok: true, n });
     }
     if (b.action === 'mail_undo') {

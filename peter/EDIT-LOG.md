@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-16 20:43 CST · "Check these boxes" every 2 weeks, and "I picked up my mail" becomes something staff confirm
+
+- **Asked for:** "i'd atleast want to be able to track the more quiet boxes so like maybe 2 weeks is good ... so either me or the staff has something to do per 2 weeks", and "what if they tapped 'I picked up my mail' when they really didnt?"
+- **What changed:**
+  - **Check these boxes** (Counter → Mailboxes): boxes whose letters have sat **2 weeks** with no one checking, each with **Empty (picked up)** and **Mail still there**. Once checked, a box stays off the list for 2 more weeks. The number is `check_every_days` in `site/src/data/mailboxes.json`.
+  - **"I picked up my mail" no longer clears anything.** The customer's count stays; their dashboard says "Thanks! We'll confirm next time we check your box." The box goes to the **top** of Check these boxes ("Holder says they picked up (date); the count says 3 letters"), and the next time staff put a letter in, Mail in asks "the holder says they picked up on (date)... Is it empty?" even if the box was already checked that day.
+  - **Empty** clears the letters. **Mail still there** keeps them, and the audit log notes the tap "DID NOT MATCH", so you can spot anyone doing it on purpose.
+  - A false tap can't dodge the 45¢ overage: the count only drops when staff see an empty box.
+- **Files:** [site/src/lib/mailbox.ts](../site/src/lib/mailbox.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/components/MailboxDashboard.astro](../site/src/components/MailboxDashboard.astro), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/data/mailboxes.json](../site/src/data/mailboxes.json), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/mailbox-photos.test.ts](../site/tests/mailbox-photos.test.ts), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, `npm run dev`. Put a few letters in a box with **Mail in**, sign in as that customer and tap **I picked up my mail**, then reload `/counter/mailboxes`: the box is under **Check these boxes**, and the next letter for it asks you to confirm.
+
 ## 2026-11-16 20:35 CST · Photos of mail as it comes in, and keeping the letter count right
 
 - **Asked for:** "is it worth taking a picture of the outside of the envelope and packages so we kinda keep track of what goes in and out?" (yes, for packages and important letters), then "how can i track if the customer already picked up their mail.. i feel like i can only physically check which may be annoying to do a count".

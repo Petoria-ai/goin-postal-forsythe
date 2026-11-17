@@ -21,6 +21,8 @@
   "storage_cap": 10,
   "package_return_notice_day": 30,
   "package_return_after_notice_days": 3,
+  "_check_note": "Boxes whose letters have sat check_every_days without anyone checking go on the staff Check these boxes list (Peter, Nov 16 2026).",
+  "check_every_days": 14,
   "package_remind_day": 4,
   "min_charge": 0.5
 }

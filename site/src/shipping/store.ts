@@ -800,15 +800,15 @@ export async function listMailboxItems(env: Env, mailboxId: number, inOnly: bool
   return mem.mbItems.filter((x) => x.mailbox_id === mailboxId && (!inOnly || x.status === 'in')).sort((a, b) => b.id - a.id).slice(0, limit);
 }
 /** Pieces in each box right now, by kind. */
-export async function countItemsIn(env: Env): Promise<Map<number, { letters: number; packages: number; last: string | null; first_pkg: string | null }>> {
+export async function countItemsIn(env: Env): Promise<Map<number, { letters: number; packages: number; last: string | null; first_pkg: string | null; first_letter: string | null }>> {
   const rows = env.DB ? (await env.DB.prepare("SELECT mailbox_id, kind, COUNT(*) AS n, MAX(arrived_at) AS last, MIN(arrived_at) AS first FROM mailbox_items WHERE status = 'in' GROUP BY mailbox_id, kind").all<{ mailbox_id: number; kind: string; n: number; last: string; first: string }>()).results
     : Object.values(mem.mbItems.filter((x) => x.status === 'in').reduce<Record<string, { mailbox_id: number; kind: string; n: number; last: string; first: string }>>((a, x) => {
       const k = `${x.mailbox_id}:${x.kind}`; const r = (a[k] ??= { mailbox_id: x.mailbox_id, kind: x.kind, n: 0, last: x.arrived_at, first: x.arrived_at }); r.n++; if (x.arrived_at > r.last) r.last = x.arrived_at; if (x.arrived_at < r.first) r.first = x.arrived_at; return a;
     }, {}));
-  const out = new Map<number, { letters: number; packages: number; last: string | null; first_pkg: string | null }>();
+  const out = new Map<number, { letters: number; packages: number; last: string | null; first_pkg: string | null; first_letter: string | null }>();
   for (const r of rows) {
-    const c = out.get(r.mailbox_id) ?? { letters: 0, packages: 0, last: null, first_pkg: null };
-    if (r.kind === 'package') { c.packages += Number(r.n); c.first_pkg = r.first; } else c.letters += Number(r.n);
+    const c = out.get(r.mailbox_id) ?? { letters: 0, packages: 0, last: null, first_pkg: null, first_letter: null };
+    if (r.kind === 'package') { c.packages += Number(r.n); c.first_pkg = r.first; } else { c.letters += Number(r.n); c.first_letter = r.first; }
     if (!c.last || r.last > c.last) c.last = r.last;
     out.set(r.mailbox_id, c);
   }
