@@ -156,12 +156,13 @@ const mem = {
   mbSettings: new Map<string, MailboxSettings>(),
   mbCharges: [] as MailboxCharge[],
   mbForwards: [] as MailboxForward[],
+  mbPhotos: [] as MailboxPhoto[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -212,6 +213,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailbox_settings': return [...mem.mbSettings.values()];
     case 'mailbox_charges': return mem.mbCharges;
     case 'mailbox_forwards': return mem.mbForwards;
+    case 'mailbox_photos': return mem.mbPhotos;
     default: return [];
   }
 };
@@ -817,6 +819,29 @@ export async function listItemsIn(env: Env): Promise<MailboxItem[]> {
   if (env.DB) return (await env.DB.prepare("SELECT * FROM mailbox_items WHERE status = 'in' ORDER BY arrived_at, id").all<MailboxItem>()).results;
   return mem.mbItems.filter((x) => x.status === 'in').sort((a, b) => a.arrived_at.localeCompare(b.arrived_at) || a.id - b.id);
 }
+/** A photo of a piece (Peter, Nov 16 2026); the JPEG itself is in lib/mailboxPhotos.ts. */
+export interface MailboxPhoto { id: string; item_id: number; mailbox_id: number; customer_id: string; bytes: number; by_name: string; at: string }
+export async function addMailboxPhoto(env: Env, r: Omit<MailboxPhoto, 'at'>): Promise<MailboxPhoto> {
+  const row = { ...r, at: now() };
+  if (env.DB) await env.DB.prepare('INSERT INTO mailbox_photos (id, item_id, mailbox_id, customer_id, bytes, by_name, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)').bind(row.id, row.item_id, row.mailbox_id, row.customer_id, row.bytes, row.by_name, row.at).run();
+  else mem.mbPhotos.push(row);
+  return row;
+}
+export async function getMailboxPhoto(env: Env, id: string): Promise<MailboxPhoto | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_photos WHERE id = ?1').bind(id).first<MailboxPhoto>()) ?? null;
+  return mem.mbPhotos.find((p) => p.id === id) ?? null;
+}
+/** Photos for a box's pieces, keyed by piece id. */
+export async function photosForBox(env: Env, mailboxId: number): Promise<Map<number, string>> {
+  const rows = env.DB ? (await env.DB.prepare('SELECT id, item_id FROM mailbox_photos WHERE mailbox_id = ?1').bind(mailboxId).all<{ id: string; item_id: number }>()).results : mem.mbPhotos.filter((p) => p.mailbox_id === mailboxId);
+  return new Map(rows.map((r) => [r.item_id, r.id]));
+}
+export async function deleteMailboxPhotosForItem(env: Env, itemId: number): Promise<string[]> {
+  const ids = env.DB ? (await env.DB.prepare('SELECT id FROM mailbox_photos WHERE item_id = ?1').bind(itemId).all<{ id: string }>()).results.map((r) => r.id) : mem.mbPhotos.filter((p) => p.item_id === itemId).map((p) => p.id);
+  if (env.DB) await env.DB.prepare('DELETE FROM mailbox_photos WHERE item_id = ?1').bind(itemId).run();
+  else mem.mbPhotos = mem.mbPhotos.filter((p) => p.item_id !== itemId);
+  return ids;
+}
 export async function getMailboxItem(env: Env, id: number): Promise<MailboxItem | null> {
   if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_items WHERE id = ?1').bind(id).first<MailboxItem>()) ?? null;
   return mem.mbItems.find((x) => x.id === id) ?? null;
@@ -826,10 +851,10 @@ export async function deleteMailboxItem(env: Env, id: number) {
   mem.mbItems = mem.mbItems.filter((x) => x.id !== id);
 }
 /** Marks every piece still in a box as gone (picked up, forwarded or returned). Returns how many. */
-export async function clearMailboxItems(env: Env, mailboxId: number, status: 'picked_up' | 'forwarded' | 'returned'): Promise<number> {
+export async function clearMailboxItems(env: Env, mailboxId: number, status: 'picked_up' | 'forwarded' | 'returned', kind?: 'letter' | 'package'): Promise<number> {
   const t = now();
-  if (env.DB) return (await env.DB.prepare("UPDATE mailbox_items SET status = ?1, out_at = ?2 WHERE mailbox_id = ?3 AND status = 'in'").bind(status, t, mailboxId).run()).meta.changes ?? 0;
-  let n = 0; for (const x of mem.mbItems) if (x.mailbox_id === mailboxId && x.status === 'in') { x.status = status; x.out_at = t; n++; } return n;
+  if (env.DB) return (await env.DB.prepare(`UPDATE mailbox_items SET status = ?1, out_at = ?2 WHERE mailbox_id = ?3 AND status = 'in'${kind ? ' AND kind = ?4' : ''}`).bind(...[status, t, mailboxId, ...(kind ? [kind] : [])]).run()).meta.changes ?? 0;
+  let n = 0; for (const x of mem.mbItems) if (x.mailbox_id === mailboxId && x.status === 'in' && (!kind || x.kind === kind)) { x.status = status; x.out_at = t; n++; } return n;
 }
 
 export interface MailboxSettings { customer_id: string; stripe_customer_id: string | null; payment_method_id: string | null; card_brand: string | null; card_last4: string | null; card_exp: string | null; card_added_by: string | null; card_added_at: string | null; autorenew: number; notify_sms: number; notify_email: number; updated_at: string }

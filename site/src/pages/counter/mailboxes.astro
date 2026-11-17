@@ -34,7 +34,14 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         <label><span data-i18n="st.mi.note">Note (optional)</span> <input id="inNote" maxlength="120" data-i18n-ph="st.mi.note.ph" placeholder="Amazon, certified letter" /></label>
         <button type="button" class="btn" data-in="letter" data-i18n="st.mi.letter">+ Letter</button>
         <button type="button" class="btn kraft" data-in="package" data-i18n="st.mi.package">+ Package</button>
+        <label class="btn small kraft mb-cam"><input type="file" id="inPhoto" accept="image/*" capture="environment" hidden /><span aria-hidden="true">📷</span> <span data-i18n="st.mi.photo">Photo</span></label>
+        <span id="inPhotoWrap" class="mb-cam-prev" hidden><img id="inPhotoPrev" alt="" /> <button type="button" class="linkish" id="inPhotoClear" aria-label="Remove photo">×</button></span>
       </form>
+      <p class="muted mb-small" data-i18n="st.mi.photo.p">Take a photo before tapping + Package (the label side). For letters, only certified or important ones. Photos show on the customer's dashboard and delete themselves after 90 days.</p>
+      <div id="inAsk" class="mb-in-ask" hidden>
+        <p id="inAskQ"></p>
+        <p class="btnrow"><button type="button" class="btn small" id="inAskEmpty" data-i18n="st.mi.empty">Empty (picked up)</button> <button type="button" class="btn small kraft" id="inAskStill" data-i18n="st.mi.still">Mail still there</button></p>
+      </div>
       <p id="inOut" class="mb-in-out" hidden></p>
     </div>
 
@@ -106,6 +113,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <h3 data-i18n="st.mi.inbox">In box</h3>
       <p id="mbEditIn"></p>
       <ul id="mbEditPkgs" class="mb-pkgs"></ul>
+      <div id="mbEditPhoto" class="mb-photo-view" hidden><img alt="" /> <button type="button" class="linkish" data-i18n="st.doc.hide">Hide</button></div>
       <p class="btnrow"><button type="button" class="btn small" data-out="picked_up" data-i18n="st.mi.pickedup">All picked up</button> <button type="button" class="btn small kraft" data-out="forwarded" data-i18n="st.mi.forwarded">Forwarded</button> <button type="button" class="btn small kraft" data-out="returned" data-i18n="st.mi.returned">Returned to sender</button></p>
     </div>
     <div class="mb-edit-sec">
@@ -252,13 +260,19 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         const d = await api({ action: 'box_detail', id: x.id });
         const letters = d.items.filter((i: any) => i.kind === 'letter').length, packages = d.items.length - letters;
         $('mbEditIn').textContent = tf('st.mi.counts', { letters, packages, n: letters, max: x.inbox?.capacity ?? '' });
-        const pl = $('mbEditPkgs'); pl.innerHTML = '';
+        const pl = $('mbEditPkgs'); pl.innerHTML = ''; $('mbEditPhoto').hidden = true;
+        const photoBtn = (id: string) => btn(t('st.mi.photo'), 'kraft', () => showPhoto(id));
         for (const p of d.packages) {
           const li = document.createElement('li'); li.className = p.rts ? 'rts' : p.late ? 'late' : '';
           li.textContent = [`${t('mbd.k.package')} · ${p.arrived_at.slice(0, 10)}${p.note ? ` · ${p.note}` : ''}`, tf('st.pk.held', { n: p.held }),
             p.rts ? t('st.pk.rts') : p.late ? tf('st.pk.storage', { amount: money(p.storage) }) : tf('st.pk.freeuntil', { date: p.free_until }),
             p.extra ? tf('st.pk.extrafee', { amount: money(p.extra) }) : ''].filter(Boolean).join(' · ');
+          if (p.photo_id) li.append(' ', photoBtn(p.photo_id));
           pl.appendChild(li);
+        }
+        for (const i of d.items.filter((x: any) => x.kind === 'letter' && x.photo_id)) {
+          const li = document.createElement('li'); li.textContent = `${t('mbd.k.letter')} · ${i.arrived_at.slice(0, 10)}${i.note ? ` · ${i.note}` : ''} `;
+          li.append(photoBtn(i.photo_id)); pl.appendChild(li);
         }
         $('mbEditCard').textContent = d.card ? `${String(d.card.brand ?? '').toUpperCase()} •••• ${d.card.last4} (${d.card.exp}) · ${tf('st.card.addedby', { who: d.card.added_by ?? '', date: String(d.card.added_at ?? '').slice(0, 10) })}` : t('st.card.none');
         $('mbEditAuto').textContent = `${t('mbd.auto')}: ${d.autorenew ? t('mbd.on') : t('mbd.off')}`;
@@ -269,6 +283,18 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         $('mbEditCharge').hidden = !d.can_charge || !d.card; $('mbEditWaive').hidden = !d.can_charge;
       } catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
     }
+    // A piece's photo, shown inside the Edit window.
+    let photoUrl = '';
+    async function showPhoto(id: string) {
+      try {
+        const r = await api({ action: 'photo', photo_id: id });
+        const bin = atob(r.data); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        if (photoUrl) URL.revokeObjectURL(photoUrl);
+        photoUrl = URL.createObjectURL(new Blob([bytes], { type: r.type }));
+        const v = $('mbEditPhoto'); v.querySelector('img')!.src = photoUrl; v.hidden = false; v.scrollIntoView({ block: 'nearest' });
+      } catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
+    }
+    $('mbEditPhoto').querySelector('button')!.addEventListener('click', () => { $('mbEditPhoto').hidden = true; });
     dlg.querySelectorAll<HTMLButtonElement>('[data-out]').forEach((b) => b.addEventListener('click', () =>
       editDo({ action: 'pickup', how: b.dataset.out }, (r) => tf('st.mi.out', { n: r.n, box: editing.box_no }))));
     $('mbEditAutoBtn').addEventListener('click', () => editDo({ action: 'set_autorenew', customer_id: editing.customer_id, on: ($('mbEditAutoBtn') as HTMLElement).dataset.on === '1' }, () => t('mbd.saved')));
@@ -284,16 +310,51 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
 
     // Mail in: one tap per piece; the last one can be undone.
     let lastItem: { id: number; box: string } | null = null;
-    async function mailIn(kind: string) {
+    // The photo for the next piece: shrunk on the tablet to 1280 px JPEG, shown as a small preview until it's used.
+    let photo: string | null = null;
+    async function shrink(file: File): Promise<string> {
+      const raw = await new Promise<string>((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => no(new Error('Could not read the photo')); r.readAsDataURL(file); });
+      const img = new Image(); await new Promise((ok, no) => { img.onload = ok; img.onerror = () => no(new Error('That photo could not be opened')); img.src = raw; });
+      const k = Math.min(1, 1280 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+      for (const q of [0.8, 0.65, 0.5]) { const u = c.toDataURL('image/jpeg', q); if (u.length * 0.75 < 590_000) return u; }
+      return c.toDataURL('image/jpeg', 0.4);
+    }
+    const clearPhoto = () => { photo = null; ($('inPhoto') as HTMLInputElement).value = ''; $('inPhotoWrap').hidden = true; };
+    $('inPhoto').addEventListener('change', async () => {
+      const f = ($('inPhoto') as HTMLInputElement).files?.[0]; if (!f) return;
+      try { photo = await shrink(f); ($('inPhotoPrev') as HTMLImageElement).src = photo; $('inPhotoWrap').hidden = false; } catch (e: any) { say(e.message, true); clearPhoto(); }
+    });
+    $('inPhotoClear').addEventListener('click', clearPhoto);
+    // The first piece of the day for a box that should still hold letters: one glance, "empty or not?"
+    let pendingKind: string | null = null;
+    async function answer(empty: boolean) {
+      $('inAsk').hidden = true;
+      try { await api({ action: 'box_checked', box_no: ($('inBox') as HTMLInputElement).value.trim(), empty }); } catch (e: any) { say(e.message, true); return; }
+      const k = pendingKind; pendingKind = null; if (k) mailIn(k, true);
+    }
+    $('inAskEmpty').addEventListener('click', () => answer(true));
+    $('inAskStill').addEventListener('click', () => answer(false));
+    $('inBox').addEventListener('input', () => { $('inAsk').hidden = true; pendingKind = null; });
+    async function mailIn(kind: string, checked = false) {
       const boxNo = ($('inBox') as HTMLInputElement).value.trim();
       const out = $('inOut');
       if (!boxNo) { ($('inBox') as HTMLInputElement).focus(); return; }
+      if (kind === 'package' && !photo && !checked && !confirm(t('st.mi.nophoto'))) return;
+      if (!checked && kind === 'letter') {
+        try {
+          const pk = await api({ action: 'box_peek', box_no: boxNo });
+          if (pk.ask) { pendingKind = kind; $('inAskQ').textContent = tf('st.mi.ask', { box: pk.box_no, n: pk.letters }); $('inAsk').hidden = false; return; }
+        } catch (e: any) { out.hidden = false; out.className = 'mb-in-out over'; out.textContent = e.message; return; }
+      }
       try {
-        const r = await api({ action: 'mail_in', box_no: boxNo, kind, note: ($('inNote') as HTMLInputElement).value });
+        const r = await api({ action: 'mail_in', box_no: boxNo, kind, note: ($('inNote') as HTMLInputElement).value, ...(photo ? { photo } : {}) });
+        clearPhoto();
         lastItem = { id: r.item.id, box: boxNo };
         out.hidden = false; out.className = `mb-in-out${r.over ? ' over' : ''}`; out.innerHTML = '';
         const line = document.createElement('span');
-        line.textContent = `#${r.box_no} ${r.customer.name}: ${tf('st.mi.ofcap', { n: r.pieces, max: r.capacity })} · ${tf('st.pk.n', { n: r.packages })}${r.over ? ` · ${t('st.mi.overcharged')}` : ''}${r.extra_package ? ` · ${t('st.pk.extra')}` : ''}${r.notified ? ` · ${t('st.mi.notified')}` : ''}`;
+        line.textContent = `#${r.box_no} ${r.customer.name}: ${tf('st.mi.ofcap', { n: r.pieces, max: r.capacity })} · ${tf('st.pk.n', { n: r.packages })}${r.over ? ` · ${t('st.mi.overcharged')}` : ''}${r.extra_package ? ` · ${t('st.pk.extra')}` : ''}${r.photo ? ` · ${t('st.mi.photosaved')}` : ''}${r.notified ? ` · ${t('st.mi.notified')}` : ''}`;
         if (r.extra_package) out.className = 'mb-in-out near';
         out.append(line, ' ', btn(t('st.mi.undo'), 'kraft', async () => {
           if (!lastItem) return;

@@ -10,11 +10,12 @@ import {
   getCustomer, searchCustomers, logAudit, reserveMailbox, waitingReservation, listWaitingReservations, getReservation, setReservationStatus,
   assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
   countItemsIn, listMailboxItems, getMailboxItem, deleteMailboxItem, clearMailboxItems, getMailboxSettings, saveMailboxSettings,
-  listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox,
+  listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs } from '../../lib/mailboxJobs';
 import { fullness, packageState, daysHeld, PKG } from '../../lib/mailbox';
+import { checkPhoto, savePiecePhoto, readPiecePhoto, deletePiecePhotos } from '../../lib/mailboxPhotos';
 
 // Physical mailboxes on the website (Peter, Nov 15 and 17 2026).
 // Customer (signed in): reserve {size, term}, cancel_reservation, renew_checkout {id, term} (Stripe; the box is
@@ -35,7 +36,7 @@ export const POST: APIRoute = async ({ request }) => {
     const today = day(new Date());
 
     // ---- customer
-    if (['reserve', 'cancel_reservation', 'renew_checkout', 'card_setup', 'card_remove', 'set_prefs', 'forward_request', 'forward_cancel'].includes(b.action)) {
+    if (['reserve', 'cancel_reservation', 'renew_checkout', 'card_setup', 'card_remove', 'set_prefs', 'forward_request', 'forward_cancel', 'emptied'].includes(b.action)) {
       const meId = await readSession(env, request.headers.get('cookie')).catch(() => null);
       const me = meId ? await getCustomer(env, meId) : null;
       if (!me) return json({ error: 'Sign in to reserve a mailbox.', signin: true }, 401);
@@ -74,6 +75,13 @@ export const POST: APIRoute = async ({ request }) => {
         await logAudit(env, { id: null, name: 'Customer (online)' }, 'mailbox.forward_request', `#${box.box_no}`, address);
         if (env.STAFF_EMAIL) await sendEmail(env, env.STAFF_EMAIL, `Forwarding request: box #${box.box_no}`, `${me.name} asked to forward the mail in box #${box.box_no} to:\n\n${address}${f.note ? `\n\nNote: ${f.note}` : ''}\n\n${env.SITE_URL}/counter/mailboxes`).catch(() => {});
         return json({ ok: true, forward: f });
+      }
+      if (b.action === 'emptied') { // "I picked up my mail": the holder emptied their wall box (letters only)
+        const box = await getMailbox(env, Number(b.id));
+        if (!box || box.status !== 'active' || box.customer_id !== me.id) return json({ error: 'No such mailbox on your account.' }, 404);
+        const n = await clearMailboxItems(env, box.id, 'picked_up', 'letter');
+        await logAudit(env, { id: null, name: 'Customer (online)' }, 'mailbox.emptied', `#${box.box_no}`, `${n} letter${n === 1 ? '' : 's'}, by the holder`);
+        return json({ ok: true, n });
       }
       if (b.action === 'forward_cancel') {
         const f = (await listMailboxForwards(env, { customer_id: me.id, status: 'open' })).find((x) => x.id === Number(b.id));
@@ -186,18 +194,53 @@ export const POST: APIRoute = async ({ request }) => {
       const box = await activeBox(env, Number(String(b.box_no ?? '').replace(/\D/g, '')));
       if (!box) return json({ error: `No open box #${b.box_no} on the website.` }, 404);
       const kind = b.kind === 'package' ? 'package' : 'letter';
+      // A photo of the label or envelope (optional; expected for packages). Checked before anything is logged.
+      if (b.photo) try { checkPhoto(String(b.photo)); } catch (e: any) { return json({ error: e.message }, 400); }
       const r = await logMail(env, who, box, kind, String(b.note ?? '').trim().slice(0, 120) || null, today);
-      await logAudit(env, who, 'mailbox.mail_in', `#${box.box_no}`, `${kind}${r.over ? ' · OVER CAPACITY' : ''}${r.notified ? ' · holder notified' : ''}`);
-      return json({ ok: true, ...r, box_no: box.box_no, customer: await person(box.customer_id) });
+      if (b.photo) await savePiecePhoto(env, r.item, String(b.photo), who.name);
+      // Putting a letter in means staff had the box open today, so later letters today don't ask "is it empty?".
+      if (kind === 'letter') {
+        const fresh = await getMailbox(env, box.id);
+        const keys: string[] = JSON.parse(fresh?.reminders ?? '[]');
+        const ck = today + ':checked';
+        if (fresh && !keys.includes(ck)) await updateMailbox(env, box.id, { reminders: JSON.stringify([...keys, ck].slice(-60)) });
+      }
+      await logAudit(env, who, 'mailbox.mail_in', `#${box.box_no}`, `${kind}${b.photo ? ' · photo' : ''}${r.over ? ' · OVER CAPACITY' : ''}${r.notified ? ' · holder notified' : ''}`);
+      return json({ ok: true, ...r, photo: !!b.photo, box_no: box.box_no, customer: await person(box.customer_id) });
+    }
+    // Before the first piece of the day goes in a box that should still have letters, staff say whether it's empty.
+    if (b.action === 'box_peek') {
+      const box = await activeBox(env, Number(String(b.box_no ?? '').replace(/\D/g, '')));
+      if (!box) return json({ error: `No open box #${b.box_no} on the website.` }, 404);
+      const n = (await countItemsIn(env)).get(box.id);
+      const checked = (JSON.parse(box.reminders) as string[]).includes(`${today}:checked`);
+      return json({ ok: true, box_no: box.box_no, letters: n?.letters ?? 0, ask: (n?.letters ?? 0) > 0 && !checked });
+    }
+    if (b.action === 'box_checked') {
+      const box = await activeBox(env, Number(String(b.box_no ?? '').replace(/\D/g, '')));
+      if (!box) return json({ error: `No open box #${b.box_no} on the website.` }, 404);
+      const n = b.empty === true ? await clearMailboxItems(env, box.id, 'picked_up', 'letter') : 0;
+      const keys: string[] = JSON.parse(box.reminders);
+      await updateMailbox(env, box.id, { reminders: JSON.stringify([...keys.filter((k) => k !== `${today}:checked`), `${today}:checked`].slice(-60)) });
+      await logAudit(env, who, 'mailbox.checked', `#${box.box_no}`, b.empty === true ? `empty: ${n} letter${n === 1 ? '' : 's'} picked up` : 'mail still there');
+      return json({ ok: true, n });
     }
     if (b.action === 'mail_undo') {
       const it = await getMailboxItem(env, Number(b.item_id));
       if (!it || it.status !== 'in') return json({ error: 'That piece is already out of the box.' }, 404);
       await deleteMailboxItem(env, it.id);
+      await deletePiecePhotos(env, it.id);
       const fee = (await listMailboxCharges(env, { customer_id: it.customer_id, status: 'unbilled' })).find((c) => c.description.endsWith(`(piece ${it.id})`));
       if (fee) await settleMailboxCharges(env, [fee.id], 'waived', `undo by ${who.name}`);
       await logAudit(env, who, 'mailbox.mail_undo', `#${it.box_no}`, `${it.kind} logged ${it.arrived_at}`);
       return json({ ok: true });
+    }
+    if (b.action === 'photo') { // a piece's photo for the Edit window (base64, never a public address)
+      const ph = await readPiecePhoto(env, String(b.photo_id ?? ''));
+      if (!ph) return json({ error: 'That photo is gone (photos are kept 90 days).' }, 404);
+      const bytes = new Uint8Array(ph.bytes); let bin = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return json({ ok: true, data: btoa(bin), type: bytes[0] === 0x89 ? 'image/png' : 'image/jpeg' });
     }
     if (b.action === 'forward_set') {
       if (!['done', 'cancelled'].includes(b.status)) return json({ error: 'Pick done or cancelled' }, 400);
@@ -280,11 +323,12 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.action === 'box_detail') { // the Edit window: what's in the box, the card, money owed, forwarding
       const st = await getMailboxSettings(env, box.customer_id);
       const bal = await balanceFor(env, box.customer_id);
-      const items = await listMailboxItems(env, box.id, true);
+      const photos = await photosForBox(env, box.id);
+      const items = (await listMailboxItems(env, box.id, true)).map((i) => ({ ...i, photo_id: photos.get(i.id) ?? null }));
       const pk = items.filter((i) => i.kind === 'package').sort((a, c) => a.arrived_at.localeCompare(c.arrived_at) || a.id - c.id);
       return json({
         items,
-        packages: pk.map((i, idx) => ({ id: i.id, note: i.note, arrived_at: i.arrived_at, ...packageState(i, idx, today) })),
+        packages: pk.map((i, idx) => ({ id: i.id, note: i.note, arrived_at: i.arrived_at, photo_id: i.photo_id, ...packageState(i, idx, today) })),
         card: st.payment_method_id ? { brand: st.card_brand, last4: st.card_last4, exp: st.card_exp, added_by: st.card_added_by, added_at: st.card_added_at } : null,
         autorenew: !!st.autorenew, balance: { due: bal.due, pieces: bal.pieces, declined: bal.declined },
         charges: bal.charges.slice(0, 20), forwards: await listMailboxForwards(env, { customer_id: box.customer_id, status: 'open' }),

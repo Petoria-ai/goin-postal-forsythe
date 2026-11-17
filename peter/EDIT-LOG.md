@@ -4,6 +4,22 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-16 20:35 CST · Photos of mail as it comes in, and keeping the letter count right
+
+- **Asked for:** "is it worth taking a picture of the outside of the envelope and packages so we kinda keep track of what goes in and out?" (yes, for packages and important letters), then "how can i track if the customer already picked up their mail.. i feel like i can only physically check which may be annoying to do a count".
+- **Photos:**
+  - **Mail in** has a **📷 Photo** button (the tablet's camera). Take the photo, then tap **+ Letter** or **+ Package**: the photo goes with that piece, with a small preview until it's used. Tapping **+ Package** without a photo asks "Log this package without a photo?". For letters, only certified or important ones.
+  - The tablet shrinks the photo before sending it. Photos **delete themselves after 90 days**.
+  - Staff see them in the **Edit** window (a **Photo** button next to each package, and any letter with a photo). The holder sees a thumbnail on their dashboard next to the package and in Recent mail; tapping it opens it full size. Only the signed-in holder of that box can open their photos; anyone else gets "not found".
+  - **Undo** removes the photo too.
+- **Keeping the letter count right without counting:**
+  - Customers take letters out with their key, so the site can't know. Now, the **first time a box gets a letter each day**, if the site thinks letters are still in it, **Mail in** asks: "Box #1105 should still have 7 letters. Is it empty?" with **Empty (picked up)** and **Mail still there**. One glance at the box you already have open. Letters put in later that day don't ask again.
+  - Customers can also tap **I picked up my mail** on their dashboard.
+  - Both clear **letters only**; packages are handed over at the counter (Edit → **All picked up**).
+  - This also keeps the 45¢ letter overage fair: the count is checked by eye whenever new mail goes in.
+- **Files:** new [site/src/lib/mailboxPhotos.ts](../site/src/lib/mailboxPhotos.ts), new [site/src/pages/api/mailbox-photo.ts](../site/src/pages/api/mailbox-photo.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/components/MailboxDashboard.astro](../site/src/components/MailboxDashboard.astro), [site/src/pages/account/index.astro](../site/src/pages/account/index.astro), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/db/schema.sql](../site/db/schema.sql), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/mailbox-photos.test.ts](../site/tests/mailbox-photos.test.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, **`npm run db:local`** (one new table), `npm run dev`. On `/counter/mailboxes`, **Mail in** a box: tap **📷 Photo** and pick a picture, then **+ Package**. Open **Edit** on that box and press **Photo**. Sign in as the holder: the thumbnail is on **My mailbox**. To see the "is it empty?" question, put a letter in a box, then come back the next day (or ask me how to fake a new day).
+
 ## 2026-11-16 20:25 CST · Package rules: 2 free at a time, 5 free days, then $1 a day up to $10, final notice on day 30
 
 - **Asked for:** "I believe i should give each customer 2 box limit, but really i want the customer to only have 1 at max but i wont charge them if they hit 2. because i dont have the space"; agreed $2 for the 3rd package "if not picked up within 2 days"; "i want them to pick up their packages"; then, worried about surprise bills, the $1-a-day storage fee with a $10 cap and warnings; and "i like the 30 day return to sender notice".

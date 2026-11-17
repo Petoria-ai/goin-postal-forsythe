@@ -18,8 +18,10 @@ interface Props {
   forwards: MailboxForward[];
   renewOptions: { term: 6 | 12; price: number | null; until: string }[];
   longDate: (ymd: string) => string;
+  photos: Record<number, string>;
 }
-const { box: b, firstName, counts, items, settings: st, balance, renewals, forwards, renewOptions, longDate } = Astro.props;
+const { box: b, firstName, counts, items, settings: st, balance, renewals, forwards, renewOptions, longDate, photos } = Astro.props;
+const photoUrl = (itemId: number) => (photos[itemId] ? `/api/mailbox-photo?id=${photos[itemId]}` : null);
 const state = boxStatus(b, day(new Date()));
 // Letters fill the box; packages have their own rules (2 free at a time, 5 free days, then $1 a day up to $10).
 const f = fullness(counts.letters, b.size);
@@ -72,10 +74,12 @@ const svg = (k: keyof typeof icon) => `<svg viewBox="0 0 24 24" width="22" heigh
   <div class="mbd-cap">
     <p class="mbd-row-line"><span class="muted" data-i18n="mbd.capacity">Mailbox capacity</span> <strong>{f.pct}%</strong></p>
     <div class={`mbd-bar mbd-${level}`} role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.min(100, f.pct)}><span style={`width:${Math.min(100, f.pct)}%`}></span></div>
+    {counts.letters > 0 && <p class="mbd-emptied"><button type="button" class="btn small kraft" data-emptied={b.id} data-i18n="mbd.emptied">I picked up my mail</button> <span class="muted mbd-small" data-i18n="mbd.emptied.p">Tap after you empty your box so the count stays right.</span></p>}
     <p class="muted mbd-small"><span data-i18n="mbd.ofcap" data-i18n-vars={JSON.stringify({ n: f.pieces, max: f.capacity })}>{f.pieces} of {f.capacity} pieces</span>
       {counts.last ? <> · <span data-i18n="mbd.updated">Last mail:</span> <time data-local={counts.last}>{counts.last.slice(0, 16).replace('T', ' ')}</time></> : <> · <span data-i18n="mbd.nomail">No mail waiting.</span></>}</p>
     {pkgs.length > 0 && <ul class="mbd-pkgs">{pkgs.map((p) => (
       <li class={p.rts ? 'rts' : p.late ? 'late' : ''}>
+        {photoUrl(p.id) && <a href={photoUrl(p.id)} target="_blank" rel="noopener" class="mbd-thumb"><img src={photoUrl(p.id)} alt="Package photo" loading="lazy" /></a>}
         <strong data-i18n="mbd.k.package">Package</strong> <span class="muted">{p.note ?? ''}</span>
         <span>{p.rts ? <span data-i18n="mbd.pk.rts">Being returned to the sender. Call us today if you still want it.</span>
           : p.held >= PKG.returnNoticeDay ? <span data-i18n="mbd.pk.final" data-i18n-vars={JSON.stringify({ date: longDate(p.return_on) })}>Final notice: pick it up by {longDate(p.return_on)} or it goes back to the sender.</span>
@@ -155,7 +159,7 @@ const svg = (k: keyof typeof icon) => `<svg viewBox="0 0 24 24" width="22" heigh
       <summary><span set:html={svg('list')} /><span data-i18n="mbd.recent">Recent mail</span></summary>
       <div class="mbd-panel">
         {items.length ? <ul class="mbd-list">{items.map((x) => (
-          <li><time data-local={x.arrived_at}>{x.arrived_at.slice(0, 10)}</time><span data-i18n={`mbd.k.${x.kind}`}>{x.kind}</span><span class="muted">{x.note ?? ''}</span><span class={`mbd-st mbd-st-${x.status}`} data-i18n={`mbd.st.${x.status}`}>{x.status}</span></li>
+          <li>{photoUrl(x.id) && <a href={photoUrl(x.id)} target="_blank" rel="noopener" class="mbd-thumb"><img src={photoUrl(x.id)} alt="Photo" loading="lazy" /></a>}<time data-local={x.arrived_at}>{x.arrived_at.slice(0, 10)}</time><span data-i18n={`mbd.k.${x.kind}`}>{x.kind}</span><span class="muted">{x.note ?? ''}</span><span class={`mbd-st mbd-st-${x.status}`} data-i18n={`mbd.st.${x.status}`}>{x.status}</span></li>
         ))}</ul> : <p class="muted" data-i18n="mbd.nomail">No mail waiting.</p>}
       </div>
     </details>
@@ -191,6 +195,7 @@ const svg = (k: keyof typeof icon) => `<svg viewBox="0 0 24 24" width="22" heigh
       ev.preventDefault();
       await run(async () => { await post({ action: 'forward_request', id: Number(f.dataset.forward), address: (f.elements.namedItem('address') as HTMLTextAreaElement).value, note: (f.elements.namedItem('note') as HTMLInputElement).value }); location.reload(); })();
     }));
+    card.querySelectorAll<HTMLButtonElement>('[data-emptied]').forEach((b) => b.addEventListener('click', run(async () => { await post({ action: 'emptied', id: Number(b.dataset.emptied) }); location.reload(); })));
     card.querySelectorAll<HTMLButtonElement>('[data-fwd-cancel]').forEach((b) => b.addEventListener('click', run(async () => { await post({ action: 'forward_cancel', id: Number(b.dataset.fwdCancel) }); location.reload(); })));
   });
 </script>

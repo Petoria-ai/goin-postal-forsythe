@@ -11,7 +11,7 @@ import { recordConsent } from '../../shipping/store';
 import { listSavedDesigns } from '../../shipping/store';
 import { renderCard, sanitizeDesign, CARD_OPTIONS } from '../../lib/cards';
 import { listCardOrdersFor, cardTotal } from '../../lib/cardOrders';
-import { mailboxesFor, waitingReservation, getRenewal, countItemsIn, listMailboxItems, getMailboxSettings, paidRenewalsFor, listMailboxForwards } from '../../shipping/store';
+import { mailboxesFor, waitingReservation, getRenewal, countItemsIn, listMailboxItems, getMailboxSettings, paidRenewalsFor, listMailboxForwards, photosForBox } from '../../shipping/store';
 import MailboxDashboard from '../../components/MailboxDashboard.astro';
 import { sizeById, addressFor, boxStatus, day, priceFor } from '../../lib/mailbox';
 import { extendedDate, balanceFor } from '../../lib/mailboxJobs';
@@ -77,6 +77,7 @@ const mbBalance = me && myBoxes.length ? await balanceFor(env, me.id) : null;
 const mbRenewals = me && myBoxes.length ? await paidRenewalsFor(env, me.id) : [];
 const mbForwards = me && myBoxes.length ? await listMailboxForwards(env, { customer_id: me.id, status: 'open' }) : [];
 const mbItems = new Map(await Promise.all(myBoxes.map(async (b) => [b.id, await listMailboxItems(env, b.id, false, 10)] as const)));
+const mbPhotos = new Map(await Promise.all(myBoxes.map(async (b) => [b.id, Object.fromEntries(await photosForBox(env, b.id))] as const)));
 const cardSaved = Astro.url.searchParams.get('card') === '1';
 const longDate = (ymd: string) => new Date(ymd + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 // Business card orders on this account (newest first), for My orders.
@@ -227,7 +228,7 @@ const savedCards = savedDesigns.filter((d) => d.product === 'card').map((d) => {
       {myBoxes.map((b) => (
         <MailboxDashboard box={b} firstName={me!.name.split(' ')[0]} counts={mbCounts.get(b.id) ?? { letters: 0, packages: 0, last: null }} items={mbItems.get(b.id) ?? []}
           settings={mbSettings!} balance={mbBalance!} renewals={mbRenewals.filter((r) => r.mailbox_id === b.id)} forwards={mbForwards.filter((f) => f.mailbox_id === b.id)}
-          renewOptions={renewOptions(b)} longDate={longDate} />
+          renewOptions={renewOptions(b)} longDate={longDate} photos={mbPhotos.get(b.id) ?? {}} />
       ))}
       {myRes && <div class="card">
         <h3 data-i18n="mb.reserve.h">Reserve a mailbox</h3>

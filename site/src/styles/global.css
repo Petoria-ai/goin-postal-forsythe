@@ -1086,3 +1086,14 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-pkgs li, .mbd-pkgs li { padding: 6px 10px; border-radius: 8px; background: rgb(15 29 58 / .05); display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .mb-pkgs li.late, .mbd-pkgs li.late { background: #fdf2d0; color: #8a5a00; }
 .mb-pkgs li.rts, .mbd-pkgs li.rts { background: #fbe4e3; color: #9b2420; font-weight: 700; }
+/* Photos of mail (Peter, Nov 16 2026) */
+.mb-cam { cursor: pointer; }
+.mb-cam-prev { display: inline-flex; align-items: center; gap: 4px; }
+.mb-cam-prev img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid var(--hair); }
+.mb-photo-view { margin: 8px 0; }
+.mb-photo-view img { max-width: 100%; max-height: 50vh; border-radius: 10px; display: block; }
+.mbd-thumb img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; border: 1px solid var(--hair); display: block; }
+.mb-in-ask { margin: 10px 0 0; padding: 10px 14px; border-radius: 10px; background: #e8f1fb; border: 1px solid #1d4ed8; color: #17202d; }
+.mb-in-ask p { margin: 4px 0; }
+.mb-in-ask p:first-child { font-weight: 700; }
+.mbd-emptied { margin: 10px 0 4px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }

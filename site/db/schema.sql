@@ -657,6 +657,20 @@ CREATE TABLE IF NOT EXISTS mailbox_items (
 );
 CREATE INDEX IF NOT EXISTS mailbox_items_box ON mailbox_items(mailbox_id, status);
 
+-- A photo of a piece when it came in (Peter, Nov 16 2026): the package label, or a certified letter. The row is
+-- the label; the JPEG is in the ORDERS KV namespace under mbphoto:<id> and deletes itself after 90 days.
+CREATE TABLE IF NOT EXISTS mailbox_photos (
+  id TEXT PRIMARY KEY,                  -- 32 random hex characters
+  item_id INTEGER NOT NULL,
+  mailbox_id INTEGER NOT NULL,
+  customer_id TEXT NOT NULL,
+  bytes INTEGER NOT NULL,
+  by_name TEXT NOT NULL,
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mailbox_photos_item ON mailbox_photos(item_id);
+CREATE INDEX IF NOT EXISTS mailbox_photos_box ON mailbox_photos(mailbox_id);
+
 -- A holder's settings: card on file (Stripe; only the brand, last 4 and expiry are kept here), automatic renewal,
 -- and how they want to hear about new mail. One row per customer.
 CREATE TABLE IF NOT EXISTS mailbox_settings (
