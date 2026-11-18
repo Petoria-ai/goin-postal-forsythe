@@ -1,0 +1,72 @@
+---
+// The Services section on the home page (Peter, Nov 18 2026): the store's three main services as feature cards
+// (icon, three selling points, a big button), the rest as compact cards with a quick action, and a "just ask" strip.
+// The list and order still come from store.services (src/data/store.ts), so another store can change them; a
+// service this file doesn't know gets a plain card. All words are i18n keys (svc.*).
+import { store } from '../data/store';
+
+const tel = `tel:${store.phone.replace(/[^\d+]/g, '')}`;
+const directions = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`;
+const featured = ['ship', 'mailbox', 'print'];
+const icons: Record<string, string> = {
+  ship: '<path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+  pack: '<path d="M21 8 12 3 3 8v8l9 5 9-5V8Z"/><path d="m3 8 9 5 9-5M12 13v8M7.5 5.5l9 5"/>',
+  returns: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+  mailbox: '<path d="M7 7h10a4 4 0 0 1 4 4v7H3v-7a4 4 0 0 1 4-4Z"/><path d="M7 7a4 4 0 0 1 4 4v7M15 11h3"/><path d="M15 3v5"/><path d="M15 3h3v2h-3"/>',
+  print: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+  notary: '<path d="M12 3v7"/><path d="M8 10h8l1 4H7z"/><path d="M5 18h14v3H5z"/>',
+  shred: '<path d="M5 3h14v8H5z"/><path d="M3 11h18v3H3z"/><path d="M7 14v7M10 14v5M13 14v7M16 14v5"/>',
+  other: '<circle cx="12" cy="12" r="8"/><path d="M12 8v5M12 16h.01"/>',
+};
+const svg = (k: string) => `<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[k] ?? icons.other}</svg>`;
+// The button on each card: where it goes and its words.
+const cta: Record<string, { href: string; key: string; text: string; ext?: boolean }> = {
+  ship: { href: '/ship', key: 'svc.cta.ship', text: 'Ship a package' },
+  mailbox: { href: '/mailbox', key: 'svc.cta.mailbox', text: 'Reserve a mailbox' },
+  print: { href: '/printing', key: 'svc.cta.print', text: 'See printing' },
+  pack: { href: directions, key: 'svc.cta.visit', text: 'Get directions', ext: true },
+  returns: { href: directions, key: 'svc.cta.visit', text: 'Get directions', ext: true },
+  notary: { href: tel, key: 'svc.cta.call', text: 'Call ahead' },
+  shred: { href: directions, key: 'svc.cta.visit', text: 'Get directions', ext: true },
+};
+const points: Record<string, [string, string][]> = {
+  ship: [['svc.ship.p1', 'Compare UPS, FedEx, USPS and DHL'], ['svc.ship.p2', 'We pack it for you'], ['svc.ship.p3', 'Tracking and insurance']],
+  mailbox: [['svc.mailbox.p1', 'A real street address, not a P.O. Box'], ['svc.mailbox.p2', 'Packages from every carrier'], ['svc.mailbox.p3', 'A text when mail arrives']],
+  print: [['svc.print.p1', 'Design business cards online'], ['svc.print.p2', 'Banners, yard signs and shirts'], ['svc.print.p3', 'Copies, often same day']],
+};
+const top = store.services.filter((s) => featured.includes(s.key)).sort((a, b) => featured.indexOf(a.key) - featured.indexOf(b.key));
+const rest = store.services.filter((s) => !featured.includes(s.key));
+---
+<section id="services" class="svc">
+  <h2 class="svc-h" data-i18n="svc.h2">Everything you need, in one stop</h2>
+  <p class="svc-lead" data-i18n="svc.lead">Shipping, mailboxes, printing and more on Forsythe Ave. Walk in, or start online.</p>
+
+  <div class="svc-top">
+    {top.map((s) => (
+      <article class={`svc-feat svc-${s.key}`}>
+        {s.key === 'ship' && <span class="svc-tag" data-i18n="svc.popular">Most popular</span>}
+        <span class="svc-icon" set:html={svg(s.key)} />
+        <h3 data-i18n={`svc.${s.key}.n`}>{s.name}</h3>
+        {!points[s.key] && <p class="svc-blurb" data-i18n={`svc.${s.key}.b`}>{s.blurb}</p>}
+        {points[s.key] && <ul class="svc-points">{points[s.key].map(([k, txt]) => <li data-i18n={k}>{txt}</li>)}</ul>}
+        {cta[s.key] && <a class="btn svc-btn" href={cta[s.key].href} data-i18n={cta[s.key].key}>{cta[s.key].text}</a>}
+      </article>
+    ))}
+  </div>
+
+  <div class="svc-rest">
+    {rest.map((s) => (
+      <article class={`svc-mini svc-${s.key}`}>
+        <span class="svc-icon small" set:html={svg(s.key in icons ? s.key : 'other')} />
+        <div>
+          <h3 data-i18n={`svc.${s.key}.n`}>{s.name}</h3>
+          <p data-i18n={`svc.${s.key}.b`}>{s.blurb}</p>
+          {cta[s.key] ? <a class="svc-link" href={cta[s.key].href} {...(cta[s.key].ext ? { target: '_blank', rel: 'noopener' } : {})} data-i18n={cta[s.key].key}>{cta[s.key].text}</a>
+            : s.link && <a class="svc-link" href={s.link} data-i18n="svc.cta.more">Learn more</a>}
+        </div>
+      </article>
+    ))}
+  </div>
+
+  <p class="svc-ask"><span data-i18n="svc.ask">Not sure we can help? Just ask.</span> <a class="btn small" href={tel}>{store.phone}</a></p>
+</section>

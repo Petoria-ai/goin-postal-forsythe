@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-18 12:57 CST · A more eye-catching Services section on the home page
+
+- **Asked for:** "can you edit the services page to make it more enticing or eye catching for the customers of what we can do"
+- **What changed:**
+  - A bolder heading, **"Everything you need, in one stop"**, with a line under it.
+  - **Shipping, Mailboxes and Printing** are now feature cards: a colored icon, three check-mark selling points, and a big button (**Ship a package**, **Reserve a mailbox**, **See printing**). Shipping has a **Most popular** tag.
+  - **Packing, Returns drop-off, Notary and Shredding** are compact cards, two per row, each with an icon and a quick action: **Get directions** (opens Google Maps) or, for Notary, **Call ahead** (dials the store).
+  - A navy strip at the bottom: **"Not sure we can help? Just ask."** with the phone number to tap.
+  - In all 14 languages.
+- **Fixed:** the Returns drop-off card linked to a `/returns` page that doesn't exist (customers got "page not found"); it now offers directions. The Mailbox rental text still said "Sign up at the counter with two IDs" in the translations; it now says to reserve online, then finish at the counter.
+- **Files:** new [site/src/components/ServicesShowcase.astro](../site/src/components/ServicesShowcase.astro), [site/src/pages/index.astro](../site/src/pages/index.astro), [site/src/data/store.ts](../site/src/data/store.ts), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/styles/global.css](../site/src/styles/global.css)
+- **How to check it:** `git pull`, `npm run dev`, open the home page and scroll to Services.
+
 ## 2026-11-18 12:44 CST · Remind button for expiring and expired IDs
 
 - **Asked for:** "yes lets add those remind buttons so i can send one manually"

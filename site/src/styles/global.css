@@ -1134,3 +1134,31 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-holdmail-row { border-color: #c0392b !important; }
 .mb-key.paid { background: #2f7d5b; border-color: #2f7d5b; color: #fff; }
 .mb-key.unpaid { background: #fbe4e3; border-color: #c0392b; color: #9b2420; }
+/* Services on the home page (Peter, Nov 18 2026) */
+.svc { margin-top: 8px; }
+.svc-h { font-size: clamp(1.6rem, 3.2vw, 2.2rem); color: var(--navy); margin: 0 0 4px; }
+.svc-lead { color: var(--muted); font-size: 1.08rem; margin: 0 0 18px; }
+.svc-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.svc-feat { position: relative; background: var(--paper); border: 1px solid var(--hair); border-top: 5px solid var(--red, #cb3833); border-radius: 18px; padding: 22px 20px 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 6px 18px rgb(41 39 110 / .08); transition: transform .15s, box-shadow .15s; }
+.svc-feat:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgb(41 39 110 / .14); }
+.svc-feat h3 { margin: 4px 0 0; font-size: 1.35rem; color: var(--navy); }
+.svc-blurb { margin: 0; color: var(--muted); }
+.svc-icon { width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: var(--navy); color: #fff; }
+.svc-icon.small { width: 44px; height: 44px; border-radius: 12px; flex: none; background: rgb(41 39 110 / .08); color: var(--navy); }
+.svc-icon.small svg { width: 24px; height: 24px; }
+.svc-mailbox .svc-icon:not(.small) { background: var(--red, #cb3833); }
+.svc-print .svc-icon:not(.small) { background: #2f7d5b; }
+.svc-points { list-style: none; padding: 0; margin: 4px 0 6px; display: grid; gap: 6px; }
+.svc-points li { padding-left: 26px; position: relative; font-weight: 600; }
+.svc-points li::before { content: ''; position: absolute; left: 0; top: .2em; width: 18px; height: 18px; border-radius: 50%; background: #2f7d5b url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E") center / 12px no-repeat; }
+.svc-btn { margin-top: auto; align-self: flex-start; white-space: nowrap; }
+.svc-icon svg { width: 30px; height: 30px; }
+.svc-tag { position: absolute; top: 14px; right: 14px; background: #fdf2d0; color: #8a5a00; font-size: .8rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+.svc-rest { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 12px; margin-top: 16px; }
+.svc-mini { display: flex; gap: 14px; align-items: flex-start; background: var(--paper); border: 1px solid var(--hair); border-radius: 14px; padding: 16px; }
+.svc-mini h3 { margin: 0 0 4px; font-size: 1.1rem; color: var(--navy); }
+.svc-mini p { margin: 0 0 6px; color: var(--muted); font-size: .95rem; }
+.svc-link { font-weight: 700; }
+.svc-link::after { content: ' →'; }
+.svc-ask { margin: 18px 0 0; padding: 14px 18px; border-radius: 14px; background: var(--navy); color: #fff; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-size: 1.1rem; font-weight: 700; }
+.svc-ask .btn { background: #fff; color: var(--navy); border-color: #fff; }

@@ -12,6 +12,7 @@ import { env } from '../lib/env';
 import { onlineLabelsOn } from '../lib/siteSettings';
 const online = await onlineLabelsOn(env);
 import CarrierBadges from '../components/CarrierBadges.astro';
+import ServicesShowcase from '../components/ServicesShowcase.astro';
 ---
 <Base title={store.name}>
   <!-- Track a package: the first thing on the home page, like ups.com (Peter, Nov 14 2026). A plain form, so it works
@@ -65,14 +66,7 @@ import CarrierBadges from '../components/CarrierBadges.astro';
         <p class="lead" data-i18n="home.lead">Your neighborhood shipping store at 1800 Forsythe Ave in Monroe. Every major carrier, honest rates, and people who pack it right.</p>
       </section>
 
-      <section id="services">
-        <h2 data-i18n="home.services">Services</h2>
-        <div class="grid">
-          {store.services.map(s => (
-            <div class="card"><h3>{s.link ? <a href={s.link} data-i18n={`svc.${s.key}.n`}>{s.name}</a> : <span data-i18n={`svc.${s.key}.n`}>{s.name}</span>}</h3><p data-i18n={`svc.${s.key}.b`}>{s.blurb}</p></div>
-          ))}
-        </div>
-      </section>
+      <ServicesShowcase />
     </div>
 
     <aside class="home-side">
