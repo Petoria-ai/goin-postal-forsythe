@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-18 12:22 CST · Red HOLD MAIL on IDs to update and in Check in
+
+- **Asked for:** "maybe its smart to have in 'ID's to update' to have in red Hold mail so it'll prevent the renter to go in and get their mail"
+- **What changed:** For anyone on ID hold or suspended, **IDs to update** now shows a red **HOLD MAIL** block: "Don't put mail in box #1102. Keep it behind the counter until they bring a current ID. 2 letters are still in the box: take them out." The same red block shows in the **Check in** window when that box is picked. The ID-hold badge is now red everywhere (it was orange).
+- **Files:** [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css)
+- **How to check it:** `git pull`, `npm run dev`; a box whose photo ID has expired shows the red block under **IDs to update**.
+
 ## 2026-11-18 12:01 CST · ID hold, suspension, and reinstating with an ID checked in person
 
 - **Asked for:** "remind them that their id is about to expire, if they dont renew, we can hold their mail until they renew ... keep track of that certain customer ... maybe 30 or 60 days their account is going to be considered expired. we'll still take their money which they will have to agree to it.. they'll have to renew their id and come into the building for us to verify the id and reinstate their account".

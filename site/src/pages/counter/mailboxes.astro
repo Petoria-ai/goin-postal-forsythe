@@ -337,6 +337,16 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           const sp = who.querySelector('span')!; sp.className = `mb-exp${d.expired ? ' expired' : ' soon'}`;
           sp.textContent = `${t(`st.doc.kind.${d.kind}`)}: ${d.expired ? tf('st.doc.expired', { date: d.expires_on }) : tf('st.doc.expireson', { date: d.expires_on })}`;
           const idb = idBadge(d.id_state); if (idb && d.id_state.state !== 'expiring') who.append(' ', idb);
+          // On hold or suspended: a red HOLD MAIL block, so nobody puts mail where the holder's key can reach it.
+          if (d.id_state && (d.id_state.state === 'hold' || d.id_state.state === 'suspended')) {
+            li.classList.add('mb-holdmail-row');
+            const inBox = boxes.find((x) => x.box_no === d.box_no)?.inbox?.letters ?? 0;
+            const hm = document.createElement('div'); hm.className = 'mb-holdmail';
+            hm.innerHTML = '<strong></strong> <span></span>';
+            hm.querySelector('strong')!.textContent = t('st.id.holdmail');
+            hm.querySelector('span')!.textContent = `${tf('st.id.holdhow', { box: d.box_no ?? '' })}${inBox ? ` ${tf('st.id.inbox', { n: inBox })}` : ''}`;
+            who.appendChild(hm);
+          }
           li.append(who, docBtn({ customer_id: d.customer_id, docs: 0 }));
           il.appendChild(li);
         }
@@ -508,6 +518,11 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('ciCounts').textContent = `${sizeName(x.size)} · ${tf('st.ci.counts', { l: x.inbox.letters, max: x.inbox.capacity, p: x.inbox.packages })}${x.names?.length ? ` · ${t('st.nm.also')} ${x.names.map((n: any) => n.name).join(', ')}` : ''}`;
       const h = $('ciHold'); h.innerHTML = ''; if (x.mail && x.mail.do !== 'box') h.appendChild(mailBadge(x.mail));
       const idb = idBadge(x.id_state); if (idb && x.id_state.state !== 'expiring') h.append(' ', idb);
+      if (x.id_state && (x.id_state.state === 'hold' || x.id_state.state === 'suspended')) {
+        const hm = document.createElement('div'); hm.className = 'mb-holdmail'; hm.innerHTML = '<strong></strong> <span></span>';
+        hm.querySelector('strong')!.textContent = t('st.id.holdmail'); hm.querySelector('span')!.textContent = tf('st.id.holdhow', { box: x.box_no });
+        h.appendChild(hm);
+      }
     }
     function ciChoose(x: any) {
       ciBox = x; ($('inBox') as HTMLInputElement).value = String(x.box_no);

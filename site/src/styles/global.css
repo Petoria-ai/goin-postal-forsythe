@@ -1127,4 +1127,8 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-exp.soon { background: #fdf2d0; color: #8a5a00; }
 .mb-exp.expired { background: #fbe4e3; color: #9b2420; }
 .mb-names { font-size: .92rem; color: var(--navy); margin-top: 2px; }
-.mb-mail-idhold { background: #ffe3c2; color: #8a3a00; }
+.mb-mail-idhold { background: #fbe4e3; color: #9b2420; }
+/* HOLD MAIL (Peter, Nov 18 2026) */
+.mb-holdmail { margin-top: 6px; padding: 8px 12px; border-radius: 10px; background: #c0392b; color: #fff; }
+.mb-holdmail strong { font-size: 1.05rem; letter-spacing: .03em; margin-right: 4px; }
+.mb-holdmail-row { border-color: #c0392b !important; }
