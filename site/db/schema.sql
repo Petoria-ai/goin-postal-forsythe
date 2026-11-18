@@ -640,6 +640,27 @@ CREATE TABLE IF NOT EXISTS mailbox_documents (
 );
 CREATE INDEX IF NOT EXISTS mailbox_documents_customer ON mailbox_documents(customer_id, at);
 
+-- When an ID on file expires (Peter, Nov 18 2026). Kept beside mailbox_documents so that table doesn't change.
+-- reminded holds the reminder keys already sent ("30", "expired").
+CREATE TABLE IF NOT EXISTS mailbox_doc_dates (
+  doc_id TEXT PRIMARY KEY,
+  expires_on TEXT NOT NULL,             -- YYYY-MM-DD
+  reminded TEXT NOT NULL DEFAULT '[]',
+  updated_at TEXT NOT NULL
+);
+
+-- The names allowed to get mail at a box (Peter, Nov 18 2026): the holder plus everyone on their PS Form 1583
+-- (family, a business). Mail check matches these, so staff know whether a name on the mail belongs in the box.
+CREATE TABLE IF NOT EXISTS mailbox_names (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mailbox_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'person',  -- person, business
+  added_by TEXT NOT NULL,
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mailbox_names_box ON mailbox_names(mailbox_id);
+
 -- The mail log (Peter, Nov 16 2026): every letter and package staff put in a box, until it's picked up.
 -- The pieces still in the box count against the size's capacity (src/data/mailboxes.json).
 CREATE TABLE IF NOT EXISTS mailbox_items (

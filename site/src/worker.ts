@@ -6,7 +6,7 @@
 //   on the paid-through date, and overage fees (45 cents a piece over the box's limit) charged to the card on file. Then an email to STAFF_EMAIL listing the boxes
 //   whose 6-month mail hold ended (once each), so their mail goes back to the sender.
 import astro from '@astrojs/cloudflare/entrypoints/server';
-import { sendDueReminders, holdEndNotices, autoRenewals, billOverages, packageJobs } from './lib/mailboxJobs';
+import { sendDueReminders, holdEndNotices, autoRenewals, billOverages, packageJobs, idExpiryNotices } from './lib/mailboxJobs';
 
 export default {
   fetch: astro.fetch,
@@ -20,6 +20,8 @@ export default {
       (r) => console.log(`mailbox billing: ${r.paid} overage charges, $${r.total}`),
       (e) => console.error('mailbox billing failed:', e),
     ));
+    // IDs on file that expire within 30 days, or have expired.
+    ctx.waitUntil(idExpiryNotices(env).then((n) => console.log(`id expiry notices: ${n}`), (e) => console.error('id expiry notices failed:', e)));
     // Tell staff (STAFF_EMAIL) which boxes' 6-month mail hold ended, so their mail goes back to the sender.
     ctx.waitUntil(holdEndNotices(env).then(
       (boxes) => console.log(`mailbox holds ended: ${boxes.length}`),

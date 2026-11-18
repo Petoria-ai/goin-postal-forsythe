@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-18 11:44 CST · ID expiration dates, names allowed at each box, and to-do P17
+
+- **Asked for:** "is there anything else i can add or need to worry about about my mailbox service" (the list is now to-do P17), then "yes. we should add for the id portion to input like expiration date so we can start keeping track of their expiration date".
+- **What changed:**
+  - **Documents:** a **date box for when an ID expires**, on upload or later (**Add date** / **Save date** on each document). Each one shows "Expires 2029-03-04", yellow within 30 days, red **EXPIRED** after.
+  - **IDs to update** (Counter → Mailboxes): every holder whose ID on file expires within 30 days or has expired, with their **Documents** button.
+  - **Reminders:** the holder gets a text and email 30 days before ("please bring the new one by") and once after it expires; staff get the list by email (`STAFF_EMAIL`). Each goes out once; a new date starts over. Runs every morning on the live site.
+  - **Names allowed at this box** (Edit window): the holder, plus anyone you add from their PS Form 1583 (person or business), with Remove. **Mail check** and the **Check in** search find the box by any of those names, and show "Also: ..." so staff know a business or family name belongs there.
+- **Files:** [site/db/schema.sql](../site/db/schema.sql), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/lib/mailboxJobs.ts](../site/src/lib/mailboxJobs.ts), [site/src/worker.ts](../site/src/worker.ts), [site/src/pages/api/mailbox-docs.ts](../site/src/pages/api/mailbox-docs.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/components/MailboxDocs.astro](../site/src/components/MailboxDocs.astro), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/mailbox-ids.test.ts](../site/tests/mailbox-ids.test.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, **`npm run db:local`** (two new tables), `npm run dev`. On `/counter/mailboxes`, open a box's **Documents**, upload a photo with an expiry date a few days away: it shows in **IDs to update**. In **Edit**, add a business name, then search it in **Mail check**.
+
 ## 2026-11-18 11:06 CST · To-do P16: store domain, email, and checking in mail by email
 
 - **Asked for:** "yes add to do list" (after talking through checking mail in by email, the way MetroFax turns an email into a fax: `1105@monroegoinpostal.com`).

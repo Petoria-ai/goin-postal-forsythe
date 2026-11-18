@@ -55,6 +55,12 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <ul id="chkList" class="mb-check-out"></ul>
     </div>
 
+    <div class="card" id="idsCard">
+      <h3 data-i18n="st.ids.h">IDs to update</h3>
+      <p class="muted" data-i18n="st.ids.p">IDs on file that expire within 30 days, or have expired. The holder gets a text and email; ask for a current one when they come in, then upload it in Documents.</p>
+      <ul id="idsList" class="mb-check-out"></ul>
+    </div>
+
     <div class="card" id="fwdCard" hidden>
       <h3 data-i18n="st.fw.h">Forwarding requests</h3>
       <ul id="fwdList" class="mb-check-out"></ul>
@@ -160,6 +166,12 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <ul id="mbEditPkgs" class="mb-pkgs"></ul>
       <div id="mbEditPhoto" class="mb-photo-view" hidden><img alt="" /> <button type="button" class="linkish" data-i18n="st.doc.hide">Hide</button></div>
       <p class="btnrow"><button type="button" class="btn small" data-out="picked_up" data-i18n="st.mi.pickedup">All picked up</button> <button type="button" class="btn small kraft" data-out="forwarded" data-i18n="st.mi.forwarded">Forwarded</button> <button type="button" class="btn small kraft" data-out="returned" data-i18n="st.mi.returned">Returned to sender</button></p>
+    </div>
+    <div class="mb-edit-sec">
+      <h3 data-i18n="st.nm.h">Names allowed at this box</h3>
+      <p class="muted mb-small" data-i18n="st.nm.p">Everyone on their PS Form 1583: family members, a business. Mail for anyone else goes back to the sender.</p>
+      <ul id="mbEditNames" class="mb-pkgs"></ul>
+      <p class="btnrow"><input id="mbEditNameIn" maxlength="80" data-i18n-ph="st.nm.ph" placeholder="Name as on the 1583" /> <select id="mbEditNameKind"><option value="person" data-i18n="st.nm.person">Person</option><option value="business" data-i18n="st.nm.business">Business</option></select> <button type="button" class="btn small kraft" id="mbEditNameAdd" data-i18n="st.nm.add">Add name</button></p>
     </div>
     <div class="mb-edit-sec">
       <h3 data-i18n="st.card.h">Card and automatic renewal</h3>
@@ -306,6 +318,18 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           li.append(who, btn(t('st.mi.empty'), '', ans(true)), btn(t('st.mi.still'), 'kraft', ans(false)));
           cl.appendChild(li);
         }
+        // IDs on file that expire soon or have expired.
+        const il = $('idsList'); il.innerHTML = '';
+        if (!j.ids_expiring.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.chk.none'); il.appendChild(li); }
+        for (const d of j.ids_expiring) {
+          const li = document.createElement('li');
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span></span>';
+          who.querySelector('strong')!.textContent = `${d.box_no ? `#${d.box_no} · ` : ''}${d.customer.name}`;
+          const sp = who.querySelector('span')!; sp.className = `mb-exp${d.expired ? ' expired' : ' soon'}`;
+          sp.textContent = `${t(`st.doc.kind.${d.kind}`)}: ${d.expired ? tf('st.doc.expired', { date: d.expires_on }) : tf('st.doc.expireson', { date: d.expires_on })}`;
+          li.append(who, docBtn({ customer_id: d.customer_id, docs: 0 }));
+          il.appendChild(li);
+        }
         // Forwarding requests from holders' dashboards.
         const fl = $('fwdList'); fl.innerHTML = '';
         $('fwdCard').hidden = !j.forwards.length;
@@ -336,6 +360,13 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       const st = $('mbEditState'); st.className = `acct-status mb-${x.state}`; st.textContent = t(`mb.state.${x.state}`);
       ($('mbEditNew') as HTMLInputElement).value = x.paid_through;
       ($('mbEditDocs') as HTMLElement).dataset.mbdocs = x.customer_id;
+      const nl = $('mbEditNames'); nl.innerHTML = '';
+      const holder = document.createElement('li'); holder.textContent = `${x.customer.name} · ${t('st.nm.holder')}`; nl.appendChild(holder);
+      for (const n of x.names ?? []) {
+        const li = document.createElement('li'); const sp = document.createElement('span'); sp.textContent = `${n.name} · ${t(`st.nm.${n.kind}`)}`;
+        li.append(sp, btn(t('st.it.remove'), 'kraft', () => { if (confirm(tf('st.nm.removeq', { name: n.name }))) editDo({ action: 'name_remove', name_id: n.id }, () => t('mbd.saved')); }));
+        nl.appendChild(li);
+      }
       const mm = $('mbEditMail'); mm.innerHTML = ''; if (x.mail && x.mail.do !== 'box') mm.appendChild(mailBadge(x.mail));
       loadDetail(x);
     }
@@ -394,6 +425,11 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       } catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
     }
     $('mbEditPhoto').querySelector('button')!.addEventListener('click', () => { $('mbEditPhoto').hidden = true; });
+    $('mbEditNameAdd').addEventListener('click', async () => {
+      const inp = $('mbEditNameIn') as HTMLInputElement;
+      await editDo({ action: 'name_add', name: inp.value, kind: ($('mbEditNameKind') as HTMLSelectElement).value }, () => t('mbd.saved'));
+      inp.value = '';
+    });
     dlg.querySelectorAll<HTMLButtonElement>('[data-out]').forEach((b) => b.addEventListener('click', () =>
       editDo({ action: 'pickup', how: b.dataset.out }, (r) => tf('st.mi.out', { n: r.n, box: editing.box_no }))));
     $('mbEditAutoBtn').addEventListener('click', () => editDo({ action: 'set_autorenew', customer_id: editing.customer_id, on: ($('mbEditAutoBtn') as HTMLElement).dataset.on === '1' }, () => t('mbd.saved')));
@@ -441,7 +477,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     function ciPaintList() {
       const q = ($('ciSearch') as HTMLInputElement).value.trim().toLowerCase().replace(/^#/, '');
       const ul = $('ciBoxes'); ul.innerHTML = '';
-      const list = [...boxes].sort((a, b) => a.box_no - b.box_no).filter((x) => !q || String(x.box_no).startsWith(q) || x.customer.name.toLowerCase().includes(q));
+      const list = [...boxes].sort((a, b) => a.box_no - b.box_no).filter((x) => !q || String(x.box_no).startsWith(q) || x.customer.name.toLowerCase().includes(q) || (x.names ?? []).some((n: any) => n.name.toLowerCase().includes(q)));
       for (const x of list) {
         const li = document.createElement('li');
         const b = document.createElement('button'); b.type = 'button'; b.className = 'mb-ci-row';
@@ -458,7 +494,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     function ciPaintBox() {
       const x = boxes.find((b) => b.id === ciBox.id) ?? ciBox; ciBox = x;
       $('ciWho').textContent = `#${x.box_no} · ${x.customer.name}`;
-      $('ciCounts').textContent = `${sizeName(x.size)} · ${tf('st.ci.counts', { l: x.inbox.letters, max: x.inbox.capacity, p: x.inbox.packages })}`;
+      $('ciCounts').textContent = `${sizeName(x.size)} · ${tf('st.ci.counts', { l: x.inbox.letters, max: x.inbox.capacity, p: x.inbox.packages })}${x.names?.length ? ` · ${t('st.nm.also')} ${x.names.map((n: any) => n.name).join(', ')}` : ''}`;
       const h = $('ciHold'); h.innerHTML = ''; if (x.mail && x.mail.do !== 'box') h.appendChild(mailBadge(x.mail));
     }
     function ciChoose(x: any) {
@@ -589,6 +625,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           who.innerHTML = '<strong></strong> <span class="muted"></span>';
           who.querySelector('strong')!.textContent = `#${x.box_no} · ${x.customer.name}`;
           who.querySelector('.muted')!.textContent = `${t(`mb.state.${x.state}`)} · ${t('st.mb.paidthru')} ${x.paid_through}`;
+          if (x.names?.length) { const nm = document.createElement('div'); nm.className = 'mb-names'; nm.textContent = `${t('st.nm.also')} ${x.names.map((n: any) => n.name).join(', ')}`; who.appendChild(nm); }
           li.append(who, mailBadge(x.mail));
           if (x.status === 'active') li.append(btn(t('st.ci.in'), '', () => { ciChoose(x); ciDlg.showModal(); }), btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
           li.append(docBtn(x));

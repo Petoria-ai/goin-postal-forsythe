@@ -13,6 +13,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P17 | [Mailbox service: rules to check and extras to add](#p17-mailbox-service-rules-to-check-and-extras-to-add) | ⏳ Some built Nov 18 | Postmaster, insurance agent, accountant, attorney |
 | P16 | [Store domain, email, and checking in mail by email](#p16-store-domain-email-and-checking-in-mail-by-email) | ⏳ Ask Goin' Postal corporate first | Corporate's answer; then the domain on Cloudflare (William) |
 | P15 | [A card on file before a mailbox starts](#p15-a-card-on-file-before-a-mailbox-starts) | ⏸ Peter to decide the details | Stripe live; the mailbox agreement (attorney) |
 | P14 | [Raise mailbox prices $2 to $5 each](#p14-raise-mailbox-prices-2-to-5-each) | ⏸ Peter to pick the figure | Peter's numbers; then one file on the website and the Prices tab in William's register |
@@ -319,6 +320,30 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P17. Mailbox service: rules to check and extras to add
+
+**Added:** 2026-11-18 11:44 CST. **Peter:** "is there anything else i can add or need to worry about about my mailbox service", then "yes. we should add for the id portion to input like expiration date so we can start keeping track of their expiration date".
+
+**Built** ✅ 2026-11-18 11:44 CST:
+- [x] **ID expiration dates** in Documents (on upload, or typed in later), with red / yellow badges, an **IDs to update** list on the Mailboxes page, and a text and email to the holder 30 days before and once it has expired (and a list emailed to staff).
+- [x] **Names allowed at each box** (the holder plus everyone on their 1583: family, a business) in the Edit window. Mail check and the check-in search find a box by any of its names.
+
+**To check (ask the right person):**
+- [ ] **Postmaster:** what Monroe wants from a mail center (CMRA): how the 1583 is verified and signed, which copy goes to the post office, how often they want an updated customer list, the rule for mail addressed to names not on a 1583, what to write on returned mail, and how long to keep 1583s after a box closes.
+- [ ] **Insurance agent:** are customers' packages covered while we hold them ("bailee" coverage)?
+- [ ] **Attorney** (with the mailbox agreement): limit of liability for lost or damaged packages; no perishables, hazardous or illegal items; a short plan for a data breach (Louisiana's breach-notice law), since ID copies are stored online.
+- [ ] **Accountant:** does Louisiana sales tax apply to mailbox rentals and the fees? The site doesn't add tax to them today.
+
+**Extras to add (each a small build):**
+- [ ] **Keys:** the key number each holder has, a lost-key fee, and key return when a box closes.
+- [ ] **Who may pick up packages** for a box (with ID), and who signed for a signature-required package.
+- [ ] **Certified / signature mail** button in Check in: texts the holder right away, "important mail".
+- [ ] **Waitlist** when a size is full, texting the next person when a box opens.
+- [ ] **Extra-name fee:** a small charge per additional person or business on a box.
+- [ ] **Promotions:** for example a 13th month free on a year, or a referral credit.
+- [ ] **Add-ons:** notary (for the 1583 itself), a shred bin by the boxes for junk mail, paid forwarding, and later virtual mail (P13).
+- [ ] **A one-page staff cheat sheet:** check in, "is it empty?", wrong-name mail, holds and return to sender.
 
 ## P16. Store domain, email, and checking in mail by email
 

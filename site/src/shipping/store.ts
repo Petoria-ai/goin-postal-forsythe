@@ -157,12 +157,14 @@ const mem = {
   mbCharges: [] as MailboxCharge[],
   mbForwards: [] as MailboxForward[],
   mbPhotos: [] as MailboxPhoto[],
+  mbDocDates: new Map<string, MailboxDocDate>(),
+  mbNames: [] as MailboxName[],
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos', 'mailbox_doc_dates', 'mailbox_names'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -214,6 +216,8 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailbox_charges': return mem.mbCharges;
     case 'mailbox_forwards': return mem.mbForwards;
     case 'mailbox_photos': return mem.mbPhotos;
+    case 'mailbox_doc_dates': return [...mem.mbDocDates.values()];
+    case 'mailbox_names': return mem.mbNames;
     default: return [];
   }
 };
@@ -931,6 +935,50 @@ export async function setMailboxForward(env: Env, id: number, status: 'done' | '
 export async function paidRenewalsFor(env: Env, customerId: string): Promise<MailboxRenewal[]> {
   if (env.DB) return (await env.DB.prepare("SELECT * FROM mailbox_renewals WHERE customer_id = ?1 AND status = 'paid' ORDER BY id DESC").bind(customerId).all<MailboxRenewal>()).results;
   return mem.mbRenewals.filter((r) => r.customer_id === customerId && r.status === 'paid').sort((a, b) => b.id - a.id);
+}
+
+// ---- ID expiry dates and allowed names (Peter, Nov 18 2026) ---------------------------------------------
+export interface MailboxDocDate { doc_id: string; expires_on: string; reminded: string; updated_at: string }
+export async function setDocExpiry(env: Env, docId: string, expiresOn: string | null) {
+  const t = now();
+  if (!expiresOn) {
+    if (env.DB) await env.DB.prepare('DELETE FROM mailbox_doc_dates WHERE doc_id = ?1').bind(docId).run(); else mem.mbDocDates.delete(docId);
+    return;
+  }
+  // A new date starts the reminders over.
+  if (env.DB) await env.DB.prepare("INSERT INTO mailbox_doc_dates (doc_id, expires_on, reminded, updated_at) VALUES (?1, ?2, '[]', ?3) ON CONFLICT(doc_id) DO UPDATE SET expires_on = ?2, reminded = '[]', updated_at = ?3").bind(docId, expiresOn, t).run();
+  else mem.mbDocDates.set(docId, { doc_id: docId, expires_on: expiresOn, reminded: '[]', updated_at: t });
+}
+export async function listDocDates(env: Env): Promise<MailboxDocDate[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_doc_dates').all<MailboxDocDate>()).results;
+  return [...mem.mbDocDates.values()];
+}
+export async function markDocReminded(env: Env, docId: string, key: string) {
+  const row = (await listDocDates(env)).find((d) => d.doc_id === docId); if (!row) return;
+  const keys = JSON.stringify([...(JSON.parse(row.reminded) as string[]), key]);
+  if (env.DB) await env.DB.prepare('UPDATE mailbox_doc_dates SET reminded = ?1 WHERE doc_id = ?2').bind(keys, docId).run(); else row.reminded = keys;
+}
+/** Every document with its holder (for the expiry list and reminders). */
+export async function listAllMailboxDocs(env: Env): Promise<MailboxDocRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM mailbox_documents').all<MailboxDocRow>()).results;
+  return [...mem.mbDocs];
+}
+
+export interface MailboxName { id: number; mailbox_id: number; name: string; kind: 'person' | 'business'; added_by: string; at: string }
+export async function addMailboxName(env: Env, r: Pick<MailboxName, 'mailbox_id' | 'name' | 'kind' | 'added_by'>): Promise<MailboxName> {
+  const row = { ...r, at: now() };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_names (mailbox_id, name, kind, added_by, at) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id').bind(r.mailbox_id, r.name, r.kind, r.added_by, row.at).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mbNames.push(full); return full;
+}
+export async function listMailboxNames(env: Env, mailboxId?: number): Promise<MailboxName[]> {
+  if (env.DB) return (await (mailboxId != null ? env.DB.prepare('SELECT * FROM mailbox_names WHERE mailbox_id = ?1 ORDER BY id').bind(mailboxId) : env.DB.prepare('SELECT * FROM mailbox_names ORDER BY id')).all<MailboxName>()).results;
+  return mem.mbNames.filter((n) => mailboxId == null || n.mailbox_id === mailboxId);
+}
+export async function deleteMailboxName(env: Env, id: number): Promise<MailboxName | null> {
+  const row = env.DB ? (await env.DB.prepare('SELECT * FROM mailbox_names WHERE id = ?1').bind(id).first<MailboxName>()) ?? null : mem.mbNames.find((n) => n.id === id) ?? null;
+  if (!row) return null;
+  if (env.DB) await env.DB.prepare('DELETE FROM mailbox_names WHERE id = ?1').bind(id).run(); else mem.mbNames = mem.mbNames.filter((n) => n.id !== id);
+  return row;
 }
 
 /** Online renewals by the holder (Peter, Nov 17 2026): created before Stripe Checkout, paid once. */

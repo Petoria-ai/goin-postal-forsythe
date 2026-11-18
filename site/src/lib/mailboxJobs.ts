@@ -5,7 +5,7 @@
 import { store } from '../data/store';
 import { sendEmail, sendSms } from '../shipping/notify';
 import { getCustomer, listActiveMailboxes, listAllMailboxes, updateMailbox, getMailbox, logAudit, claimRenewal, getRenewal, setRenewalPaidThrough, type MailboxRow,
-  addMailboxItem, countItemsIn, listItemsIn, addMailboxCharge, listMailboxCharges, settleMailboxCharges, getMailboxSettings, saveMailboxSettings, type MailboxCharge } from '../shipping/store';
+  addMailboxItem, countItemsIn, listItemsIn, addMailboxCharge, listDocDates, markDocReminded, listAllMailboxDocs, mailboxesFor, listMailboxCharges, settleMailboxCharges, getMailboxSettings, saveMailboxSettings, type MailboxCharge } from '../shipping/store';
 import { chargeSavedCard } from './stripe';
 import { addMonths, addressFor, day, dueReminder, reminderText, mailAction, onExpiredList, HOLD_MONTHS as HOLD, fullness, OVERAGE_FEE, MIN_CHARGE, priceFor, money, PKG, packageFeesDue, daysHeld, freeUntil, returnOn } from './mailbox';
 
@@ -268,4 +268,37 @@ export async function packageJobs(env: Env, today = day(new Date())) {
   }
   if (fees || notices) await logAudit(env, AUTO, 'mailbox.packages', null, `${fees} fee${fees === 1 ? '' : 's'} added, ${notices} notice${notices === 1 ? '' : 's'} sent`);
   return { fees, notices };
+}
+
+/**
+ * IDs on file that expire soon or have expired (Peter, Nov 18 2026), once a day: the holder (text and email) and
+ * staff (STAFF_EMAIL) hear 30 days before and again once it has expired. Only for people who still have a box.
+ */
+export const ID_WARN_DAYS = 30;
+export async function idExpiryNotices(env: Env, today = day(new Date())) {
+  const docs = new Map((await listAllMailboxDocs(env)).map((d) => [d.id, d]));
+  const staff: string[] = [];
+  let sent = 0;
+  for (const dd of await listDocDates(env)) {
+    const doc = docs.get(dd.doc_id); if (!doc) continue;
+    const left = Math.round((Date.parse(dd.expires_on + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86_400_000);
+    const stage = left < 0 ? 'expired' : left <= ID_WARN_DAYS ? '30' : null;
+    if (!stage || (JSON.parse(dd.reminded) as string[]).includes(stage)) continue;
+    if (!(await mailboxesFor(env, doc.customer_id)).length) continue;
+    const c = await getCustomer(env, doc.customer_id);
+    const what = doc.kind === 'second_id' ? 'second ID' : doc.kind === 'form_1583' ? 'PS Form 1583' : 'photo ID';
+    const body = stage === 'expired'
+      ? `The ${what} we have on file for your mailbox expired on ${when(dd.expires_on)}. Please bring a current one next time you're in, so your mailbox file stays up to date.`
+      : `The ${what} we have on file for your mailbox expires on ${when(dd.expires_on)}. When you renew it, please bring the new one by so we can update your file.`;
+    try {
+      if (c?.phone) await sendSms(env, c.phone, `${store.name}: ${body} Questions: ${store.phone}`);
+      if (c?.email) await sendEmail(env, c.email, stage === 'expired' ? 'Your ID on file has expired' : 'Your ID on file expires soon', `${body}\n\nQuestions? Call us at ${store.phone}.`);
+    } catch (e) { console.error('id notice:', e); }
+    await markDocReminded(env, dd.doc_id, stage);
+    staff.push(`${c?.name ?? doc.customer_id}: ${what} ${stage === 'expired' ? 'EXPIRED' : 'expires'} ${dd.expires_on}`);
+    sent++;
+  }
+  if (staff.length && env.STAFF_EMAIL) await sendEmail(env, env.STAFF_EMAIL, `IDs on file: ${staff.length} to update`, `${staff.join('\n')}\n\n${env.SITE_URL}/counter/mailboxes`).catch(() => {});
+  if (sent) await logAudit(env, { id: null, name: 'Daily reminders (automatic)' }, 'mailbox.id_expiry', null, staff.join('; '));
+  return sent;
 }

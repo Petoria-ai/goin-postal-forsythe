@@ -11,9 +11,10 @@ import {
   assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
   countItemsIn, listMailboxItems, getMailboxItem, deleteMailboxItem, clearMailboxItems, getMailboxSettings, saveMailboxSettings,
   listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox, moveMailboxItem, exportTable,
+  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
-import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs } from '../../lib/mailboxJobs';
+import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs, ID_WARN_DAYS } from '../../lib/mailboxJobs';
 import { fullness, packageState, daysHeld, PKG, checkReason, pendingClaim } from '../../lib/mailbox';
 import { checkPhoto, savePiecePhoto, readPiecePhoto, deletePiecePhotos } from '../../lib/mailboxPhotos';
 import { buildMailboxReport, mailboxReportCsv, type MailboxReportData } from '../../lib/mailboxReport';
@@ -124,13 +125,15 @@ export const POST: APIRoute = async ({ request }) => {
     };
     let docCounts: Map<string, number> | null = null;
     let inBox: Awaited<ReturnType<typeof countItemsIn>> | null = null;
+    let namesByBox: Map<number, { id: number; name: string; kind: string }[]> | null = null;
     const view = async (x: MailboxRow) => {
       docCounts ??= await countMailboxDocs(env);
       inBox ??= await countItemsIn(env);
+      if (!namesByBox) { namesByBox = new Map(); for (const n of await listMailboxNames(env)) (namesByBox.get(n.mailbox_id) ?? namesByBox.set(n.mailbox_id, []).get(n.mailbox_id)!).push({ id: n.id, name: n.name, kind: n.kind }); }
       const n = inBox.get(x.id) ?? { letters: 0, packages: 0, last: null, first_pkg: null, first_letter: null };
       // Letters fill the box; packages are flagged when the oldest is past its free days or due back to the sender.
       const oldest = n.first_pkg ? daysHeld(n.first_pkg, today) : 0;
-      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0,
+      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0, names: namesByBox.get(x.id) ?? [],
         inbox: { ...n, ...fullness(n.letters, x.size), pkg_late: n.packages > 0 && oldest > PKG.freeDays, pkg_rts: n.packages > 0 && oldest >= PKG.returnNoticeDay + PKG.returnAfter } };
     };
 
@@ -147,6 +150,18 @@ export const POST: APIRoute = async ({ request }) => {
         sizes: SIZES.map((s) => ({ ...s, free: Array.from({ length: s.to - s.from + 1 }, (_, i) => s.from + i).filter((n) => !used.has(n)).length })),
         reservations: await Promise.all(res.map(async (r) => ({ ...r, customer: await person(r.customer_id), price: priceFor(r.size as any, r.term as any) }))),
         boxes: views.filter((x) => x.mail.do === 'box').map((x) => ({ ...x, due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
+        ids_expiring: await (async () => {
+          const docs = new Map((await listAllMailboxDocs(env)).map((d) => [d.id, d]));
+          const holders = new Set(open.map((x) => x.customer_id));
+          const soon = new Date(Date.parse(today + 'T00:00:00Z') + ID_WARN_DAYS * 86_400_000).toISOString().slice(0, 10);
+          const out = [];
+          for (const dd of await listDocDates(env)) {
+            const d = docs.get(dd.doc_id);
+            if (!d || !holders.has(d.customer_id) || dd.expires_on > soon) continue;
+            out.push({ customer_id: d.customer_id, customer: await person(d.customer_id), kind: d.kind, expires_on: dd.expires_on, expired: dd.expires_on < today, box_no: open.find((x) => x.customer_id === d.customer_id)?.box_no ?? null });
+          }
+          return out.sort((a, c) => a.expires_on.localeCompare(c.expires_on));
+        })(),
         to_check: views.filter((x) => x.status === 'active').map((x) => ({ x, r: checkReason(x.inbox.letters, x.inbox.first_letter, JSON.parse(x.reminders), today) })).filter((c) => c.r)
           .map(({ x, r }) => ({ id: x.id, box_no: x.box_no, customer: x.customer, letters: x.inbox.letters, ...r! })).sort((a, c) => (a.why === 'claim' ? 0 : 1) - (c.why === 'claim' ? 0 : 1) || a.since.localeCompare(c.since)),
         forwards: await Promise.all((await listMailboxForwards(env, { status: 'open' })).map(async (f) => ({ ...f, box_no: all.find((x) => x.id === f.mailbox_id)?.box_no ?? null, customer: await person(f.customer_id) }))),
@@ -169,7 +184,10 @@ export const POST: APIRoute = async ({ request }) => {
       if (num) hits = all.filter((x) => x.box_no === Number(num[1]));
       else {
         const ids = new Set((await searchCustomers(env, q, 20)).customers.map((c) => c.id));
-        hits = all.filter((x) => ids.has(x.customer_id));
+        // Also the other names allowed at a box (family, a business), so "Smith Consulting" finds #1105.
+        const lq = q.toLowerCase();
+        const byName = new Set((await listMailboxNames(env)).filter((n) => n.name.toLowerCase().includes(lq)).map((n) => n.mailbox_id));
+        hits = all.filter((x) => ids.has(x.customer_id) || byName.has(x.id));
       }
       // The box's current holder first, then past holders, newest first.
       hits.sort((a, c) => (a.status === 'active' ? 0 : 1) - (c.status === 'active' ? 0 : 1) || c.id - a.id);
@@ -365,6 +383,21 @@ export const POST: APIRoute = async ({ request }) => {
     const box = b.id != null ? await getMailbox(env, Number(b.id)) : null;
     if (!box || box.status !== 'active') return json({ error: 'No such open box' }, 404);
 
+    // The names allowed at this box (beyond the holder), from their PS Form 1583.
+    if (b.action === 'name_add') {
+      const name = String(b.name ?? '').trim().replace(/\s+/g, ' ').slice(0, 80);
+      if (name.length < 2) return json({ error: 'Type the name as it is on the 1583.' }, 400);
+      const n = await addMailboxName(env, { mailbox_id: box.id, name, kind: b.kind === 'business' ? 'business' : 'person', added_by: who.name });
+      await logAudit(env, who, 'mailbox.name_add', `#${box.box_no}`, `${n.kind}: ${name}`);
+      return json({ ok: true, name: n });
+    }
+    if (b.action === 'name_remove') {
+      const n = (await listMailboxNames(env, box.id)).find((x) => x.id === Number(b.name_id));
+      if (!n) return json({ error: 'No such name on this box' }, 404);
+      await deleteMailboxName(env, n.id);
+      await logAudit(env, who, 'mailbox.name_remove', `#${box.box_no}`, n.name);
+      return json({ ok: true });
+    }
     if (b.action === 'renew' || b.action === 'adjust') {
       const months = Number(b.action === 'renew' ? b.term : b.months);
       if (![6, 12, -6, -12].includes(months)) return json({ error: 'Add or take off 6 or 12 months.' }, 400);

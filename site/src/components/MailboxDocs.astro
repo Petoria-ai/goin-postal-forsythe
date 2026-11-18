@@ -32,6 +32,7 @@
       </select>
     </label>
     <label><span data-i18n="st.doc.file">Photo or PDF</span> <input type="file" name="file" accept="image/*,application/pdf" required /></label>
+    <label><span data-i18n="st.doc.expires">Expires on (for IDs)</span> <input type="date" name="expires_on" /></label>
     <label><span data-i18n="st.doc.note">Note (optional)</span> <input name="note" maxlength="200" data-i18n-ph="st.doc.note.ph" placeholder="Louisiana driver's license, expires 2029" /></label>
     <p class="btnrow"><button type="submit" class="btn small" data-i18n="st.doc.upload">Upload</button> <span id="mbDocsBusy" class="muted"></span></p>
     <p class="muted mb-docs-safe" data-i18n="st.doc.safe">Files are locked (encrypted) when stored. Every time someone opens one, it's logged.</p>
@@ -82,6 +83,19 @@
       info.querySelector('strong')!.textContent = t(`st.doc.kind.${d.kind}`);
       (info.querySelectorAll('.muted')[0] as HTMLElement).textContent = `${d.name} · ${size(d.bytes)}`;
       (info.querySelectorAll('.muted')[1] as HTMLElement).textContent = [tf('st.doc.addedby', { who: d.by_name, date: d.at.slice(0, 10) }), d.note].filter(Boolean).join(' · ');
+      // The expiration date: a badge (red when expired, yellow within 30 days) and a date box to type or fix it.
+      const exp = document.createElement('div'); exp.className = 'mb-doc-exp';
+      if (d.expires_on) {
+        const left = Math.round((Date.parse(d.expires_on + 'T00:00:00Z') - Date.parse(new Date().toISOString().slice(0, 10) + 'T00:00:00Z')) / 86_400_000);
+        const badge = document.createElement('span'); badge.className = `mb-exp${left < 0 ? ' expired' : left <= 30 ? ' soon' : ''}`;
+        badge.textContent = left < 0 ? tf('st.doc.expired', { date: d.expires_on }) : tf('st.doc.expireson', { date: d.expires_on });
+        exp.appendChild(badge);
+      }
+      const dateIn = document.createElement('input'); dateIn.type = 'date'; dateIn.value = d.expires_on ?? ''; dateIn.setAttribute('aria-label', t('st.doc.expires'));
+      const save = document.createElement('button'); save.type = 'button'; save.className = 'linkish'; save.textContent = d.expires_on ? t('st.doc.changedate') : t('st.doc.adddate');
+      save.addEventListener('click', async () => { try { await api({ action: 'set_expiry', id: d.id, expires_on: dateIn.value || null }); await load(); window.dispatchEvent(new CustomEvent('mbdocs:changed', { detail: { customer_id: customerId } })); } catch (e: any) { showErr(e.message); } });
+      exp.append(dateIn, save);
+      info.appendChild(exp);
       li.appendChild(info);
       if (j.can_open) {
         const v = document.createElement('button'); v.type = 'button'; v.className = 'btn small kraft'; v.textContent = t('st.doc.view');
@@ -136,7 +150,7 @@
     showErr(''); $('mbDocsBusy').textContent = t('st.doc.uploading');
     try {
       const data = await readFile(file);
-      await api({ action: 'add', customer_id: customerId, kind: (f.elements.namedItem('kind') as HTMLSelectElement).value, name: file.name, note: (f.elements.namedItem('note') as HTMLInputElement).value, data });
+      await api({ action: 'add', customer_id: customerId, kind: (f.elements.namedItem('kind') as HTMLSelectElement).value, name: file.name, note: (f.elements.namedItem('note') as HTMLInputElement).value, expires_on: (f.elements.namedItem('expires_on') as HTMLInputElement).value || null, data });
       f.reset(); $('mbDocsBusy').textContent = t('st.doc.uploaded');
       await load();
       window.dispatchEvent(new CustomEvent('mbdocs:changed', { detail: { customer_id: customerId } }));
