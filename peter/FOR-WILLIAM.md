@@ -2,7 +2,7 @@
 
 Everything Peter's work turned up that William should know about: problems found in the project, what was done, and what still needs a decision. Newest topics are added at the bottom of each section. Each item links to the full entry in [EDIT-LOG.md](EDIT-LOG.md).
 
-**Last updated:** November 16, 2026, 21:06 CST.
+**Last updated:** November 18, 2026, 10:50 CST.
 
 ## How Peter is working
 

@@ -1104,3 +1104,19 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-pick-scroll { max-height: 55vh; overflow-y: auto; border: 1px solid var(--hair); border-radius: 10px; }
 .mb-pick-scroll table { margin: 0; }
 .mb-pick-scroll td, .mb-pick-scroll th { padding: 6px 10px; }
+/* Check in mail or package (Peter, Nov 18 2026) */
+.mb-ci-open { font-size: 1.15rem; padding: 14px 26px; }
+.mb-ci { max-width: 40rem; width: calc(100% - 32px); }
+.mb-ci h2 { margin: 0 0 8px; color: var(--navy); font-size: 1.35rem; }
+.mb-ci-search { width: 100%; font-size: 1.1rem; margin-bottom: 10px; }
+.mb-ci-boxes { list-style: none; padding: 0; margin: 0; max-height: 55vh; overflow-y: auto; display: grid; gap: 6px; }
+.mb-ci-row { width: 100%; display: grid; grid-template-columns: 5.5rem 1fr; gap: 2px 10px; text-align: left; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 10px; background: var(--paper, #fff); cursor: pointer; font: inherit; color: inherit; }
+.mb-ci-row:hover, .mb-ci-row:focus-visible { border-color: var(--navy); background: rgb(15 29 58 / .04); }
+.mb-ci-row strong { grid-row: span 2; font-size: 1.25rem; color: var(--navy); align-self: center; }
+.mb-ci-row.hold { background: #fdf2d0; }
+.mb-ci-row.rts { background: #fbe4e3; }
+.mb-ci-add { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+.mb-ci-add .btn { font-size: 1.2rem; padding: 18px 10px; }
+.mb-ci-extra { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.mb-ci-extra input[type=text], .mb-ci-extra #inNote { flex: 1 1 14rem; min-width: 0; }
+.mb-ci h3 { font-size: 1rem; margin: 12px 0 6px; }

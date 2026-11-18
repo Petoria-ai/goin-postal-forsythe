@@ -26,23 +26,17 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
   </div>
 
   <div id="mbMain" class="hidden">
+    <div class="card mb-check">
+      <h3 data-i18n="st.mb.check.h">Mail check</h3>
+      <p class="muted" data-i18n="st.mb.check.p">Got mail for a box? Type the box number or the name on the mail to see whether it goes in the box, gets held, or goes back to the sender.</p>
+      <form id="checkForm" class="btnrow"><input id="checkQ" data-i18n-ph="st.mb.check.ph" placeholder="Box # or name" autocomplete="off" /> <button class="btn small" type="submit" data-i18n="st.mb.check">Check</button></form>
+      <ul id="checkOut" class="mb-check-out"></ul>
+    </div>
+
     <div class="card mb-in">
       <h3 data-i18n="st.mi.h">Mail in</h3>
-      <p class="muted" data-i18n="st.mi.p">Putting mail in a box? Type the box number and tap Letter or Package for each piece. The holder gets one "You've got mail" text and email a day.</p>
-      <form id="inForm" class="mb-in-row" autocomplete="off">
-        <label><span data-i18n="st.mb.box">Box #</span> <input id="inBox" inputmode="numeric" size="6" required /></label>
-        <label><span data-i18n="st.mi.note">Note (optional)</span> <input id="inNote" maxlength="120" data-i18n-ph="st.mi.note.ph" placeholder="Amazon, certified letter" /></label>
-        <button type="button" class="btn" data-in="letter" data-i18n="st.mi.letter">+ Letter</button>
-        <button type="button" class="btn kraft" data-in="package" data-i18n="st.mi.package">+ Package</button>
-        <label class="btn small kraft mb-cam"><input type="file" id="inPhoto" accept="image/*" capture="environment" hidden /><span aria-hidden="true">📷</span> <span data-i18n="st.mi.photo">Photo</span></label>
-        <span id="inPhotoWrap" class="mb-cam-prev" hidden><img id="inPhotoPrev" alt="" /> <button type="button" class="linkish" id="inPhotoClear" aria-label="Remove photo">×</button></span>
-      </form>
-      <p class="muted mb-small" data-i18n="st.mi.photo.p">Take a photo before tapping + Package (the label side). For letters, only certified or important ones. Photos show on the customer's dashboard and delete themselves after 90 days.</p>
-      <div id="inAsk" class="mb-in-ask" hidden>
-        <p id="inAskQ"></p>
-        <p class="btnrow"><button type="button" class="btn small" id="inAskEmpty" data-i18n="st.mi.empty">Empty (picked up)</button> <button type="button" class="btn small kraft" id="inAskStill" data-i18n="st.mi.still">Mail still there</button></p>
-      </div>
-      <p id="inOut" class="mb-in-out" hidden></p>
+      <p class="muted" data-i18n="st.ci.p">Mail or a package came in? Tap the button, pick the box, then add each piece.</p>
+      <p><button type="button" class="btn mb-ci-open" id="ciOpen" data-i18n="st.ci.open">Check in mail or package</button></p>
     </div>
 
     <div class="card mb-bill">
@@ -64,13 +58,6 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     <div class="card" id="fwdCard" hidden>
       <h3 data-i18n="st.fw.h">Forwarding requests</h3>
       <ul id="fwdList" class="mb-check-out"></ul>
-    </div>
-
-    <div class="card mb-check">
-      <h3 data-i18n="st.mb.check.h">Mail check</h3>
-      <p class="muted" data-i18n="st.mb.check.p">Got mail for a box? Type the box number or the name on the mail to see whether it goes in the box, gets held, or goes back to the sender.</p>
-      <form id="checkForm" class="btnrow"><input id="checkQ" data-i18n-ph="st.mb.check.ph" placeholder="Box # or name" autocomplete="off" /> <button class="btn small" type="submit" data-i18n="st.mb.check">Check</button></form>
-      <ul id="checkOut" class="mb-check-out"></ul>
     </div>
 
     <p id="rtsAlert" class="mb-rts-alert" hidden></p>
@@ -120,6 +107,39 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
   </div>
 
   <MailboxDocs />
+
+  <dialog id="ciDlg" class="hz-dialog mb-ci" aria-labelledby="ciH">
+    <div id="ciList">
+      <h2 id="ciH" data-i18n="st.ci.open">Check in mail or package</h2>
+      <input id="ciSearch" type="search" class="mb-ci-search" data-i18n-ph="st.ci.search" placeholder="Box # or name" autocomplete="off" />
+      <ul id="ciBoxes" class="mb-ci-boxes"></ul>
+    </div>
+    <div id="ciBox" hidden>
+      <p><button type="button" class="linkish" id="ciBack" data-i18n="st.ci.another">← Another box</button></p>
+      <h2 id="ciWho"></h2>
+      <p id="ciCounts" class="muted"></p>
+      <p id="ciHold"></p>
+      <input type="hidden" id="inBox" />
+      <div id="inAsk" class="mb-in-ask" hidden>
+        <p id="inAskQ"></p>
+        <p class="btnrow"><button type="button" class="btn small" id="inAskEmpty" data-i18n="st.mi.empty">Empty (picked up)</button> <button type="button" class="btn small kraft" id="inAskStill" data-i18n="st.mi.still">Mail still there</button></p>
+      </div>
+      <div class="mb-ci-add">
+        <button type="button" class="btn" data-in="letter" data-i18n="st.mi.letter">+ Letter</button>
+        <button type="button" class="btn kraft" data-in="package" data-i18n="st.mi.package">+ Package</button>
+      </div>
+      <div class="mb-ci-extra">
+        <label class="btn small kraft mb-cam"><input type="file" id="inPhoto" accept="image/*" capture="environment" hidden /><span aria-hidden="true">📷</span> <span data-i18n="st.mi.photo">Photo</span></label>
+        <span id="inPhotoWrap" class="mb-cam-prev" hidden><img id="inPhotoPrev" alt="" /> <button type="button" class="linkish" id="inPhotoClear" aria-label="Remove photo">×</button></span>
+        <input id="inNote" maxlength="120" data-i18n-ph="st.mi.note.ph" placeholder="Amazon, certified letter" aria-label="Note" />
+      </div>
+      <p class="muted mb-small" data-i18n="st.mi.photo.p">Take a photo before tapping + Package (the label side). For letters, only certified or important ones. Photos show on the customer's dashboard and delete themselves after 90 days.</p>
+      <p id="inOut" class="mb-in-out" hidden></p>
+      <h3 id="ciLogH" data-i18n="st.ci.added" hidden>Added this time</h3>
+      <ul id="ciLog" class="mb-pkgs"></ul>
+    </div>
+    <p class="btnrow mb-edit-foot"><span></span><button type="button" class="btn small" id="ciDone" data-i18n="st.mb.done">Done</button></p>
+  </dialog>
 
   <dialog id="mbPick" class="hz-dialog mb-pick" aria-labelledby="mbPickH">
     <h2 id="mbPickH" data-i18n="st.pick.h">Choose a free box</h2>
@@ -415,7 +435,44 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     }
     $('inAskEmpty').addEventListener('click', () => answer(true));
     $('inAskStill').addEventListener('click', () => answer(false));
-    $('inBox').addEventListener('input', () => { $('inAsk').hidden = true; pendingKind = null; });
+    // Check in mail: pick a box from the list (or search), then add pieces; "Another box" goes back to the list.
+    const ciDlg = $('ciDlg') as HTMLDialogElement;
+    let ciBox: any = null;
+    function ciPaintList() {
+      const q = ($('ciSearch') as HTMLInputElement).value.trim().toLowerCase().replace(/^#/, '');
+      const ul = $('ciBoxes'); ul.innerHTML = '';
+      const list = [...boxes].sort((a, b) => a.box_no - b.box_no).filter((x) => !q || String(x.box_no).startsWith(q) || x.customer.name.toLowerCase().includes(q));
+      for (const x of list) {
+        const li = document.createElement('li');
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'mb-ci-row';
+        b.innerHTML = '<strong></strong><span></span><span class="muted"></span>';
+        b.querySelector('strong')!.textContent = `#${x.box_no}`;
+        b.querySelectorAll('span')[0].textContent = x.customer.name;
+        b.querySelectorAll('span')[1].textContent = `${sizeName(x.size)} · ${tf('st.ci.counts', { l: x.inbox.letters, max: x.inbox.capacity, p: x.inbox.packages })}${x.mail?.do && x.mail.do !== 'box' ? ` · ${mailText(x.mail)}` : ''}`;
+        if (x.mail?.do === 'rts') b.classList.add('rts'); else if (x.mail?.do === 'hold') b.classList.add('hold');
+        b.addEventListener('click', () => ciChoose(x));
+        li.appendChild(b); ul.appendChild(li);
+      }
+      if (!list.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.ci.nobox'); ul.appendChild(li); }
+    }
+    function ciPaintBox() {
+      const x = boxes.find((b) => b.id === ciBox.id) ?? ciBox; ciBox = x;
+      $('ciWho').textContent = `#${x.box_no} · ${x.customer.name}`;
+      $('ciCounts').textContent = `${sizeName(x.size)} · ${tf('st.ci.counts', { l: x.inbox.letters, max: x.inbox.capacity, p: x.inbox.packages })}`;
+      const h = $('ciHold'); h.innerHTML = ''; if (x.mail && x.mail.do !== 'box') h.appendChild(mailBadge(x.mail));
+    }
+    function ciChoose(x: any) {
+      ciBox = x; ($('inBox') as HTMLInputElement).value = String(x.box_no);
+      $('inAsk').hidden = true; pendingKind = null; $('inOut').hidden = true; $('ciLog').innerHTML = ''; $('ciLogH').hidden = true;
+      ($('inNote') as HTMLInputElement).value = ''; clearPhoto();
+      ciPaintBox(); $('ciList').hidden = true; $('ciBox').hidden = false;
+    }
+    function ciShowList() { ciBox = null; $('ciBox').hidden = true; $('ciList').hidden = false; ($('ciSearch') as HTMLInputElement).value = ''; ciPaintList(); ($('ciSearch') as HTMLInputElement).focus(); }
+    $('ciOpen').addEventListener('click', () => { ciShowList(); ciDlg.showModal(); ($('ciSearch') as HTMLInputElement).focus(); });
+    $('ciSearch').addEventListener('input', ciPaintList);
+    $('ciSearch').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') { e.preventDefault(); ($('ciBoxes').querySelector('button') as HTMLButtonElement | null)?.click(); } });
+    $('ciBack').addEventListener('click', ciShowList);
+    $('ciDone').addEventListener('click', () => ciDlg.close());
     async function mailIn(kind: string, checked = false) {
       const boxNo = ($('inBox') as HTMLInputElement).value.trim();
       const out = $('inOut');
@@ -431,20 +488,22 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         const r = await api({ action: 'mail_in', box_no: boxNo, kind, note: ($('inNote') as HTMLInputElement).value, ...(photo ? { photo } : {}) });
         clearPhoto();
         lastItem = { id: r.item.id, box: boxNo };
-        out.hidden = false; out.className = `mb-in-out${r.over ? ' over' : ''}`; out.innerHTML = '';
-        const line = document.createElement('span');
-        line.textContent = `#${r.box_no} ${r.customer.name}: ${tf('st.mi.ofcap', { n: r.pieces, max: r.capacity })} · ${tf('st.pk.n', { n: r.packages })}${r.over ? ` · ${t('st.mi.overcharged')}` : ''}${r.extra_package ? ` · ${t('st.pk.extra')}` : ''}${r.photo ? ` · ${t('st.mi.photosaved')}` : ''}${r.notified ? ` · ${t('st.mi.notified')}` : ''}`;
-        if (r.extra_package) out.className = 'mb-in-out near';
-        out.append(line, ' ', btn(t('st.mi.undo'), 'kraft', async () => {
-          if (!lastItem) return;
-          try { await api({ action: 'mail_undo', item_id: lastItem.id }); out.textContent = t('st.mi.undone'); lastItem = null; load(); } catch (e: any) { say(e.message, true); }
+        // The latest status (counts, overage, extra package, notified), then one line per piece with its own Undo.
+        out.hidden = false; out.className = `mb-in-out${r.over ? ' over' : r.extra_package ? ' near' : ''}`;
+        out.textContent = `${tf('st.mi.ofcap', { n: r.pieces, max: r.capacity })} · ${tf('st.pk.n', { n: r.packages })}${r.over ? ` · ${t('st.mi.overcharged')}` : ''}${r.extra_package ? ` · ${t('st.pk.extra')}` : ''}${r.notified ? ` · ${t('st.mi.notified')}` : ''}`;
+        const li = document.createElement('li');
+        const txt = document.createElement('span');
+        txt.textContent = `${t(`mbd.k.${kind}`)}${r.item.note ? ` · ${r.item.note}` : ''}${r.photo ? ` · ${t('st.mi.photosaved')}` : ''}`;
+        const itemId = r.item.id;
+        li.append(txt, btn(t('st.mi.undo'), 'kraft', async () => {
+          try { await api({ action: 'mail_undo', item_id: itemId }); li.remove(); await load(); ciPaintBox(); } catch (e: any) { say(e.message, true); }
         }));
+        $('ciLog').prepend(li); $('ciLogH').hidden = false;
         ($('inNote') as HTMLInputElement).value = '';
-        load();
+        await load(); if (ciBox) ciPaintBox();
       } catch (e: any) { out.hidden = false; out.className = 'mb-in-out over'; out.textContent = e.message; }
     }
     document.querySelectorAll<HTMLButtonElement>('[data-in]').forEach((b) => b.addEventListener('click', () => mailIn(b.dataset.in!)));
-    $('inForm').addEventListener('submit', (ev) => { ev.preventDefault(); mailIn('letter'); });
 
     // Billing: a list to look at, and Charge now one customer at a time, after a yes.
     const cardText = (c: any) => (c ? `${String(c.brand ?? '').toUpperCase()} •••• ${c.last4}` : t('st.bl.nocard'));
@@ -531,7 +590,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           who.querySelector('strong')!.textContent = `#${x.box_no} · ${x.customer.name}`;
           who.querySelector('.muted')!.textContent = `${t(`mb.state.${x.state}`)} · ${t('st.mb.paidthru')} ${x.paid_through}`;
           li.append(who, mailBadge(x.mail));
-          if (x.status === 'active') li.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
+          if (x.status === 'active') li.append(btn(t('st.ci.in'), '', () => { ciChoose(x); ciDlg.showModal(); }), btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
           li.append(docBtn(x));
           ul.appendChild(li);
         }

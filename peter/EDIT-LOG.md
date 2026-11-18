@@ -4,6 +4,16 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-18 10:50 CST · "Check in mail or package" window, and Mail check at the top
+
+- **Asked for:** "this is a little confusing.. can we make it where if a piece of mail/package comes in. where we click like a button 'Check in Mail or Package' pops up a window with a list of mailboxes or we can search then we click the box number, then have a add mail piece or package", and "[Mail check] needs to be at the very top for staff to quickly check if the piece of mail is something we can check in or not".
+- **What changed** on Counter → Mailboxes:
+  - **Mail check is first** (right under the PIN), so staff look up a name or box number before anything else. Each result for an open box has a **Check in** button that opens the check-in window on that box.
+  - **Mail in** is now one big button, **Check in mail or package**. It opens a window with **every box** (number, name, size, letters and packages in it now; boxes on mail hold in yellow, return-to-sender in red) and a **search** box (a number or a name; Enter picks the first match).
+  - **Tap a box** and the window shows that customer, with big **+ Letter** and **+ Package** buttons, the **📷 Photo** button and a note. The "is it empty?" question and the fee warnings appear here as before. **Added this time** lists each piece with its own **Undo**. **← Another box** goes back to the list; **Done** closes it.
+- **Files:** [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css)
+- **How to check it:** `git pull`, `npm run dev`, `/counter/mailboxes` (PIN 1234): press **Check in mail or package**, type a name, tap the box, then **+ Letter**.
+
 ## 2026-11-16 21:06 CST · Mailbox report on the Reports page, Choose a box, Move/Remove a piece, and Check these boxes always showing
 
 - **Asked for:** "Yes add to the reports page" (the mailbox report for a month, quarter or year), "add to the to do list ... requiring customers to have a credit card or debit card on file before signing up", "where is the 'Check these boxes list'", "i want to be able to remove a package or letter from a customer just incase i accidentally assigned to the wrong person ... each customer to have a list of things checked in", and "a popup window to allow staff to choose whats available ... a table of all the numbers and a column of whether its a small/medium/large".
