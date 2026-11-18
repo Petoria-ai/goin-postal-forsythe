@@ -363,7 +363,12 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
             hm.querySelector('span')!.textContent = `${tf('st.id.holdhow', { box: d.box_no ?? '' })}${inBox ? ` ${tf('st.id.inbox', { n: inBox })}` : ''}`;
             who.appendChild(hm);
           }
-          li.append(who, docBtn({ customer_id: d.customer_id, docs: 0 }));
+          li.append(who, btn(t('st.mb.remind'), 'kraft', async () => {
+            try {
+              const r = await api({ action: 'id_remind', customer_id: d.customer_id, kind: d.kind });
+              say(tf('st.ids.sent', { name: r.name, how: [r.sms ? t('st.mb.text') : '', r.email ? t('st.mb.email') : ''].filter(Boolean).join(' + ') || '—' }));
+            } catch (e: any) { say(e.message, true); }
+          }), docBtn({ customer_id: d.customer_id, docs: 0 }));
           il.appendChild(li);
         }
         // Forwarding requests from holders' dashboards.
@@ -684,8 +689,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       try {
         const j = await api({ action: 'send_due' });
         const ul = $('sentList'); ul.innerHTML = '';
-        if (!j.sent.length) { say(t('st.mb.nonedue')); return; }
-        say(tf('st.mb.sentn', { n: j.sent.length }));
+        if (!j.sent.length && !j.id_notices) { say(t('st.mb.nonedue')); return; }
+        say(`${tf('st.mb.sentn', { n: j.sent.length })}${j.id_notices ? ` ${tf('st.ids.duesent', { n: j.id_notices })}` : ''}`);
         for (const s of j.sent) { const li = document.createElement('li'); li.textContent = `#${s.box_no} ${s.name} · ${stageName(s.key.split(':')[1])}`; ul.appendChild(li); }
         load();
       } catch (e: any) { say(e.message, true); }

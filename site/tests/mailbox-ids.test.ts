@@ -117,3 +117,19 @@ describe('key deposit', () => {
     expect((await listAudit(env as any)).filter((a) => a.action === 'mailbox.key_deposit').length).toBe(2);
   });
 });
+
+describe('ID reminders by hand', () => {
+  it('Remind sends the right notice now; Send due reminders includes ID notices', async () => {
+    const today = day(new Date());
+    const c = (await upsertCustomer(env as any, { name: 'Rita Remind', email: 'rita@example.com', phone: '318-555-0178' }))!;
+    await assignMailbox(env as any, { box_no: 1147, customer_id: c, size: 'small', term: 6, start_date: today, paid_through: addMonths(today, 6) });
+    expect((await mb({ pin: '1234', action: 'id_remind', customer_id: c, kind: 'photo_id' })).status).toBe(404); // nothing on file yet
+    await docs({ pin: '1234', action: 'add', customer_id: c, kind: 'photo_id', name: 'dl.png', data: PNG, expires_on: plus(-2) });
+    const r = await mb({ pin: '1234', action: 'id_remind', customer_id: c, kind: 'photo_id' });
+    expect(r.body).toMatchObject({ ok: true, stage: 'expired', sms: true, email: true, name: 'Rita Remind' });
+    expect((await mb({ pin: '1234', action: 'id_remind', customer_id: c, kind: 'photo_id' })).body.ok).toBe(true); // can resend
+    expect((await listAudit(env as any)).filter((a) => a.action === 'mailbox.id_remind').length).toBe(2);
+    const d = await mb({ pin: '1234', action: 'send_due' });
+    expect(typeof d.body.id_notices).toBe('number');
+  });
+});

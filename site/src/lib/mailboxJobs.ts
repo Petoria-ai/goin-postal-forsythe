@@ -293,18 +293,7 @@ export async function idExpiryNotices(env: Env, today = day(new Date())) {
     if (!stage || reminded.includes(stage)) continue;
     if (!(await mailboxesFor(env, doc.customer_id)).length) continue;
     const c = await getCustomer(env, doc.customer_id);
-    const what = doc.kind === 'second_id' ? 'second ID' : doc.kind === 'form_1583' ? 'PS Form 1583' : 'photo ID';
-    const suspendOn = st && st.state === 'hold' ? st.suspend_on : null;
-    const body = !photo
-      ? (stage === 'expired'
-        ? `The ${what} we have on file for your mailbox expired on ${when(dd.expires_on)}. Please bring a current one next time you're in, so your mailbox file stays up to date.`
-        : `The ${what} we have on file for your mailbox expires on ${when(dd.expires_on)}. When you renew it, please bring the new one by so we can update your file.`)
-      : stage === '30'
-        ? `The photo ID we have on file for your mailbox expires on ${when(dd.expires_on)}. Please bring your new ID by before then. If it expires first, we'll hold your mail and packages at the counter until you do.`
-        : stage === 'expired'
-          ? `The photo ID we have on file for your mailbox expired on ${when(dd.expires_on)}. Until you bring a current photo ID to the store, we're holding your mail and packages at the counter. If we don't see a current ID by ${when(suspendOn!)}, your mailbox account will be suspended until you do (your plan stays active and is billed as usual).`
-          : `Your mailbox account is suspended because the photo ID on file expired on ${when(dd.expires_on)}. Your mail is held at the counter and your plan is billed as usual. Bring a current photo ID to the store and we'll reinstate your account right away.`;
-    const subject = stage === '30' ? 'Your ID on file expires soon' : stage === 'suspended' ? 'Your mailbox account is suspended' : photo ? 'Your ID has expired: mail held at the counter' : 'Your ID on file has expired';
+    const { body, subject, what } = idNoticeText(doc.kind, dd.expires_on, stage, st && st.state === 'hold' ? st.suspend_on : null);
     try {
       if (c?.phone) await sendSms(env, c.phone, `${store.name}: ${body} Questions: ${store.phone}`);
       if (c?.email) await sendEmail(env, c.email, subject, `${body}\n\nQuestions? Call us at ${store.phone}.`);
@@ -317,4 +306,39 @@ export async function idExpiryNotices(env: Env, today = day(new Date())) {
   if (staff.length && env.STAFF_EMAIL) await sendEmail(env, env.STAFF_EMAIL, `IDs on file: ${staff.length} to update`, `${staff.join('\n')}\n\n${env.SITE_URL}/counter/mailboxes`).catch(() => {});
   if (sent) await logAudit(env, { id: null, name: 'Daily reminders (automatic)' }, 'mailbox.id_expiry', null, staff.join('; '));
   return sent;
+}
+
+/** The words of an ID notice (stage "30", "expired" or "suspended"); the daily run and the Remind button share them. */
+export function idNoticeText(kind: string, expiresOn: string, stage: '30' | 'expired' | 'suspended', suspendOn: string | null) {
+  const photo = kind === 'photo_id';
+  const what = kind === 'second_id' ? 'second ID' : kind === 'form_1583' ? 'PS Form 1583' : 'photo ID';
+  const body = !photo
+    ? (stage === '30'
+      ? `The ${what} we have on file for your mailbox expires on ${when(expiresOn)}. When you renew it, please bring the new one by so we can update your file.`
+      : `The ${what} we have on file for your mailbox expired on ${when(expiresOn)}. Please bring a current one next time you're in, so your mailbox file stays up to date.`)
+    : stage === '30'
+      ? `The photo ID we have on file for your mailbox expires on ${when(expiresOn)}. Please bring your new ID by before then. If it expires first, we'll hold your mail and packages at the counter until you do.`
+      : stage === 'expired'
+        ? `The photo ID we have on file for your mailbox expired on ${when(expiresOn)}. Until you bring a current photo ID to the store, we're holding your mail and packages at the counter.${suspendOn ? ` If we don't see a current ID by ${when(suspendOn)}, your mailbox account will be suspended until you do (your plan stays active and is billed as usual).` : ''}`
+        : `Your mailbox account is suspended because the photo ID on file expired on ${when(expiresOn)}. Your mail is held at the counter and your plan is billed as usual. Bring a current photo ID to the store and we'll reinstate your account right away.`;
+  const subject = stage === '30' ? 'Your ID on file expires soon' : stage === 'suspended' ? 'Your mailbox account is suspended' : photo ? 'Your ID has expired: mail held at the counter' : 'Your ID on file has expired';
+  return { body, subject, what };
+}
+
+/** Staff's Remind button: send a holder's ID notice now for their newest document of that kind. */
+export async function sendIdNoticeNow(env: Env, customerId: string, kind: string, today = day(new Date())) {
+  const docs = (await listAllMailboxDocs(env)).filter((d) => d.customer_id === customerId && d.kind === kind);
+  const dates = new Map((await listDocDates(env)).map((d) => [d.doc_id, d]));
+  const best = docs.map((d) => ({ d, dd: dates.get(d.id) })).filter((x) => x.dd).sort((a, b) => b.dd!.expires_on.localeCompare(a.dd!.expires_on))[0];
+  if (!best) return null;
+  const st = idState(best.dd!.expires_on, today, 3650);
+  const stage: '30' | 'expired' | 'suspended' = !st || st.state === 'expiring' ? '30' : st.state === 'hold' || kind !== 'photo_id' ? 'expired' : 'suspended';
+  const { body, subject } = idNoticeText(kind, best.dd!.expires_on, stage, st && st.state === 'hold' ? st.suspend_on : null);
+  const c = await getCustomer(env, customerId);
+  // sendSms/sendEmail return true only in mock mode, so "sent" means "we had a number/address and it went".
+  const sms = c?.phone ? (await sendSms(env, c.phone, `${store.name}: ${body} Questions: ${store.phone}`), true) : false;
+  const email = c?.email ? (await sendEmail(env, c.email, subject, `${body}\n\nQuestions? Call us at ${store.phone}.`), true) : false;
+  const reminded: string[] = JSON.parse(best.dd!.reminded);
+  if (!reminded.includes(stage)) await markDocReminded(env, best.d.id, stage);
+  return { stage, sms, email, name: c?.name ?? '' };
 }

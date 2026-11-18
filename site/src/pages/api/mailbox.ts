@@ -14,7 +14,7 @@ import {
   addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
-import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs, ID_WARN_DAYS } from '../../lib/mailboxJobs';
+import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs, ID_WARN_DAYS, sendIdNoticeNow, idExpiryNotices } from '../../lib/mailboxJobs';
 import { fullness, packageState, daysHeld, PKG, checkReason, pendingClaim, idState } from '../../lib/mailbox';
 import { checkPhoto, savePiecePhoto, readPiecePhoto, deletePiecePhotos } from '../../lib/mailboxPhotos';
 import { buildMailboxReport, mailboxReportCsv, type MailboxReportData } from '../../lib/mailboxReport';
@@ -309,6 +309,14 @@ export const POST: APIRoute = async ({ request }) => {
     // Billing (Peter, Nov 16 2026): who owes fees, who renews soon, and what was charged lately. Looking is for any
     // staff PIN; charging is one customer at a time (charge_now, renew_now) and only for a manager or owner. There is
     // deliberately no "charge everyone" here: only the morning run (src/worker.ts) bills in bulk.
+    if (b.action === 'id_remind') { // the Remind button on IDs to update: send that holder's ID notice now
+      const c = await getCustomer(env, String(b.customer_id ?? ''));
+      if (!c) return json({ error: 'No such customer' }, 404);
+      const r = await sendIdNoticeNow(env, c.id, String(b.kind ?? 'photo_id'), today);
+      if (!r) return json({ error: 'No ID with an expiration date on file for them.' }, 404);
+      await logAudit(env, who, 'mailbox.id_remind', c.id, `${c.name} · ${b.kind} · ${r.stage} · text ${r.sms ? 'sent' : 'no phone'} · email ${r.email ? 'sent' : 'no email'}`);
+      return json({ ok: true, ...r });
+    }
     if (b.action === 'billing') {
       const all = await listAllMailboxes(env);
       const boxNo = (id: number) => all.find((x) => x.id === id)?.box_no ?? null;
@@ -384,7 +392,8 @@ export const POST: APIRoute = async ({ request }) => {
     if (b.action === 'send_due') {
       const sent = await sendDueReminders(env, who, today);
       const holds_ended = await holdEndNotices(env, today);
-      return json({ ok: true, sent, holds_ended });
+      const id_notices = await idExpiryNotices(env, today);
+      return json({ ok: true, sent, holds_ended, id_notices });
     }
 
     const box = b.id != null ? await getMailbox(env, Number(b.id)) : null;

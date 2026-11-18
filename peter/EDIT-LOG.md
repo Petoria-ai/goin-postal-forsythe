@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-18 12:44 CST · Remind button for expiring and expired IDs
+
+- **Asked for:** "yes lets add those remind buttons so i can send one manually"
+- **What changed:** Each row in **IDs to update** (Counter → Mailboxes) has a **Remind** button. It sends that holder the right message now, by text and email: "expires soon" (with the warning that mail will be held), "expired: mail held at the counter" (with the suspension date), or "account suspended". It says how it went ("ID reminder sent to Nina Names (text + email)"), can be pressed again, and is in the activity log. The daily run and the button use the same words. **Send due reminders** now also sends any ID notices that are due, so they can be tried on your computer.
+- **Files:** [site/src/lib/mailboxJobs.ts](../site/src/lib/mailboxJobs.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/mailbox-ids.test.ts](../site/tests/mailbox-ids.test.ts)
+- **How to check it:** `git pull`, `npm run dev`, then **Remind** on a row in **IDs to update**; the text and email show in PowerShell as `[mock sms]` and `[mock email]`.
+
 ## 2026-11-18 12:24 CST · Key deposit: Paid / Unpaid for each renter
 
 - **Asked for:** "also for each renter. add a Key deposit paid or unpaid button"
