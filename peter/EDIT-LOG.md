@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-18 11:06 CST · To-do P16: store domain, email, and checking in mail by email
+
+- **Asked for:** "yes add to do list" (after talking through checking mail in by email, the way MetroFax turns an email into a fax: `1105@monroegoinpostal.com`).
+- **What changed:** new to-do **P16**: ask Goin' Postal corporate whether franchisees get a store email or domain and whether "Goin' Postal" can be in our own domain; then the domain on Cloudflare with free Email Routing (box numbers to the website, everything else forwarded to Peter's Gmail); a Gmail for the copier's Scan to Email; the list of senders allowed to check mail in; and the build. Nothing changed on the website.
+- **Files:** [TODO.md](TODO.md)
+- **How to check it:** open `peter/TODO.md` and look for P16.
+
 ## 2026-11-18 10:50 CST · "Check in mail or package" window, and Mail check at the top
 
 - **Asked for:** "this is a little confusing.. can we make it where if a piece of mail/package comes in. where we click like a button 'Check in Mail or Package' pops up a window with a list of mailboxes or we can search then we click the box number, then have a add mail piece or package", and "[Mail check] needs to be at the very top for staff to quickly check if the piece of mail is something we can check in or not".

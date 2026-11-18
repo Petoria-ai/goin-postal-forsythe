@@ -13,6 +13,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P16 | [Store domain, email, and checking in mail by email](#p16-store-domain-email-and-checking-in-mail-by-email) | ⏳ Ask Goin' Postal corporate first | Corporate's answer; then the domain on Cloudflare (William) |
 | P15 | [A card on file before a mailbox starts](#p15-a-card-on-file-before-a-mailbox-starts) | ⏸ Peter to decide the details | Stripe live; the mailbox agreement (attorney) |
 | P14 | [Raise mailbox prices $2 to $5 each](#p14-raise-mailbox-prices-2-to-5-each) | ⏸ Peter to pick the figure | Peter's numbers; then one file on the website and the Prices tab in William's register |
 | P13 | [Virtual mail on the website](#p13-virtual-mail-on-the-website) | ⏸ Later | What virtual mail we sell and at what price; Anytime Mailbox's rules |
@@ -318,6 +319,26 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P16. Store domain, email, and checking in mail by email
+
+**Added:** 2026-11-18 11:06 CST. **Status:** ask corporate first. **Peter:** "how efax works.. i just put the fax number i want to send to in the email like faxnumber@metrofax.com ... so im thinking what if i did like mailboxnumber@monroegoinpostal.com".
+
+**The idea:** email a photo or scan to **`1105@monroegoinpostal.com`** and it's checked in to box #1105, just like MetroFax turns an email into a fax. The subject can say "package" or "letter" and a note ("package Amazon"); each attachment is one piece. The customer gets "You've got mail", and the sender gets a reply ("Checked in to #1105 (Dana Box): 1 package", or "No open box #1105, nothing added"). Works with the copier's **Scan to Email** and with any phone's share-to-email.
+
+**First, ask Goin' Postal corporate:**
+- [ ] Do franchisees get a **store email or a website domain** from corporate (for example `forsythe@goinpostal.com`)?
+- [ ] Are there **rules about using "Goin' Postal" in our own domain** (like `monroegoinpostal.com`)?
+
+**Then:**
+- [ ] **The domain** (about $10–15 a year), corporate's or our own. The website needs one anyway to go live and to send customer emails (receipts, reminders, "You've got mail") from the store's name.
+- [ ] **William:** put the domain on Cloudflare and turn on **Email Routing** (free). Box-number addresses go to the website; everything else (`peter@`, `info@`) forwards to Peter's **existing Gmail**. No new inbox needed.
+- [ ] **Optional:** a business inbox (Google Workspace, about $7 a month per person) only if Peter wants to *send* as `peter@…`.
+- [ ] **The copier:** Scan to Email needs an account to send from: a free Gmail just for the copier, or a Workspace account.
+- [ ] **Who may send:** the list of email addresses allowed to check mail in (the copier, Peter, staff). Anything else is ignored, with a heads-up to Peter. Stronger still: a short secret in the address (`1105@in-x7.monroegoinpostal.com`), saved once in the copier and phones.
+- [ ] **Build** (Claude): the website side that reads those emails, checks the pieces in with their photos, and replies. Testable on Peter's computer before the domain is ready.
+- [ ] **Meanwhile:** on the store phone or a tablet, open Counter → Mailboxes and choose **Add to Home Screen**, so it opens like an app straight to **Check in mail or package** with the camera.
+- [ ] Later, the same emailed scans are the start of **virtual mail** (P13).
 
 ## P15. A card on file before a mailbox starts
 
