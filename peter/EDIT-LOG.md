@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-18 12:24 CST · Key deposit: Paid / Unpaid for each renter
+
+- **Asked for:** "also for each renter. add a Key deposit paid or unpaid button"
+- **What changed:** Every box in **Boxes on the website** (Counter → Mailboxes) has a **Key deposit** button: green **Paid** or red **Unpaid** (new boxes start Unpaid). One tap switches it after "Mark the key deposit for box #1100 (Carla Checkin) as PAID?". Hovering shows who changed it and when; the **Edit** window shows the same button with "changed by ..., date". Every change is in the activity log.
+- **Files:** [site/db/schema.sql](../site/db/schema.sql) (new table `mailbox_keys`), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/mailbox-ids.test.ts](../site/tests/mailbox-ids.test.ts), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, **`npm run db:local`** (one new table), `npm run dev`, then the **Key deposit** button on any box.
+
 ## 2026-11-18 12:22 CST · Red HOLD MAIL on IDs to update and in Check in
 
 - **Asked for:** "maybe its smart to have in 'ID's to update' to have in red Hold mail so it'll prevent the renter to go in and get their mail"

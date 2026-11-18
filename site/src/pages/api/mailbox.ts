@@ -11,7 +11,7 @@ import {
   assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
   countItemsIn, listMailboxItems, getMailboxItem, deleteMailboxItem, clearMailboxItems, getMailboxSettings, saveMailboxSettings,
   listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox, moveMailboxItem, exportTable,
-  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry,
+  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs, ID_WARN_DAYS } from '../../lib/mailboxJobs';
@@ -127,15 +127,17 @@ export const POST: APIRoute = async ({ request }) => {
     let inBox: Awaited<ReturnType<typeof countItemsIn>> | null = null;
     let namesByBox: Map<number, { id: number; name: string; kind: string }[]> | null = null;
     let photoIds: Map<string, string> | null = null;
+    let keyDeps: Awaited<ReturnType<typeof listKeyDeposits>> | null = null;
     const view = async (x: MailboxRow) => {
       docCounts ??= await countMailboxDocs(env);
       inBox ??= await countItemsIn(env);
       photoIds ??= await latestPhotoIdExpiry(env);
+      keyDeps ??= await listKeyDeposits(env);
       if (!namesByBox) { namesByBox = new Map(); for (const n of await listMailboxNames(env)) (namesByBox.get(n.mailbox_id) ?? namesByBox.set(n.mailbox_id, []).get(n.mailbox_id)!).push({ id: n.id, name: n.name, kind: n.kind }); }
       const n = inBox.get(x.id) ?? { letters: 0, packages: 0, last: null, first_pkg: null, first_letter: null };
       // Letters fill the box; packages are flagged when the oldest is past its free days or due back to the sender.
       const oldest = n.first_pkg ? daysHeld(n.first_pkg, today) : 0;
-      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0, names: namesByBox.get(x.id) ?? [], id_state: x.status === 'active' ? idState(photoIds.get(x.customer_id), today) : null,
+      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0, names: namesByBox.get(x.id) ?? [], id_state: x.status === 'active' ? idState(photoIds.get(x.customer_id), today) : null, key_deposit: keyDeps.get(x.id) ?? { deposit: 'unpaid', changed_at: null, changed_by: null },
         inbox: { ...n, ...fullness(n.letters, x.size), pkg_late: n.packages > 0 && oldest > PKG.freeDays, pkg_rts: n.packages > 0 && oldest >= PKG.returnNoticeDay + PKG.returnAfter } };
     };
 
@@ -389,6 +391,12 @@ export const POST: APIRoute = async ({ request }) => {
     if (!box || box.status !== 'active') return json({ error: 'No such open box' }, 404);
 
     // The names allowed at this box (beyond the holder), from their PS Form 1583.
+    if (b.action === 'key_deposit') { // paid or not; who and when are kept and audited
+      if (typeof b.paid !== 'boolean') return json({ error: 'Paid or unpaid?' }, 400);
+      const k = await setKeyDeposit(env, box.id, b.paid, who.name);
+      await logAudit(env, who, 'mailbox.key_deposit', `#${box.box_no}`, b.paid ? 'paid' : 'unpaid');
+      return json({ ok: true, key_deposit: k });
+    }
     if (b.action === 'name_add') {
       const name = String(b.name ?? '').trim().replace(/\s+/g, ' ').slice(0, 80);
       if (name.length < 2) return json({ error: 'Type the name as it is on the 1583.' }, 400);

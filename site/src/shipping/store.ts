@@ -159,12 +159,13 @@ const mem = {
   mbPhotos: [] as MailboxPhoto[],
   mbDocDates: new Map<string, MailboxDocDate>(),
   mbNames: [] as MailboxName[],
+  mbKeys: new Map<number, MailboxKey>(),
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos', 'mailbox_doc_dates', 'mailbox_names'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos', 'mailbox_doc_dates', 'mailbox_names', 'mailbox_keys'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -218,6 +219,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailbox_photos': return mem.mbPhotos;
     case 'mailbox_doc_dates': return [...mem.mbDocDates.values()];
     case 'mailbox_names': return mem.mbNames;
+    case 'mailbox_keys': return [...mem.mbKeys.values()];
     default: return [];
   }
 };
@@ -990,6 +992,19 @@ export async function deleteMailboxName(env: Env, id: number): Promise<MailboxNa
   if (!row) return null;
   if (env.DB) await env.DB.prepare('DELETE FROM mailbox_names WHERE id = ?1').bind(id).run(); else mem.mbNames = mem.mbNames.filter((n) => n.id !== id);
   return row;
+}
+
+/** A box's key deposit (Peter, Nov 18 2026). */
+export interface MailboxKey { mailbox_id: number; deposit: 'paid' | 'unpaid'; changed_at: string; changed_by: string }
+export async function setKeyDeposit(env: Env, mailboxId: number, paid: boolean, by: string): Promise<MailboxKey> {
+  const row: MailboxKey = { mailbox_id: mailboxId, deposit: paid ? 'paid' : 'unpaid', changed_at: now(), changed_by: by };
+  if (env.DB) await env.DB.prepare('INSERT INTO mailbox_keys (mailbox_id, deposit, changed_at, changed_by) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(mailbox_id) DO UPDATE SET deposit = ?2, changed_at = ?3, changed_by = ?4').bind(row.mailbox_id, row.deposit, row.changed_at, row.changed_by).run();
+  else mem.mbKeys.set(mailboxId, row);
+  return row;
+}
+export async function listKeyDeposits(env: Env): Promise<Map<number, MailboxKey>> {
+  const rows = env.DB ? (await env.DB.prepare('SELECT * FROM mailbox_keys').all<MailboxKey>()).results : [...mem.mbKeys.values()];
+  return new Map(rows.map((r) => [r.mailbox_id, r]));
 }
 
 /** Online renewals by the holder (Peter, Nov 17 2026): created before Stripe Checkout, paid once. */

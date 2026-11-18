@@ -168,6 +168,10 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <p class="btnrow"><button type="button" class="btn small" data-out="picked_up" data-i18n="st.mi.pickedup">All picked up</button> <button type="button" class="btn small kraft" data-out="forwarded" data-i18n="st.mi.forwarded">Forwarded</button> <button type="button" class="btn small kraft" data-out="returned" data-i18n="st.mi.returned">Returned to sender</button></p>
     </div>
     <div class="mb-edit-sec">
+      <h3 data-i18n="st.key.h">Key deposit</h3>
+      <p class="btnrow" id="mbEditKey"></p>
+    </div>
+    <div class="mb-edit-sec">
       <h3 data-i18n="st.nm.h">Names allowed at this box</h3>
       <p class="muted mb-small" data-i18n="st.nm.p">Everyone on their PS Form 1583: family members, a business. Mail for anyone else goes back to the sender.</p>
       <ul id="mbEditNames" class="mb-pkgs"></ul>
@@ -261,6 +265,18 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       b.textContent = s.state === 'suspended' ? tf('st.id.susp', { date: s.expired_on }) : s.state === 'hold' ? tf('st.id.hold', { date: s.expired_on, susp: s.suspend_on }) : tf('st.id.exp', { date: s.expires_on });
       return b;
     };
+    // Key deposit (Peter, Nov 18 2026): one button per renter, Paid (green) or Unpaid (red); a tap switches it after a yes.
+    const keyBtn = (x: any) => {
+      const paid = x.key_deposit?.deposit === 'paid';
+      const b = document.createElement('button'); b.type = 'button'; b.className = `btn small mb-key ${paid ? 'paid' : 'unpaid'}`;
+      b.textContent = paid ? t('st.key.paid') : t('st.key.unpaid');
+      if (x.key_deposit?.changed_at) b.title = tf('st.key.by', { who: x.key_deposit.changed_by, date: String(x.key_deposit.changed_at).slice(0, 10) });
+      b.addEventListener('click', async () => {
+        if (!confirm(tf(paid ? 'st.key.q.unpaid' : 'st.key.q.paid', { box: x.box_no, name: x.customer.name }))) return;
+        try { await api({ action: 'key_deposit', id: x.id, paid: !paid }); say(tf(paid ? 'st.key.now.unpaid' : 'st.key.now.paid', { box: x.box_no })); await load(); } catch (e: any) { say(e.message, true); }
+      });
+      return b;
+    };
     const contact = (c: any) => [c.phone, c.email].filter(Boolean).join(' · ');
 
     async function load() {
@@ -292,7 +308,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           const ib = cell(tr, `${x.inbox.pieces}/${x.inbox.capacity}`); ib.className = x.inbox.pct >= 100 ? 'mb-cap-over' : x.inbox.pct >= 80 ? 'mb-cap-near' : '';
           if (x.inbox.packages) { const pk = document.createElement('span'); pk.className = `mb-pk${x.inbox.pkg_rts ? ' rts' : x.inbox.pkg_late ? ' late' : ''}`; pk.textContent = `${tf('st.pk.n', { n: x.inbox.packages })}${x.inbox.pkg_rts ? ` · ${t('st.pk.rts')}` : x.inbox.pkg_late ? ` · ${t('st.pk.late')}` : ''}`; ib.append(' ', pk); }
           const act = cell(tr, ''); act.className = 'mb-acts';
-          act.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)), docBtn(x));
+          act.append(btn(t('st.mb.edit'), 'kraft', () => openEdit(x)), docBtn(x), keyBtn(x));
           bb.appendChild(tr);
         }
         // Expired and closed: what to do with their mail, return-to-sender first.
@@ -380,6 +396,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       const st = $('mbEditState'); st.className = `acct-status mb-${x.state}`; st.textContent = t(`mb.state.${x.state}`);
       ($('mbEditNew') as HTMLInputElement).value = x.paid_through;
       ($('mbEditDocs') as HTMLElement).dataset.mbdocs = x.customer_id;
+      const kk = $('mbEditKey'); kk.innerHTML = ''; kk.appendChild(keyBtn(x));
+      if (x.key_deposit?.changed_at) { const m = document.createElement('span'); m.className = 'muted mb-small'; m.textContent = tf('st.key.by', { who: x.key_deposit.changed_by, date: String(x.key_deposit.changed_at).slice(0, 10) }); kk.append(' ', m); }
       const nl = $('mbEditNames'); nl.innerHTML = '';
       const holder = document.createElement('li'); holder.textContent = `${x.customer.name} · ${t('st.nm.holder')}`; nl.appendChild(holder);
       for (const n of x.names ?? []) {

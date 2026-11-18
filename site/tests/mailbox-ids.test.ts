@@ -100,3 +100,20 @@ describe('ID hold, suspension and reinstating in person', () => {
     expect((await listAudit(env as any)).some((a) => a.action === 'mailbox.id_reinstated')).toBe(true);
   });
 });
+
+describe('key deposit', () => {
+  it('starts unpaid, switches with a PIN, and remembers who', async () => {
+    const today = day(new Date());
+    const c = (await upsertCustomer(env as any, { name: 'Kim Key', email: 'kim@example.com', phone: '318-555-0177' }))!;
+    const box = await assignMailbox(env as any, { box_no: 1146, customer_id: c, size: 'small', term: 6, start_date: today, paid_through: addMonths(today, 6) });
+    const view = () => mb({ pin: '1234', action: 'search', q: '1146' }).then((r) => r.body.boxes[0]);
+    expect((await view()).key_deposit.deposit).toBe('unpaid');
+    expect((await mb({ pin: '1234', action: 'key_deposit', id: box.id })).status).toBe(400);
+    expect((await mb({ pin: '0000', action: 'key_deposit', id: box.id, paid: true })).status).toBe(401);
+    await mb({ pin: '1234', action: 'key_deposit', id: box.id, paid: true });
+    expect((await view()).key_deposit).toMatchObject({ deposit: 'paid', changed_by: 'Counter (shared PIN)' });
+    await mb({ pin: '1234', action: 'key_deposit', id: box.id, paid: false });
+    expect((await view()).key_deposit.deposit).toBe('unpaid');
+    expect((await listAudit(env as any)).filter((a) => a.action === 'mailbox.key_deposit').length).toBe(2);
+  });
+});

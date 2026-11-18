@@ -661,6 +661,14 @@ CREATE TABLE IF NOT EXISTS mailbox_names (
 );
 CREATE INDEX IF NOT EXISTS mailbox_names_box ON mailbox_names(mailbox_id);
 
+-- The key deposit for each box (Peter, Nov 18 2026): paid or not, when, and who marked it. No row means unpaid.
+CREATE TABLE IF NOT EXISTS mailbox_keys (
+  mailbox_id INTEGER PRIMARY KEY,
+  deposit TEXT NOT NULL DEFAULT 'unpaid', -- paid, unpaid
+  changed_at TEXT NOT NULL,
+  changed_by TEXT NOT NULL
+);
+
 -- The mail log (Peter, Nov 16 2026): every letter and package staff put in a box, until it's picked up.
 -- The pieces still in the box count against the size's capacity (src/data/mailboxes.json).
 CREATE TABLE IF NOT EXISTS mailbox_items (
