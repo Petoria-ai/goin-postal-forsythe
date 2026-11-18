@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-18 12:01 CST · ID hold, suspension, and reinstating with an ID checked in person
+
+- **Asked for:** "remind them that their id is about to expire, if they dont renew, we can hold their mail until they renew ... keep track of that certain customer ... maybe 30 or 60 days their account is going to be considered expired. we'll still take their money which they will have to agree to it.. they'll have to renew their id and come into the building for us to verify the id and reinstate their account".
+- **What changed** (goes by each holder's newest photo ID on file):
+  - **30 days before** it expires, the text and email now also say: "If it expires first, we'll hold your mail and packages at the counter until you do."
+  - **The day it expires: ID hold.** An orange **ID HOLD: keep at the counter** badge shows in the box list, Mail check, the Check in window and the Edit window. The holder gets a text and email saying their mail is held and the date their account will be suspended.
+  - **30 days later: suspended.** The badge turns red (**SUSPENDED: ID needed**); mail is still held; billing continues as their agreement says; the holder and staff get a notice. The 30 is `id_grace_days` in `site/src/data/mailboxes.json` (change it to 60 if you like).
+  - **Reinstating:** in **Documents**, a red note explains what to do. Staff upload the new photo ID with its expiration date and tick **"I checked this ID in person (the customer is here)"**. Without the tick, or without a future date, the upload is refused. Then "Reinstated: their mail can go in the box again." The badge disappears and the activity log records who checked it.
+  - The customer's **dashboard** shows the matching notice (expiring, held, or suspended).
+  - An old ID no longer counts once a newer one is on file (no more reminders for the old one, and it drops off **IDs to update**).
+- **Files:** [site/src/lib/mailbox.ts](../site/src/lib/mailbox.ts), [site/src/lib/mailboxJobs.ts](../site/src/lib/mailboxJobs.ts), [site/src/data/mailboxes.json](../site/src/data/mailboxes.json), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/pages/api/mailbox-docs.ts](../site/src/pages/api/mailbox-docs.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/components/MailboxDocs.astro](../site/src/components/MailboxDocs.astro), [site/src/components/MailboxDashboard.astro](../site/src/components/MailboxDashboard.astro), [site/src/pages/account/index.astro](../site/src/pages/account/index.astro), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/mailbox-ids.test.ts](../site/tests/mailbox-ids.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, `npm run dev`. In a box's **Documents**, upload a photo ID with an expiration date a few days in the past: the box shows **ID HOLD**. Upload a new one with a future date: refused until you tick the in-person box, then reinstated.
+
 ## 2026-11-18 11:44 CST · ID expiration dates, names allowed at each box, and to-do P17
 
 - **Asked for:** "is there anything else i can add or need to worry about about my mailbox service" (the list is now to-do P17), then "yes. we should add for the id portion to input like expiration date so we can start keeping track of their expiration date".

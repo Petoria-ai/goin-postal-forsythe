@@ -253,6 +253,14 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     document.querySelectorAll<HTMLButtonElement>('#mbPick [data-size]').forEach((b) => b.addEventListener('click', () => paintPicker(b.dataset.size!)));
     document.getElementById('mbPickClose')!.addEventListener('click', () => pickDlg().close());
     document.getElementById('assignPick')!.addEventListener('click', () => openPicker(document.getElementById('assignBoxNo') as HTMLInputElement));
+    // ID hold (Peter, Nov 18 2026): the holder's photo ID expired, so their mail stays at the counter; suspended after the grace days.
+    const idBadge = (s: any) => {
+      if (!s) return null;
+      const b = document.createElement('span');
+      b.className = `mb-mail ${s.state === 'suspended' ? 'mb-mail-rts' : s.state === 'hold' ? 'mb-mail-idhold' : 'mb-mail-hold'}`;
+      b.textContent = s.state === 'suspended' ? tf('st.id.susp', { date: s.expired_on }) : s.state === 'hold' ? tf('st.id.hold', { date: s.expired_on, susp: s.suspend_on }) : tf('st.id.exp', { date: s.expires_on });
+      return b;
+    };
     const contact = (c: any) => [c.phone, c.email].filter(Boolean).join(' · ');
 
     async function load() {
@@ -280,6 +288,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           const tr = document.createElement('tr');
           cell(tr, `#${x.box_no}`); cell(tr, x.customer.name); cell(tr, contact(x.customer)); cell(tr, sizeName(x.size)); cell(tr, x.paid_through);
           const st = cell(tr, ''); const badge = document.createElement('span'); badge.className = `acct-status mb-${x.state}`; badge.textContent = t(`mb.state.${x.state}`); st.appendChild(badge);
+          const ib0 = idBadge(x.id_state); if (ib0 && x.id_state.state !== 'expiring') st.append(' ', ib0);
           const ib = cell(tr, `${x.inbox.pieces}/${x.inbox.capacity}`); ib.className = x.inbox.pct >= 100 ? 'mb-cap-over' : x.inbox.pct >= 80 ? 'mb-cap-near' : '';
           if (x.inbox.packages) { const pk = document.createElement('span'); pk.className = `mb-pk${x.inbox.pkg_rts ? ' rts' : x.inbox.pkg_late ? ' late' : ''}`; pk.textContent = `${tf('st.pk.n', { n: x.inbox.packages })}${x.inbox.pkg_rts ? ` · ${t('st.pk.rts')}` : x.inbox.pkg_late ? ` · ${t('st.pk.late')}` : ''}`; ib.append(' ', pk); }
           const act = cell(tr, ''); act.className = 'mb-acts';
@@ -327,6 +336,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           who.querySelector('strong')!.textContent = `${d.box_no ? `#${d.box_no} · ` : ''}${d.customer.name}`;
           const sp = who.querySelector('span')!; sp.className = `mb-exp${d.expired ? ' expired' : ' soon'}`;
           sp.textContent = `${t(`st.doc.kind.${d.kind}`)}: ${d.expired ? tf('st.doc.expired', { date: d.expires_on }) : tf('st.doc.expireson', { date: d.expires_on })}`;
+          const idb = idBadge(d.id_state); if (idb && d.id_state.state !== 'expiring') who.append(' ', idb);
           li.append(who, docBtn({ customer_id: d.customer_id, docs: 0 }));
           il.appendChild(li);
         }
@@ -368,6 +378,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         nl.appendChild(li);
       }
       const mm = $('mbEditMail'); mm.innerHTML = ''; if (x.mail && x.mail.do !== 'box') mm.appendChild(mailBadge(x.mail));
+      const idb = idBadge(x.id_state); if (idb) mm.append(' ', idb);
       loadDetail(x);
     }
     function openEdit(x: any) { editErr.hidden = true; ($('mbEditAgree') as HTMLInputElement).checked = false; paintEdit(x); dlg.showModal(); }
@@ -496,6 +507,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('ciWho').textContent = `#${x.box_no} · ${x.customer.name}`;
       $('ciCounts').textContent = `${sizeName(x.size)} · ${tf('st.ci.counts', { l: x.inbox.letters, max: x.inbox.capacity, p: x.inbox.packages })}${x.names?.length ? ` · ${t('st.nm.also')} ${x.names.map((n: any) => n.name).join(', ')}` : ''}`;
       const h = $('ciHold'); h.innerHTML = ''; if (x.mail && x.mail.do !== 'box') h.appendChild(mailBadge(x.mail));
+      const idb = idBadge(x.id_state); if (idb && x.id_state.state !== 'expiring') h.append(' ', idb);
     }
     function ciChoose(x: any) {
       ciBox = x; ($('inBox') as HTMLInputElement).value = String(x.box_no);
@@ -626,7 +638,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           who.querySelector('strong')!.textContent = `#${x.box_no} · ${x.customer.name}`;
           who.querySelector('.muted')!.textContent = `${t(`mb.state.${x.state}`)} · ${t('st.mb.paidthru')} ${x.paid_through}`;
           if (x.names?.length) { const nm = document.createElement('div'); nm.className = 'mb-names'; nm.textContent = `${t('st.nm.also')} ${x.names.map((n: any) => n.name).join(', ')}`; who.appendChild(nm); }
-          li.append(who, mailBadge(x.mail));
+          const idb = idBadge(x.id_state);
+          li.append(who, idb && x.id_state.state !== 'expiring' ? idb : mailBadge(x.mail));
           if (x.status === 'active') li.append(btn(t('st.ci.in'), '', () => { ciChoose(x); ciDlg.showModal(); }), btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));
           li.append(docBtn(x));
           ul.appendChild(li);

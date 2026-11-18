@@ -7,7 +7,7 @@ import { sendEmail, sendSms } from '../shipping/notify';
 import { getCustomer, listActiveMailboxes, listAllMailboxes, updateMailbox, getMailbox, logAudit, claimRenewal, getRenewal, setRenewalPaidThrough, type MailboxRow,
   addMailboxItem, countItemsIn, listItemsIn, addMailboxCharge, listDocDates, markDocReminded, listAllMailboxDocs, mailboxesFor, listMailboxCharges, settleMailboxCharges, getMailboxSettings, saveMailboxSettings, type MailboxCharge } from '../shipping/store';
 import { chargeSavedCard } from './stripe';
-import { addMonths, addressFor, day, dueReminder, reminderText, mailAction, onExpiredList, HOLD_MONTHS as HOLD, fullness, OVERAGE_FEE, MIN_CHARGE, priceFor, money, PKG, packageFeesDue, daysHeld, freeUntil, returnOn } from './mailbox';
+import { idState, addMonths, addressFor, day, dueReminder, reminderText, mailAction, onExpiredList, HOLD_MONTHS as HOLD, fullness, OVERAGE_FEE, MIN_CHARGE, priceFor, money, PKG, packageFeesDue, daysHeld, freeUntil, returnOn } from './mailbox';
 
 /** Text and email one reminder. "sms"/"email" say whether the holder had a number/address to send to. */
 export async function sendReminder(env: Env, b: MailboxRow, key: string): Promise<{ sms: boolean; email: boolean; to: string }> {
@@ -277,25 +277,41 @@ export async function packageJobs(env: Env, today = day(new Date())) {
 export const ID_WARN_DAYS = 30;
 export async function idExpiryNotices(env: Env, today = day(new Date())) {
   const docs = new Map((await listAllMailboxDocs(env)).map((d) => [d.id, d]));
+  const dates = await listDocDates(env);
+  // Only each holder's newest document of a kind counts: an old license is ignored once a newer one is on file.
+  const newest = new Map<string, string>();
+  for (const dd of dates) { const d = docs.get(dd.doc_id); if (!d) continue; const k = `${d.customer_id}|${d.kind}`; if (!newest.has(k) || dd.expires_on > newest.get(k)!) newest.set(k, dd.expires_on); }
   const staff: string[] = [];
   let sent = 0;
-  for (const dd of await listDocDates(env)) {
+  for (const dd of dates) {
     const doc = docs.get(dd.doc_id); if (!doc) continue;
-    const left = Math.round((Date.parse(dd.expires_on + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86_400_000);
-    const stage = left < 0 ? 'expired' : left <= ID_WARN_DAYS ? '30' : null;
-    if (!stage || (JSON.parse(dd.reminded) as string[]).includes(stage)) continue;
+    if (newest.get(`${doc.customer_id}|${doc.kind}`) !== dd.expires_on) continue;
+    const photo = doc.kind === 'photo_id';
+    const st = idState(dd.expires_on, today, ID_WARN_DAYS);
+    const stage = !st ? null : st.state === 'expiring' ? '30' : st.state === 'hold' || !photo ? 'expired' : 'suspended';
+    const reminded: string[] = JSON.parse(dd.reminded);
+    if (!stage || reminded.includes(stage)) continue;
     if (!(await mailboxesFor(env, doc.customer_id)).length) continue;
     const c = await getCustomer(env, doc.customer_id);
     const what = doc.kind === 'second_id' ? 'second ID' : doc.kind === 'form_1583' ? 'PS Form 1583' : 'photo ID';
-    const body = stage === 'expired'
-      ? `The ${what} we have on file for your mailbox expired on ${when(dd.expires_on)}. Please bring a current one next time you're in, so your mailbox file stays up to date.`
-      : `The ${what} we have on file for your mailbox expires on ${when(dd.expires_on)}. When you renew it, please bring the new one by so we can update your file.`;
+    const suspendOn = st && st.state === 'hold' ? st.suspend_on : null;
+    const body = !photo
+      ? (stage === 'expired'
+        ? `The ${what} we have on file for your mailbox expired on ${when(dd.expires_on)}. Please bring a current one next time you're in, so your mailbox file stays up to date.`
+        : `The ${what} we have on file for your mailbox expires on ${when(dd.expires_on)}. When you renew it, please bring the new one by so we can update your file.`)
+      : stage === '30'
+        ? `The photo ID we have on file for your mailbox expires on ${when(dd.expires_on)}. Please bring your new ID by before then. If it expires first, we'll hold your mail and packages at the counter until you do.`
+        : stage === 'expired'
+          ? `The photo ID we have on file for your mailbox expired on ${when(dd.expires_on)}. Until you bring a current photo ID to the store, we're holding your mail and packages at the counter. If we don't see a current ID by ${when(suspendOn!)}, your mailbox account will be suspended until you do (your plan stays active and is billed as usual).`
+          : `Your mailbox account is suspended because the photo ID on file expired on ${when(dd.expires_on)}. Your mail is held at the counter and your plan is billed as usual. Bring a current photo ID to the store and we'll reinstate your account right away.`;
+    const subject = stage === '30' ? 'Your ID on file expires soon' : stage === 'suspended' ? 'Your mailbox account is suspended' : photo ? 'Your ID has expired: mail held at the counter' : 'Your ID on file has expired';
     try {
       if (c?.phone) await sendSms(env, c.phone, `${store.name}: ${body} Questions: ${store.phone}`);
-      if (c?.email) await sendEmail(env, c.email, stage === 'expired' ? 'Your ID on file has expired' : 'Your ID on file expires soon', `${body}\n\nQuestions? Call us at ${store.phone}.`);
+      if (c?.email) await sendEmail(env, c.email, subject, `${body}\n\nQuestions? Call us at ${store.phone}.`);
     } catch (e) { console.error('id notice:', e); }
-    await markDocReminded(env, dd.doc_id, stage);
-    staff.push(`${c?.name ?? doc.customer_id}: ${what} ${stage === 'expired' ? 'EXPIRED' : 'expires'} ${dd.expires_on}`);
+    // A later stage covers the earlier ones (a missed day never sends two messages).
+    for (const k of stage === 'suspended' ? ['30', 'expired', 'suspended'] : stage === 'expired' ? ['30', 'expired'] : ['30']) if (!reminded.includes(k)) await markDocReminded(env, dd.doc_id, k);
+    staff.push(`${c?.name ?? doc.customer_id}: ${what} ${stage === '30' ? 'expires' : 'EXPIRED'} ${dd.expires_on}${stage === 'suspended' ? ' · SUSPENDED' : stage === 'expired' && photo ? ' · mail on ID hold' : ''}`);
     sent++;
   }
   if (staff.length && env.STAFF_EMAIL) await sendEmail(env, env.STAFF_EMAIL, `IDs on file: ${staff.length} to update`, `${staff.join('\n')}\n\n${env.SITE_URL}/counter/mailboxes`).catch(() => {});

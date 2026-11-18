@@ -3,9 +3,9 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, atLeast } from '../../lib/auth';
-import { getCustomer, listMailboxDocs, listAllMailboxes, logAudit, setDocExpiry, listDocDates, getMailboxDoc } from '../../shipping/store';
+import { getCustomer, listMailboxDocs, listAllMailboxes, logAudit, setDocExpiry, listDocDates, getMailboxDoc, latestPhotoIdExpiry } from '../../shipping/store';
 import { saveDoc, openDoc, removeDoc, KINDS, docsReady, type DocKind } from '../../lib/mailboxDocs';
-import { addMonths, day, endedOn, KEEP_MONTHS, isDay } from '../../lib/mailbox';
+import { addMonths, day, endedOn, KEEP_MONTHS, isDay, idState } from '../../lib/mailbox';
 
 // Mailbox holders' documents (Peter, Nov 16 2026): photo IDs and the PS Form 1583, by customer.
 // Any staff PIN: list {customer_id}, add {customer_id, kind, name, data (data URL), note}.
@@ -38,6 +38,7 @@ export const POST: APIRoute = async ({ request }) => {
         can_open: canOpen, ready: docsReady(env), kinds: KINDS,
         boxes: boxes.map((x) => x.box_no),
         last_ended: lastEnded, delete_after: lastEnded ? addMonths(lastEnded, KEEP_MONTHS) : null,
+        id_state: idState((await latestPhotoIdExpiry(env)).get(customer.id), today),
       });
     }
     if (b.action === 'add') {
@@ -46,10 +47,16 @@ export const POST: APIRoute = async ({ request }) => {
       const kind = String(b.kind ?? '') as DocKind;
       if (!(KINDS as readonly string[]).includes(kind)) return json({ error: 'Pick what kind of document it is.' }, 400);
       if (b.expires_on && !isDay(b.expires_on)) return json({ error: 'Pick the expiration date from the calendar.' }, 400);
+      // Someone on ID hold or suspended is reinstated only by a current photo ID that staff checked in person.
+      const before = idState((await latestPhotoIdExpiry(env)).get(customer.id), day(new Date()));
+      const reinstating = kind === 'photo_id' && !!before && (before.state === 'hold' || before.state === 'suspended');
+      if (reinstating && b.in_person !== true) return json({ error: 'Their ID is expired: check the new one in person (the customer is here), tick the box, then upload.', code: 'in_person' }, 400);
+      if (reinstating && (!isDay(b.expires_on) || b.expires_on <= day(new Date()))) return json({ error: 'Enter the new ID\'s expiration date (it must be in the future) to reinstate them.' }, 400);
       const row = await saveDoc(env, { customer_id: customer.id, kind, name: String(b.name ?? ''), dataUrl: String(b.data ?? ''), note: String(b.note ?? '').trim(), by_name: user.name });
       if (b.expires_on) await setDocExpiry(env, row.id, b.expires_on);
-      await logAudit(env, user, 'mailbox.doc_add', customer.id, `${customer.name} · ${kind} · ${row.name} · ${row.bytes} bytes${b.expires_on ? ` · expires ${b.expires_on}` : ''}`);
-      return json({ ok: true, doc: row });
+      if (reinstating) await logAudit(env, user, 'mailbox.id_reinstated', customer.id, `${customer.name}: new photo ID checked in person, expires ${b.expires_on}`);
+      await logAudit(env, user, 'mailbox.doc_add', customer.id, `${customer.name} · ${kind} · ${row.name} · ${row.bytes} bytes${b.expires_on ? ` · expires ${b.expires_on}` : ''}${b.in_person === true ? ' · checked in person' : ''}`);
+      return json({ ok: true, doc: row, reinstated: reinstating });
     }
     if (b.action === 'set_expiry') { // any staff: type or fix the date printed on the ID
       const doc = await getMailboxDoc(env, String(b.id ?? ''));

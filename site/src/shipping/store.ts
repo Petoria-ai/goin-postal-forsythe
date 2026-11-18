@@ -964,6 +964,17 @@ export async function listAllMailboxDocs(env: Env): Promise<MailboxDocRow[]> {
   return [...mem.mbDocs];
 }
 
+/** Each holder's latest photo-ID expiration date (the one that counts for an ID hold). */
+export async function latestPhotoIdExpiry(env: Env): Promise<Map<string, string>> {
+  const dates = new Map((await listDocDates(env)).map((d) => [d.doc_id, d.expires_on]));
+  const out = new Map<string, string>();
+  for (const d of await listAllMailboxDocs(env)) {
+    const e = d.kind === 'photo_id' ? dates.get(d.id) : undefined;
+    if (e && (!out.has(d.customer_id) || e > out.get(d.customer_id)!)) out.set(d.customer_id, e);
+  }
+  return out;
+}
+
 export interface MailboxName { id: number; mailbox_id: number; name: string; kind: 'person' | 'business'; added_by: string; at: string }
 export async function addMailboxName(env: Env, r: Pick<MailboxName, 'mailbox_id' | 'name' | 'kind' | 'added_by'>): Promise<MailboxName> {
   const row = { ...r, at: now() };

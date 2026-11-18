@@ -199,3 +199,17 @@ export function checkReason(letters: number, firstLetter: string | null, keys: s
   if (oldest && daysBetween(oldest, today) >= CHECK_EVERY_DAYS && (!last || daysBetween(last, today) >= CHECK_EVERY_DAYS)) return { why: 'quiet', since: oldest };
   return null;
 }
+
+// ---- ID hold and suspension (Peter, Nov 18 2026) -------------------------------------------------------
+// Goes by the latest expiration date among the holder's photo IDs on file. Expired: hold their mail at the counter.
+// ID_GRACE_DAYS after that: suspended (mail still held; billing continues per the agreement). A current photo ID,
+// checked in person by staff and uploaded in Documents, ends it.
+export const ID_GRACE_DAYS: number = (cfg as any).id_grace_days ?? 30;
+export type IdState = { state: 'expiring'; expires_on: string } | { state: 'hold'; expired_on: string; suspend_on: string } | { state: 'suspended'; expired_on: string; since: string };
+export function idState(latestPhotoIdExpiry: string | null | undefined, today: string, warnDays = 30): IdState | null {
+  if (!latestPhotoIdExpiry) return null;
+  const left = daysBetween(today, latestPhotoIdExpiry);
+  if (left >= 0) return left <= warnDays ? { state: 'expiring', expires_on: latestPhotoIdExpiry } : null;
+  const suspendOn = day(new Date(Date.parse(latestPhotoIdExpiry + 'T00:00:00Z') + ID_GRACE_DAYS * 86_400_000));
+  return today < suspendOn ? { state: 'hold', expired_on: latestPhotoIdExpiry, suspend_on: suspendOn } : { state: 'suspended', expired_on: latestPhotoIdExpiry, since: suspendOn };
+}

@@ -19,8 +19,9 @@ interface Props {
   renewOptions: { term: 6 | 12; price: number | null; until: string }[];
   longDate: (ymd: string) => string;
   photos: Record<number, string>;
+  idState: import('../lib/mailbox').IdState | null;
 }
-const { box: b, firstName, counts, items, settings: st, balance, renewals, forwards, renewOptions, longDate, photos } = Astro.props;
+const { box: b, firstName, counts, items, settings: st, balance, renewals, forwards, renewOptions, longDate, photos, idState: ids } = Astro.props;
 const photoUrl = (itemId: number) => (photos[itemId] ? `/api/mailbox-photo?id=${photos[itemId]}` : null);
 const state = boxStatus(b, day(new Date()));
 // Letters fill the box; packages have their own rules (2 free at a time, 5 free days, then $1 a day up to $10).
@@ -58,6 +59,9 @@ const svg = (k: keyof typeof icon) => `<svg viewBox="0 0 24 24" width="22" heigh
     <button type="button" class="mbd-bell" data-open="notify" aria-label="Notification preferences" set:html={svg('bell')} />
   </header>
 
+  {ids?.state === 'suspended' && <p class="mbd-warn over" data-i18n="mbd.id.susp" data-i18n-vars={JSON.stringify({ date: longDate(ids.expired_on) })}>Your mailbox account is suspended because the photo ID on file expired on {longDate(ids.expired_on)}. Your mail is held at the counter. Bring a current photo ID to the store to reinstate it.</p>}
+  {ids?.state === 'hold' && <p class="mbd-warn over" data-i18n="mbd.id.hold" data-i18n-vars={JSON.stringify({ date: longDate(ids.expired_on), susp: longDate(ids.suspend_on) })}>Your photo ID on file expired on {longDate(ids.expired_on)}, so we're holding your mail at the counter. Bring a current photo ID by {longDate(ids.suspend_on)} to keep your account active.</p>}
+  {ids?.state === 'expiring' && <p class="mbd-warn" data-i18n="mbd.id.exp" data-i18n-vars={JSON.stringify({ date: longDate(ids.expires_on) })}>Your photo ID on file expires on {longDate(ids.expires_on)}. Please bring your new one by before then, or we'll have to hold your mail at the counter.</p>}
   <div class="mbd-box">
     <div>
       <p class="muted" data-i18n="mbd.yourbox">Your mailbox</p>

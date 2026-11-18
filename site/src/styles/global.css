@@ -1127,3 +1127,4 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .mb-exp.soon { background: #fdf2d0; color: #8a5a00; }
 .mb-exp.expired { background: #fbe4e3; color: #9b2420; }
 .mb-names { font-size: .92rem; color: var(--navy); margin-top: 2px; }
+.mb-mail-idhold { background: #ffe3c2; color: #8a3a00; }

@@ -32,7 +32,9 @@
       </select>
     </label>
     <label><span data-i18n="st.doc.file">Photo or PDF</span> <input type="file" name="file" accept="image/*,application/pdf" required /></label>
+    <p id="mbDocsReinstate" class="mb-docs-keep past" hidden data-i18n="st.doc.reinstate">Their photo ID has expired, so their mail is on hold. Check their new photo ID in person, upload it here with its expiration date, and tick the box: that reinstates them.</p>
     <label><span data-i18n="st.doc.expires">Expires on (for IDs)</span> <input type="date" name="expires_on" /></label>
+    <label class="check"><input type="checkbox" name="in_person" /> <span data-i18n="st.doc.inperson">I checked this ID in person (the customer is here)</span></label>
     <label><span data-i18n="st.doc.note">Note (optional)</span> <input name="note" maxlength="200" data-i18n-ph="st.doc.note.ph" placeholder="Louisiana driver's license, expires 2029" /></label>
     <p class="btnrow"><button type="submit" class="btn small" data-i18n="st.doc.upload">Upload</button> <span id="mbDocsBusy" class="muted"></span></p>
     <p class="muted mb-docs-safe" data-i18n="st.doc.safe">Files are locked (encrypted) when stored. Every time someone opens one, it's logged.</p>
@@ -72,6 +74,7 @@
       keep.textContent = past ? tf('st.doc.overdue', { ended: j.last_ended }) : tf('st.doc.keep', { ended: j.last_ended, date: j.delete_after });
     }
     $('mbDocsNotReady').hidden = j.ready;
+    $('mbDocsReinstate').hidden = !(j.id_state && (j.id_state.state === 'hold' || j.id_state.state === 'suspended'));
     ($('mbDocsForm') as HTMLFormElement).hidden = !j.ready;
     $('mbDocsLocked').hidden = j.can_open || !j.docs.length;
     $('mbDocsNone').hidden = j.docs.length > 0;
@@ -150,7 +153,7 @@
     showErr(''); $('mbDocsBusy').textContent = t('st.doc.uploading');
     try {
       const data = await readFile(file);
-      await api({ action: 'add', customer_id: customerId, kind: (f.elements.namedItem('kind') as HTMLSelectElement).value, name: file.name, note: (f.elements.namedItem('note') as HTMLInputElement).value, expires_on: (f.elements.namedItem('expires_on') as HTMLInputElement).value || null, data });
+      await api({ action: 'add', customer_id: customerId, kind: (f.elements.namedItem('kind') as HTMLSelectElement).value, name: file.name, note: (f.elements.namedItem('note') as HTMLInputElement).value, expires_on: (f.elements.namedItem('expires_on') as HTMLInputElement).value || null, in_person: (f.elements.namedItem('in_person') as HTMLInputElement).checked, data }).then((r) => { if (r.reinstated) alert(t('st.doc.reinstated')); return r; });
       f.reset(); $('mbDocsBusy').textContent = t('st.doc.uploaded');
       await load();
       window.dispatchEvent(new CustomEvent('mbdocs:changed', { detail: { customer_id: customerId } }));

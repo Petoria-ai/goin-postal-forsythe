@@ -332,7 +332,8 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 **To check (ask the right person):**
 - [ ] **Postmaster:** what Monroe wants from a mail center (CMRA): how the 1583 is verified and signed, which copy goes to the post office, how often they want an updated customer list, the rule for mail addressed to names not on a 1583, what to write on returned mail, and how long to keep 1583s after a box closes.
 - [ ] **Insurance agent:** are customers' packages covered while we hold them ("bailee" coverage)?
-- [ ] **Attorney** (with the mailbox agreement): limit of liability for lost or damaged packages; no perishables, hazardous or illegal items; a short plan for a data breach (Louisiana's breach-notice law), since ID copies are stored online.
+- [x] **ID hold and suspension** ✅ 2026-11-18 12:01 CST: mail held at the counter when the photo ID expires; suspended 30 days later (billing continues); reinstated only by a current ID checked in person.
+- [ ] **Attorney** (with the mailbox agreement): **billing continues while an account is suspended for an expired ID**, and mail is held (not delivered to the box) until a current ID is shown; limit of liability for lost or damaged packages; no perishables, hazardous or illegal items; a short plan for a data breach (Louisiana's breach-notice law), since ID copies are stored online.
 - [ ] **Accountant:** does Louisiana sales tax apply to mailbox rentals and the fees? The site doesn't add tax to them today.
 
 **Extras to add (each a small build):**

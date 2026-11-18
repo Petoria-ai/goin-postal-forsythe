@@ -69,3 +69,34 @@ describe('ID expiration dates', () => {
     expect((await mb({ pin: '1234', action: 'search', q: 'consulting' })).body.boxes).toEqual([]);
   });
 });
+
+describe('ID hold, suspension and reinstating in person', () => {
+  it('works out the state from the latest photo-ID date', async () => {
+    const { idState } = await import('../src/lib/mailbox');
+    expect(idState(null, '2026-11-18')).toBeNull();
+    expect(idState('2027-06-01', '2026-11-18')).toBeNull();
+    expect(idState('2026-12-01', '2026-11-18')).toEqual({ state: 'expiring', expires_on: '2026-12-01' });
+    expect(idState('2026-11-10', '2026-11-18')).toEqual({ state: 'hold', expired_on: '2026-11-10', suspend_on: '2026-12-10' });
+    expect(idState('2026-10-10', '2026-11-18')).toEqual({ state: 'suspended', expired_on: '2026-10-10', since: '2026-11-09' });
+  });
+
+  it('holds, then suspends with one notice each, and a current ID checked in person reinstates', async () => {
+    const today = day(new Date());
+    const c = (await upsertCustomer(env as any, { name: 'Hal Hold', email: 'hal@example.com', phone: '318-555-0176' }))!;
+    await assignMailbox(env as any, { box_no: 1145, customer_id: c, size: 'small', term: 6, start_date: today, paid_through: addMonths(today, 6) });
+    await docs({ pin: '1234', action: 'add', customer_id: c, kind: 'photo_id', name: 'old.png', data: PNG, expires_on: plus(-3) });
+    const box = () => mb({ pin: '1234', action: 'search', q: '1145' }).then((r) => r.body.boxes[0]);
+    expect((await box()).id_state).toMatchObject({ state: 'hold', expired_on: plus(-3) });
+    expect(await idExpiryNotices(env as any)).toBe(1);                      // "mail held at the counter"
+    expect(await idExpiryNotices(env as any, plus(27))).toBe(1);            // 30 days after: suspended
+    expect(await idExpiryNotices(env as any, plus(28))).toBe(0);
+    // Uploading a new photo ID needs the in-person tick and a future date.
+    expect((await docs({ pin: '1234', action: 'add', customer_id: c, kind: 'photo_id', name: 'new.png', data: PNG, expires_on: plus(1500) })).body.code).toBe('in_person');
+    expect((await docs({ pin: '1234', action: 'add', customer_id: c, kind: 'photo_id', name: 'new.png', data: PNG, in_person: true })).status).toBe(400);
+    const ok = await docs({ pin: '1234', action: 'add', customer_id: c, kind: 'photo_id', name: 'new.png', data: PNG, expires_on: plus(1500), in_person: true });
+    expect(ok.body.reinstated).toBe(true);
+    expect((await box()).id_state).toBeNull();
+    expect(await idExpiryNotices(env as any)).toBe(0);                      // the old license no longer counts
+    expect((await listAudit(env as any)).some((a) => a.action === 'mailbox.id_reinstated')).toBe(true);
+  });
+});

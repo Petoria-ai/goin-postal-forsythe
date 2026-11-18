@@ -23,6 +23,8 @@
   "package_return_after_notice_days": 3,
   "_check_note": "Boxes whose letters have sat check_every_days without anyone checking go on the staff Check these boxes list (Peter, Nov 16 2026).",
   "check_every_days": 14,
+  "_id_note": "When the photo ID on file expires, mail is held at the counter (ID hold). id_grace_days later the account is suspended: mail still held, billing continues per the agreement, until the holder brings a current ID that staff check in person (Peter, Nov 18 2026).",
+  "id_grace_days": 30,
   "package_remind_day": 4,
   "min_charge": 0.5
 }
