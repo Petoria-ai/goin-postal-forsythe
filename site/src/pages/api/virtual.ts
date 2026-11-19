@@ -6,10 +6,13 @@ import { authenticate, atLeast } from '../../lib/auth';
 import { serviceKeyInfo, saveServiceKey, removeServiceKey, serviceKey, cleanKey, keysReady } from '../../lib/serviceKeys';
 import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, virtualDocKey, reassignDocs, countMailboxDocs, latestPhotoIdExpiry, type VirtualInput } from '../../shipping/store';
 import { idState, day } from '../../lib/mailbox';
+import { testKey, listRenters, compare } from '../../lib/anytime';
 import { SIZES } from '../../lib/mailbox';
 import cfg from '../../data/virtual.json';
 
-export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean; api_base: string | null }[];
+export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean; api_base: string | null; renters_path?: string }[];
+/** Services we can read from (lib/anytime.ts speaks Anytime Mailbox's API). */
+const canSync = (p: { id: string; api_base: string | null; renters_path?: string }) => p.id === 'anytime' && !!p.api_base && !!p.renters_path;
 const providerOf = (id: unknown) => PROVIDERS.find((p) => p.id === String(id ?? '')) ?? null;
 
 // Virtual mailboxes (Peter, Nov 19 2026), for Counter → Virtual mail: one tab per service in src/data/virtual.json
@@ -48,7 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
       return json({
         virtual: await Promise.all(rows.map(async (v) => ({ ...v, names: JSON.parse(v.names), account: v.customer_id ? (await getCustomer(env, v.customer_id))?.name ?? null : null,
           doc_key: virtualDocKey(v), docs: docs.get(virtualDocKey(v)) ?? 0, id_state: v.status === 'active' ? idState(ids.get(virtualDocKey(v)), today) : null }))),
-        providers: await Promise.all(PROVIDERS.map(async (p) => { const key = await serviceKeyInfo(env, p.id); return { ...p, key, connected: !!key.source && !!p.api_base }; })),
+        providers: await Promise.all(PROVIDERS.map(async (p) => { const key = await serviceKeyInfo(env, p.id); return { ...p, key, connected: !!key.source && canSync(p) }; })),
         can_manage_keys: atLeast(user, 'owner'), keys_ready: keysReady(env),
       });
     }
@@ -78,8 +81,10 @@ export const POST: APIRoute = async ({ request }) => {
       if (b.action === 'key_test') {
         const key = await serviceKey(env, prov.id);
         if (!key) return json({ ok: false, result: 'no_key' });
-        if (!prov.api_base) return json({ ok: false, result: 'no_address' });
-        return json({ ok: false, result: 'not_built' }); // the call itself comes with their API documentation (P18)
+        if (!canSync(prov)) return json({ ok: false, result: 'no_address' });
+        const r = await testKey(prov.api_base!, prov.renters_path!, key);
+        await logAudit(env, who, 'virtual.key_test', prov.name, r.ok ? 'key works' : `${r.result}${r.status ? ` ${r.status}` : ''}`);
+        return json(r.ok ? { ok: true, result: 'ok' } : r);
       }
       if (!atLeast(user, 'owner')) return json({ error: 'Only an owner PIN can add, change or remove the key.' }, 403);
       if (b.action === 'key_remove') {
@@ -92,6 +97,19 @@ export const POST: APIRoute = async ({ request }) => {
       await saveServiceKey(env, prov.id, key, user.name);
       await logAudit(env, who, 'virtual.key_save', prov.name, 'API key saved'); // never the key itself
       return json({ ok: true, key: await serviceKeyInfo(env, prov.id) });
+    }
+    if (b.action === 'sync_preview') { // read only: compares their renters with our list; changes nothing anywhere
+      const prov = providerOf(b.provider);
+      if (!prov) return json({ error: 'Pick which virtual mailbox service.' }, 400);
+      const key = await serviceKey(env, prov.id);
+      if (!key) return json({ ok: false, result: 'no_key' });
+      if (!canSync(prov)) return json({ ok: false, result: 'no_address' });
+      const r = await listRenters(prov.api_base!, prov.renters_path!, key);
+      if (!r.ok) return json(r);
+      const locals = (await listVirtual(env)).filter((v) => v.provider === prov.id).map((v) => ({ id: v.id, vno: v.vno, name: v.name, email: v.email, phone: v.phone, names: JSON.parse(v.names), status: v.status }));
+      const c = compare(r.renters, locals);
+      await logAudit(env, who, 'virtual.sync_preview', prov.name, `${r.renters.length} renters · ${c.matched} match · ${c.rows.length} to look at`);
+      return json({ ok: true, renters: r.renters.length, ...c });
     }
     if (b.action === 'close' || b.action === 'reopen') {
       const cur = await getVirtual(env, Number(b.id));

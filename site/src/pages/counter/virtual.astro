@@ -49,6 +49,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
 
     <div class="card">
       <h3 data-i18n="st.vm.list.h">Virtual mailboxes</h3>
+      <p class="btnrow"><button type="button" class="btn small kraft" id="vmSyncBtn" hidden></button> <span id="vmSyncSum" class="muted"></span></p>
+      <ul id="vmSync" class="mb-check-out vm-sync"></ul>
       <p><input id="vmSearch" type="search" data-i18n-ph="st.ci.search" placeholder="Box # or name" /></p>
       <ul id="vmList" class="mb-check-out"></ul>
     </div>
@@ -115,6 +117,9 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         : t('st.vm.key.none');
       const kf = $('vmKeyForm') as HTMLFormElement; kf.hidden = !canKeys; kf.reset();
       $('vmKeyRemove').hidden = k.source !== 'site';
+      // Sync now (read only): shows once a key is saved and we know the service's API address.
+      const sb = $('vmSyncBtn'); sb.hidden = !p.connected; sb.textContent = tf('st.vm.sync.btn', { provider: p.name });
+      $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = '';
       const l = $('vmVnoLabel'); l.dataset.i18nVars = JSON.stringify({ provider: p.name }); l.textContent = tf('st.vm.vno', { provider: p.name });
     }
     function paintAll() { paintTabs(); paintProvider(); paint(); }
@@ -162,21 +167,66 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       ev.preventDefault();
       const input = ($('vmKeyForm') as HTMLFormElement).elements.namedItem('key') as HTMLInputElement;
       try {
-        const j = await api('/api/virtual', { action: 'key_save', provider: prov().id, key: input.value });
-        input.value = ''; prov().key = j.key; paintProvider(); say(t('st.vm.key.saved'));
+        await api('/api/virtual', { action: 'key_save', provider: prov().id, key: input.value });
+        input.value = ''; await load(); say(t('st.vm.key.saved'));
       } catch (e: any) { say(e.message, true); }
     });
     $('vmKeyRemove').addEventListener('click', async () => {
       if (!confirm(tf('st.vm.key.removeq', { provider: prov().name }))) return;
-      try { const j = await api('/api/virtual', { action: 'key_remove', provider: prov().id }); prov().key = j.key; paintProvider(); say(t('st.vm.key.removed')); }
+      try { await api('/api/virtual', { action: 'key_remove', provider: prov().id }); await load(); say(t('st.vm.key.removed')); }
       catch (e: any) { say(e.message, true); }
     });
+    const apiFail = (j: any) => j.result === 'no_key' ? t('st.vm.key.none') : j.result === 'no_address' ? tf('st.vm.key.wait', { provider: prov().name })
+      : j.result === 'rejected' ? tf('st.vm.key.bad', { provider: prov().name }) : j.result === 'not_found' ? t('st.vm.key.path')
+      : `${tf('st.vm.key.err', { provider: prov().name })}${j.status ? ` (${j.status})` : ''}${j.message ? ` ${j.message}` : ''}`;
     $('vmKeyTest').addEventListener('click', async () => {
       try {
         const j = await api('/api/virtual', { action: 'key_test', provider: prov().id });
-        say(j.result === 'no_key' ? t('st.vm.key.none') : tf('st.vm.key.wait', { provider: prov().name }), !j.ok);
+        say(j.ok ? tf('st.vm.key.ok', { provider: prov().name }) : apiFail(j), !j.ok);
       } catch (e: any) { say(e.message, true); }
     });
+    // Sync now: their renters next to our list. Each button uses the normal add / update / close / reopen.
+    $('vmSyncBtn').addEventListener('click', async () => {
+      const ul = $('vmSync'); ul.innerHTML = ''; $('vmSyncSum').textContent = t('st.vm.sync.wait');
+      try {
+        const j = await api('/api/virtual', { action: 'sync_preview', provider: prov().id });
+        if (!j.ok) { $('vmSyncSum').textContent = ''; say(apiFail(j), true); return; }
+        $('vmSyncSum').textContent = tf('st.vm.sync.sum', { n: j.renters, ok: j.matched, look: j.rows.length });
+        for (const r of j.rows) ul.appendChild(syncRow(r));
+      } catch (e: any) { $('vmSyncSum').textContent = ''; say(e.message, true); }
+    });
+    function syncRow(r: any) {
+      const li = document.createElement('li');
+      const who = document.createElement('span'); who.innerHTML = '<strong></strong> <span class="muted"></span>';
+      const ren = r.renter;
+      who.querySelector('strong')!.textContent = `#${r.vno} · ${ren?.name || r.local?.name}`;
+      const tag = document.createElement('span'); tag.className = 'mb-mail';
+      const fieldName = (f: string) => t(f === 'name' ? 'st.c.th.name' : f === 'email' ? 'st.vm.email' : 'st.vm.phone');
+      const done = (b: HTMLButtonElement) => { b.disabled = true; li.classList.add('vm-sync-done'); };
+      const save = async (b: HTMLButtonElement, body: Record<string, unknown>) => {
+        try { await api('/api/virtual', body); done(b); const j = await api('/api/virtual', { action: 'list' }); rows = j.virtual; paintTabs(); paint(); }
+        catch (e: any) { say(e.message, true); }
+      };
+      const fromRenter = (l?: any) => ({ provider: prov().id, vno: r.vno, name: ren.name || l?.name, email: ren.email ?? l?.email, phone: ren.phone ?? l?.phone,
+        names: l ? l.names : (ren.company ? [ren.company] : []), customer_id: l ? rows.find((x) => x.id === l.id)?.customer_id ?? null : null, note: l ? rows.find((x) => x.id === l.id)?.note ?? null : null });
+      if (r.kind === 'new') {
+        tag.textContent = t('st.vm.sync.new'); who.querySelector('.muted')!.textContent = [ren.email, ren.phone, ren.company].filter(Boolean).join(' · ');
+        const b = btn(t('st.vm.sync.add'), '', () => save(b, { action: 'add', ...fromRenter() })); li.append(who, tag, b);
+      } else if (r.kind === 'diff') {
+        tag.textContent = tf('st.vm.sync.diff', { fields: r.fields.map(fieldName).join(', ') });
+        who.querySelector('.muted')!.textContent = r.fields.map((f: string) => `${fieldName(f)}: ${r.local[f] ?? '—'} → ${ren[f] ?? '—'}`).join(' · ');
+        const b = btn(t('st.vm.sync.use'), '', () => save(b, { action: 'update', id: r.local.id, ...fromRenter(r.local) })); li.append(who, tag, b);
+      } else if (r.kind === 'inactive') {
+        tag.textContent = tf('st.vm.sync.inactive', { provider: prov().name }); tag.classList.add('mb-mail-rts');
+        const b = btn(t('st.vm.close'), 'kraft', () => save(b, { action: 'close', id: r.local.id })); li.append(who, tag, b);
+      } else if (r.kind === 'reopen') {
+        tag.textContent = tf('st.vm.sync.reopen', { provider: prov().name });
+        const b = btn(t('st.vm.reopen'), 'kraft', () => save(b, { action: 'reopen', id: r.local.id })); li.append(who, tag, b);
+      } else {
+        tag.textContent = tf('st.vm.sync.missing', { provider: prov().name }); tag.classList.add('mb-mail-rts'); li.append(who, tag);
+      }
+      return li;
+    }
     function setAccount(id: string | null, name: string | null) {
       field('customer_id').value = id ?? '';
       $('vmAccount').textContent = name ?? t('st.vm.noacct');

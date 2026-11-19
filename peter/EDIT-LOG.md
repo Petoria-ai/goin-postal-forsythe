@@ -4,6 +4,24 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 15:39 CST · Anytime Mailbox: Test the key, and Sync now (read only)
+
+- **Asked for:** "can i try testing things from anytime renters?", then Anytime Mailbox's API docs as screenshots: the address and Bearer sign-in, List Renters (with its example response), List Renter Mailboxes, Retrieve Renter, List Authorized Recipient.
+- **What changed:**
+  - The site now knows where Anytime Mailbox's API is (`https://connect.anytimemailbox.com/v1`, saved in `site/src/data/virtual.json`).
+  - **Test** (in the Connection card) really tries the key: "The key works: Anytime Mailbox answered", or "Anytime Mailbox refused the key", or, if the List Renters path is wrong, a note to send Claude the path from their docs.
+  - **Sync now with Anytime Mailbox** (top of the Virtual mailboxes list, once a key is saved) reads all your active and inactive renters, 100 at a time, and lines them up with the hand-kept list by mailbox name ("A103"). It **only reads**: nothing changes at Anytime Mailbox. It shows:
+    - **NOT ON OUR LIST** → **Add to our list** (name, email, phone, company as an allowed name).
+    - **DIFFERENT: Phone** (ours → theirs) → **Use theirs**.
+    - **INACTIVE AT Anytime Mailbox, still open here** → **Close**.
+    - **ACTIVE AT Anytime Mailbox, closed here** → **Reopen**.
+    - **NOT FOUND AT Anytime Mailbox** → check their dashboard (no button).
+    - Matching customers are just counted ("3 renters read · 1 match our list · 2 to look at").
+  - Every button uses the same Add / Edit / Close as by hand, so the usual checks (never a wall box number, no duplicates) still apply. Nothing is changed unless you press a button.
+  - The path for List Renters wasn't on the screenshots; the site uses `/renters`, the usual one. If Test says the address was wrong, it's a one-line fix (`renters_path`).
+- **Files:** new [site/src/lib/anytime.ts](../site/src/lib/anytime.ts), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/data/virtual.json](../site/src/data/virtual.json), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/anytime.test.ts](../site/tests/anytime.test.ts), [site/tests/service-keys.test.ts](../site/tests/service-keys.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, `npm run dev` (no new tables). Counter → Virtual mail, owner PIN, paste the new key at the bottom, **Save key**, **Test**, then **Sync now with Anytime Mailbox** at the top of the list.
+
 ## 2026-11-19 15:26 CST · Virtual mail: the Connection card (API key) moved to the bottom
 
 - **Asked for:** "alright lets put that api key connection area at the very bottom of the page".
