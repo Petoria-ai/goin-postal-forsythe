@@ -2,6 +2,8 @@
 
 Ideas and projects Peter wants to do later. Each one has what it is, why it's waiting, and the steps when it's time. Finished items move to [EDIT-LOG.md](EDIT-LOG.md).
 
+> **Start here next time:** [P18, Anytime Mailbox on the website](#p18-anytime-mailbox-on-the-website) (Peter asked to be reminded, Nov 19 2026).
+
 | # | Item | Status | Waiting on |
 |---|---|---|---|
 | P1 | [International shipping online](#p1-international-shipping-online) | ⏸ Later | The US-only site going live, then a talk with William and Rin |
@@ -13,6 +15,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P18 | [Anytime Mailbox on the website: their API and logo](#p18-anytime-mailbox-on-the-website) | ⏳ **Next coding session** | Anytime Mailbox: API access and logo permission |
 | P17 | [Mailbox service: rules to check and extras to add](#p17-mailbox-service-rules-to-check-and-extras-to-add) | ⏳ Some built Nov 18 | Postmaster, insurance agent, accountant, attorney |
 | P16 | [Store domain, email, and checking in mail by email](#p16-store-domain-email-and-checking-in-mail-by-email) | ⏳ Ask Goin' Postal corporate first | Corporate's answer; then the domain on Cloudflare (William) |
 | P15 | [A card on file before a mailbox starts](#p15-a-card-on-file-before-a-mailbox-starts) | ⏸ Peter to decide the details | Stripe live; the mailbox agreement (attorney) |
@@ -320,6 +323,22 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P18. Anytime Mailbox on the website
+
+**Added:** 2026-11-19 12:48 CST. **Status:** do this first when Peter gets back to coding. **Peter:** "when i get back to coding again. remind me to add 'Anytime Mailbox' Api and their logo on the website".
+
+The store's virtual mailboxes run on **Anytime Mailbox** (see P13 and [physical-mailbox/README.md](../physical-mailbox/README.md#virtual-mailboxes-stay-on-anytime-mailbox)).
+
+**Before building, find out (Peter, from Anytime Mailbox's operator support or the operator dashboard):**
+- [ ] **Do they offer an API to operators**, and what can it do (list our virtual customers, log incoming mail or scans, see who's active or expired)? We need the API documentation and an API key; the key goes in the site's settings through the secure form, never in chat.
+- [ ] **The logo:** do they allow operators to show the Anytime Mailbox logo on their own website, and do they have an official logo file and usage rules (like the carrier logos, P11)? Get the file from them, not a copy from the web.
+- [ ] Our **sign-up link** for virtual mailboxes at this location (for a "Get a virtual mailbox" button).
+
+**Then build (Claude):**
+- [ ] A **"Virtual mailbox, powered by Anytime Mailbox"** card on the Mailboxes page and in Services, with their logo and our sign-up link.
+- [ ] If the API allows it: virtual customers on Counter → Mailboxes (separate from wall boxes, never sharing a number), and mail logged in one place for both.
+- [ ] Keep the rule from William's notes: virtual and physical boxes stay separate.
 
 ## P17. Mailbox service: rules to check and extras to add
 

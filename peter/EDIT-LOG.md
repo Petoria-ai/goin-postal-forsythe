@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 12:48 CST · Reminder: Anytime Mailbox API and logo (to-do P18)
+
+- **Asked for:** "when i get back to coding again. remind me to add 'Anytime Mailbox' Api and their logo on the website"
+- **What changed:** new to-do **P18**, marked "Next coding session", plus a **"Start here next time"** line at the top of [TODO.md](TODO.md). It lists what to get from Anytime Mailbox first (whether they have an operator API and a key, permission and an official logo file, our sign-up link) and what to build after. Nothing changed on the website.
+- **Files:** [TODO.md](TODO.md)
+
 ## 2026-11-18 12:57 CST · A more eye-catching Services section on the home page
 
 - **Asked for:** "can you edit the services page to make it more enticing or eye catching for the customers of what we can do"
