@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 15:47 CST · Sync results: grouped, folded and in a scrolling box; Add all
+
+- **Asked for:** "sync works. but after i hit sync.. it seems to blow up my whole page with all the active renters haha".
+- **What changed:**
+  - Sync results sit in **one box that scrolls inside**, so the page doesn't grow.
+  - They're **grouped**: Different details, Inactive at Anytime Mailbox, Active there but closed here, **Not on our list**, Not found at Anytime Mailbox, each with a count. Groups fold open and shut; a long "Not on our list" starts folded.
+  - **Add all N to our list** (with a confirm) brings every new renter in at once. Any that can't be added (say, a number that's a wall box) show the reason on their row.
+  - **Hide** clears the results.
+- **Files:** [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts)
+- **How to check it:** `git pull`, `npm run dev`, Virtual mail → **Sync now with Anytime Mailbox**.
+
 ## 2026-11-19 15:39 CST · Anytime Mailbox: Test the key, and Sync now (read only)
 
 - **Asked for:** "can i try testing things from anytime renters?", then Anytime Mailbox's API docs as screenshots: the address and Bearer sign-in, List Renters (with its example response), List Renter Mailboxes, Retrieve Renter, List Authorized Recipient.

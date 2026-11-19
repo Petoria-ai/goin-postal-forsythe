@@ -1167,7 +1167,12 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-badge.small { font-size: .75rem; padding: 1px 8px; }
 .vm-connect.on { border-color: #2f7d5b; }
 .vm-keyinfo { font-weight: 600; margin: .25rem 0 .5rem; }
-.vm-sync:not(:empty) { margin-bottom: 1rem; border-bottom: 2px dashed #d8cfbf; padding-bottom: .5rem; }
+.vm-sync:not(:empty) { margin-bottom: 1rem; max-height: 26rem; overflow-y: auto; border: 2px dashed #d8cfbf; border-radius: 10px; padding: .25rem .75rem; }
+.vm-sync-group { padding: .35rem 0; }
+.vm-sync-group + .vm-sync-group { border-top: 1px solid #ece4d6; }
+.vm-sync-group > summary { cursor: pointer; font-weight: 700; padding: .25rem 0; }
+.vm-sync-group ul { margin-top: .25rem; }
+.vm-sync-bad .muted { color: #b3261e; }
 .vm-sync-done { opacity: .55; }
 .vm-keyform { display: flex; flex-wrap: wrap; gap: .5rem; align-items: end; }
 .vm-keyform label { display: flex; flex-direction: column; gap: .2rem; flex: 1 1 16rem; }

@@ -49,8 +49,10 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
 
     <div class="card">
       <h3 data-i18n="st.vm.list.h">Virtual mailboxes</h3>
-      <p class="btnrow"><button type="button" class="btn small kraft" id="vmSyncBtn" hidden></button> <span id="vmSyncSum" class="muted"></span></p>
-      <ul id="vmSync" class="mb-check-out vm-sync"></ul>
+      <p class="btnrow"><button type="button" class="btn small kraft" id="vmSyncBtn" hidden></button> <span id="vmSyncSum" class="muted"></span>
+        <button type="button" class="linkish" id="vmSyncHide" hidden data-i18n="st.vm.sync.hide">Hide</button></p>
+      <!-- Sync results (Peter, Nov 19 2026: "it seems to blow up my whole page"): grouped, folded, in a box that scrolls. -->
+      <div id="vmSync" class="vm-sync"></div>
       <p><input id="vmSearch" type="search" data-i18n-ph="st.ci.search" placeholder="Box # or name" /></p>
       <ul id="vmList" class="mb-check-out"></ul>
     </div>
@@ -119,7 +121,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('vmKeyRemove').hidden = k.source !== 'site';
       // Sync now (read only): shows once a key is saved and we know the service's API address.
       const sb = $('vmSyncBtn'); sb.hidden = !p.connected; sb.textContent = tf('st.vm.sync.btn', { provider: p.name });
-      $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = '';
+      $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = ''; $('vmSyncHide').hidden = true;
       const l = $('vmVnoLabel'); l.dataset.i18nVars = JSON.stringify({ provider: p.name }); l.textContent = tf('st.vm.vno', { provider: p.name });
     }
     function paintAll() { paintTabs(); paintProvider(); paint(); }
@@ -187,14 +189,41 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     });
     // Sync now: their renters next to our list. Each button uses the normal add / update / close / reopen.
     $('vmSyncBtn').addEventListener('click', async () => {
-      const ul = $('vmSync'); ul.innerHTML = ''; $('vmSyncSum').textContent = t('st.vm.sync.wait');
+      const box = $('vmSync'); box.innerHTML = ''; $('vmSyncSum').textContent = t('st.vm.sync.wait'); $('vmSyncHide').hidden = true;
       try {
         const j = await api('/api/virtual', { action: 'sync_preview', provider: prov().id });
         if (!j.ok) { $('vmSyncSum').textContent = ''; say(apiFail(j), true); return; }
         $('vmSyncSum').textContent = tf('st.vm.sync.sum', { n: j.renters, ok: j.matched, look: j.rows.length });
-        for (const r of j.rows) ul.appendChild(syncRow(r));
+        $('vmSyncHide').hidden = false;
+        // One folding group per kind; the small, act-now groups open, a long "not on our list" folded.
+        for (const kind of ['diff', 'inactive', 'reopen', 'new', 'missing']) {
+          const list = j.rows.filter((r: any) => r.kind === kind);
+          if (!list.length) continue;
+          const d = document.createElement('details'); d.className = 'vm-sync-group'; d.open = kind !== 'new' ? list.length <= 15 : list.length <= 5;
+          const sum = document.createElement('summary'); sum.textContent = tf(`st.vm.sync.g.${kind}`, { n: list.length, provider: prov().name });
+          const ul = document.createElement('ul'); ul.className = 'mb-check-out';
+          const lis = list.map((r: any) => syncRow(r)); ul.append(...lis);
+          d.append(sum);
+          if (kind === 'new' && list.length > 1) {
+            const p = document.createElement('p'); p.className = 'btnrow';
+            const all = btn(tf('st.vm.sync.addall', { n: list.length }), '', async () => {
+              if (!confirm(tf('st.vm.sync.addallq', { n: list.length, provider: prov().name }))) return;
+              all.disabled = true; let ok = 0, bad = 0;
+              for (const li of lis as any[]) {
+                if (li.classList.contains('vm-sync-done')) continue;
+                try { await api('/api/virtual', li.addBody()); li.markDone(); ok++; }
+                catch (e: any) { bad++; li.querySelector('.muted')!.textContent = e.message; li.classList.add('vm-sync-bad'); }
+              }
+              const k = await api('/api/virtual', { action: 'list' }); rows = k.virtual; paintTabs(); paint();
+              say(tf('st.vm.sync.added', { n: ok, bad }), bad > 0);
+            });
+            p.append(all); box.appendChild(p); // above the group, so it shows even when the group is folded
+          }
+          d.append(ul); box.appendChild(d);
+        }
       } catch (e: any) { $('vmSyncSum').textContent = ''; say(e.message, true); }
     });
+    $('vmSyncHide').addEventListener('click', () => { $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = ''; $('vmSyncHide').hidden = true; });
     function syncRow(r: any) {
       const li = document.createElement('li');
       const who = document.createElement('span'); who.innerHTML = '<strong></strong> <span class="muted"></span>';
@@ -212,6 +241,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       if (r.kind === 'new') {
         tag.textContent = t('st.vm.sync.new'); who.querySelector('.muted')!.textContent = [ren.email, ren.phone, ren.company].filter(Boolean).join(' · ');
         const b = btn(t('st.vm.sync.add'), '', () => save(b, { action: 'add', ...fromRenter() })); li.append(who, tag, b);
+        Object.assign(li, { addBody: () => ({ action: 'add', ...fromRenter() }), markDone: () => done(b) });
       } else if (r.kind === 'diff') {
         tag.textContent = tf('st.vm.sync.diff', { fields: r.fields.map(fieldName).join(', ') });
         who.querySelector('.muted')!.textContent = r.fields.map((f: string) => `${fieldName(f)}: ${r.local[f] ?? '—'} → ${ren[f] ?? '—'}`).join(' · ');
