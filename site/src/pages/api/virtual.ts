@@ -50,7 +50,8 @@ export const POST: APIRoute = async ({ request }) => {
       const today = day(new Date());
       return json({
         virtual: await Promise.all(rows.map(async (v) => ({ ...v, names: JSON.parse(v.names), account: v.customer_id ? (await getCustomer(env, v.customer_id))?.name ?? null : null,
-          doc_key: virtualDocKey(v), docs: docs.get(virtualDocKey(v)) ?? 0, id_state: v.status === 'active' ? idState(ids.get(virtualDocKey(v)), today) : null }))),
+          doc_key: virtualDocKey(v), docs: docs.get(virtualDocKey(v)) ?? 0, id_state: v.status === 'active' ? idState(ids.get(virtualDocKey(v)), today) : null,
+          no_id: v.status === 'active' && !ids.has(virtualDocKey(v)) }))),
         providers: await Promise.all(PROVIDERS.map(async (p) => { const key = await serviceKeyInfo(env, p.id); return { ...p, key, connected: !!key.source && canSync(p) }; })),
         can_manage_keys: atLeast(user, 'owner'), keys_ready: keysReady(env),
       });

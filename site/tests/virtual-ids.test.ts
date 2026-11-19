@@ -65,4 +65,20 @@ describe('virtual customers: IDs and mail holds', () => {
     const row = (await v({ pin: '1234', action: 'list' })).body.virtual.find((x: any) => x.id === id);
     expect([row.doc_key, row.docs]).toEqual([cust, 2]);
   });
+
+  it('an ID date with no file (the ID stays at Anytime Mailbox), and the "no ID date" reminder', async () => {
+    const a = await v({ pin: '1234', action: 'add', vno: 'N77', name: 'Nora Nodate' });
+    const k = `V-${a.body.virtual.id}`;
+    let row = (await v({ pin: '1234', action: 'list' })).body.virtual.find((x: any) => x.id === a.body.virtual.id);
+    expect(row.no_id).toBe(true);
+    expect((await mb({ pin: '1234', action: 'search', q: 'N77' })).body.virtual[0].no_id).toBe(true);
+    expect((await docs({ pin: '1234', action: 'add_date', customer_id: k, expires_on: 'soon' })).status).toBe(400);
+    const d = await docs({ pin: '1234', action: 'add_date', customer_id: k, expires_on: plus(-2) });
+    expect(d.body.doc).toMatchObject({ name: 'On file at Anytime Mailbox', bytes: 0, kind: 'photo_id' });
+    row = (await v({ pin: '1234', action: 'list' })).body.virtual.find((x: any) => x.id === a.body.virtual.id);
+    expect([row.no_id, row.id_state.state]).toEqual([false, 'hold']); // an expired date puts their mail on hold
+    expect((await docs({ pin: '1234', action: 'add_date', customer_id: k, expires_on: plus(700) })).body.code).toBe('in_person');
+    expect((await docs({ pin: '1234', action: 'add_date', customer_id: k, expires_on: plus(700), in_person: true })).body.reinstated).toBe(true);
+    expect((await v({ pin: '1234', action: 'list' })).body.virtual.find((x: any) => x.id === a.body.virtual.id).id_state).toBeNull();
+  });
 });

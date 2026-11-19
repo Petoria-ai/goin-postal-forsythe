@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 15:51 CST · Virtual customers: ID date without uploading, a "no ID date" reminder, and Add by hand folded away
+
+- **Asked for:** "is there anyway i can grab all the renters info? because now when i add the renter to my list.. i gotta reupload their documents..", then "well im going to have to remember to input the renters id to the website..", then "seems like this website tool would only serve as a find a mailbox finder and lets me know if its expired or not. so i wont need add a virtual mailbox owner at the top i believe?"
+- **The answer on documents:** Anytime Mailbox's API has no documents or ID dates (only renters and mailboxes), so they can't be pulled in. They don't need to be: Anytime Mailbox keeps the verified IDs and 1583. The website only needs **the date the ID expires**.
+- **What changed:**
+  - **Type the ID date right in the customer's row:** a date box and **Save ID date**, no file. It's saved as "Photo ID · On file at Anytime Mailbox" with that date, and every ID rule works from it (expiring badge, ID HOLD and HOLD MAIL, suspension, IDs to update, Remind, the automatic texts and emails). For someone on hold, the row also has the "I checked this ID in person" box, as reinstating needs.
+  - **The reminder, so nobody has to remember:** a yellow bar at the top of the list, "42 customers have no ID date yet…", with **Show only them** to work through the list. Each of them has a yellow **NO ID DATE** badge, on this tab and in **Mail check**.
+  - **Add a virtual customer** is now folded near the bottom as **Add someone by hand**, since Sync brings customers in. **Edit** opens it when needed. The page now starts with Sync and the list.
+  - Uploading a scan in Documents still works if you ever want one.
+- **Files:** [site/src/pages/api/mailbox-docs.ts](../site/src/pages/api/mailbox-docs.ts) (`add_date`), [site/src/components/MailboxDocs.astro](../site/src/components/MailboxDocs.astro), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/virtual-ids.test.ts](../site/tests/virtual-ids.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, `npm run dev` (no new tables). Virtual mail → **Sync now** → **Add all** → the yellow bar → **Show only them** → type a date → **Save ID date**.
+
 ## 2026-11-19 15:47 CST · Sync results: grouped, folded and in a scrolling box; Add all
 
 - **Asked for:** "sync works. but after i hit sync.. it seems to blow up my whole page with all the active renters haha".

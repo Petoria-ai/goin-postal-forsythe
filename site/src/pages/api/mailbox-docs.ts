@@ -6,9 +6,13 @@ import { authenticate, atLeast } from '../../lib/auth';
 import { docOwner, listMailboxDocs, listAllMailboxes, logAudit, setDocExpiry, listDocDates, getMailboxDoc, latestPhotoIdExpiry } from '../../shipping/store';
 import { saveDoc, openDoc, removeDoc, KINDS, docsReady, type DocKind } from '../../lib/mailboxDocs';
 import { addMonths, day, endedOn, KEEP_MONTHS, isDay, idState } from '../../lib/mailbox';
+import { addMailboxDoc } from '../../shipping/store';
+import vcfg from '../../data/virtual.json';
 
 // Mailbox holders' documents (Peter, Nov 16 2026): photo IDs and the PS Form 1583, by customer.
 // Any staff PIN: list {customer_id}, add {customer_id, kind, name, data (data URL), note}.
+// Any staff PIN: add_date {customer_id, expires_on, in_person?}: a photo ID's date with no file, for virtual customers whose
+// ID is kept by their virtual mailbox service (Peter, Nov 19 2026: "i gotta reupload their documents"). Same reinstatement rule.
 // Manager or owner PIN only: open {id} (returns the decrypted file; audited every time), delete {id}.
 // The file is never served by URL: the page asks with the PIN and shows it from memory.
 
@@ -40,6 +44,24 @@ export const POST: APIRoute = async ({ request }) => {
         last_ended: lastEnded, delete_after: lastEnded ? addMonths(lastEnded, KEEP_MONTHS) : null,
         id_state: idState((await latestPhotoIdExpiry(env)).get(customer.id), today),
       });
+    }
+    if (b.action === 'add_date') {
+      const customer = await docOwner(env, String(b.customer_id ?? ''));
+      if (!customer) return json({ error: 'No such customer' }, 404);
+      if (!isDay(b.expires_on)) return json({ error: 'Pick the expiration date from the calendar.' }, 400);
+      const today = day(new Date());
+      const before = idState((await latestPhotoIdExpiry(env)).get(customer.id), today);
+      const reinstating = !!before && (before.state === 'hold' || before.state === 'suspended');
+      if (reinstating && b.in_person !== true) return json({ error: 'Their ID is expired: check the new one in person (the customer is here), tick the box, then save.', code: 'in_person' }, 400);
+      if (reinstating && b.expires_on <= today) return json({ error: 'Enter the new ID\'s expiration date (it must be in the future) to reinstate them.' }, 400);
+      const v = customer.virtual.find((x) => x.status === 'active') ?? customer.virtual[0];
+      const where = (vcfg.providers as { id: string; name: string }[]).find((p) => p.id === v?.provider)?.name ?? 'the virtual mailbox service';
+      const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), (x) => x.toString(16).padStart(2, '0')).join('');
+      const row = await addMailboxDoc(env, { id, customer_id: customer.id, kind: 'photo_id', name: `On file at ${where}`, content_type: 'none', bytes: 0, note: b.in_person === true ? 'checked in person' : null, by_name: user.name });
+      await setDocExpiry(env, row.id, b.expires_on);
+      if (reinstating) await logAudit(env, user, 'mailbox.id_reinstated', customer.id, `${customer.name}: new photo ID checked in person, expires ${b.expires_on}`);
+      await logAudit(env, user, 'mailbox.doc_add', customer.id, `${customer.name} · photo_id date only (on file at ${where}) · expires ${b.expires_on}${b.in_person === true ? ' · checked in person' : ''}`);
+      return json({ ok: true, doc: row, reinstated: reinstating });
     }
     if (b.action === 'add') {
       const customer = await docOwner(env, String(b.customer_id ?? ''));

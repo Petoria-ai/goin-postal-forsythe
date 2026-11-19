@@ -84,7 +84,7 @@
       const info = document.createElement('div');
       info.innerHTML = '<strong></strong> <span class="muted"></span><br /><span class="muted small"></span>';
       info.querySelector('strong')!.textContent = t(`st.doc.kind.${d.kind}`);
-      (info.querySelectorAll('.muted')[0] as HTMLElement).textContent = `${d.name} · ${size(d.bytes)}`;
+      (info.querySelectorAll('.muted')[0] as HTMLElement).textContent = d.bytes ? `${d.name} · ${size(d.bytes)}` : d.name; // no file: the date only
       (info.querySelectorAll('.muted')[1] as HTMLElement).textContent = [tf('st.doc.addedby', { who: d.by_name, date: d.at.slice(0, 10) }), d.note].filter(Boolean).join(' · ');
       // The expiration date: a badge (red when expired, yellow within 30 days) and a date box to type or fix it.
       const exp = document.createElement('div'); exp.className = 'mb-doc-exp';
@@ -102,7 +102,7 @@
       li.appendChild(info);
       if (j.can_open) {
         const v = document.createElement('button'); v.type = 'button'; v.className = 'btn small kraft'; v.textContent = t('st.doc.view');
-        v.addEventListener('click', () => view(d.id));
+        v.addEventListener('click', () => view(d.id)); v.hidden = !d.bytes;
         const del = document.createElement('button'); del.type = 'button'; del.className = 'linkish mb-danger'; del.textContent = t('st.doc.delete');
         del.addEventListener('click', async () => {
           if (!confirm(t('st.doc.deleteq'))) return;

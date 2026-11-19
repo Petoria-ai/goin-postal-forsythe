@@ -211,7 +211,7 @@ export const POST: APIRoute = async ({ request }) => {
         const names: string[] = JSON.parse(v.names);
         return v.vno.toLowerCase() === lq || v.vno.toLowerCase().startsWith(lq) || v.name.toLowerCase().includes(lq) || names.some((n) => n.toLowerCase().includes(lq))
           || (!!v.email && v.email.toLowerCase().includes(lq)) || (digitsQ.length >= 4 && !!v.phone && v.phone.replace(/\D/g, '').includes(digitsQ));
-      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status, provider: v.provider, provider_name: VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider, doc_key: virtualDocKey(v), id_state: v.status === 'active' ? idState(photoIdsAll.get(virtualDocKey(v)), today) : null }));
+      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status, provider: v.provider, provider_name: VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider, doc_key: virtualDocKey(v), id_state: v.status === 'active' ? idState(photoIdsAll.get(virtualDocKey(v)), today) : null, no_id: v.status === 'active' && !photoIdsAll.has(virtualDocKey(v)) }));
       return json({ boxes: await Promise.all(hits.slice(0, 20).map(view)), virtual });
     }
     if (b.action === 'find') {

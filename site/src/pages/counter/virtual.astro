@@ -26,7 +26,19 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
   <div id="vmMain" class="hidden">
     <nav class="vm-tabs" role="tablist" id="vmTabs" aria-label="Virtual mailbox services"></nav>
     <div class="card">
-      <h3 data-i18n="st.vm.add.h">Add a virtual customer</h3>
+      <h3 data-i18n="st.vm.list.h">Virtual mailboxes</h3>
+      <p class="btnrow"><button type="button" class="btn small kraft" id="vmSyncBtn" hidden></button> <span id="vmSyncSum" class="muted"></span>
+        <button type="button" class="linkish" id="vmSyncHide" hidden data-i18n="st.vm.sync.hide">Hide</button></p>
+      <!-- Sync results (Peter, Nov 19 2026: "it seems to blow up my whole page"): grouped, folded, in a box that scrolls. -->
+      <div id="vmSync" class="vm-sync"></div>
+      <p id="vmNoId" class="vm-noid-banner" hidden><span></span> <button type="button" class="linkish" id="vmNoIdBtn"></button></p>
+      <p><input id="vmSearch" type="search" data-i18n-ph="st.ci.search" placeholder="Box # or name" /></p>
+      <ul id="vmList" class="mb-check-out"></ul>
+    </div>
+
+    <!-- Folded near the bottom (Peter, Nov 19 2026): Sync brings customers in; adding by hand is the exception. -->
+    <details class="card vm-addbox" id="vmAddBox">
+      <summary><h3 data-i18n="st.vm.addhand">Add someone by hand</h3></summary>
       <form id="vmForm" class="vm-form" autocomplete="off">
         <input type="hidden" name="id" />
         <label><span id="vmVnoLabel" data-i18n="st.vm.vno">Anytime Mailbox #</span> <input name="vno" required maxlength="20" /></label>
@@ -45,17 +57,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         </div>
         <p class="btnrow vm-wide"><button type="submit" class="btn" id="vmSave" data-i18n="st.vm.save">Add</button> <button type="button" class="btn kraft" id="vmCancel" hidden data-i18n="st.vm.cancel">Cancel editing</button></p>
       </form>
-    </div>
-
-    <div class="card">
-      <h3 data-i18n="st.vm.list.h">Virtual mailboxes</h3>
-      <p class="btnrow"><button type="button" class="btn small kraft" id="vmSyncBtn" hidden></button> <span id="vmSyncSum" class="muted"></span>
-        <button type="button" class="linkish" id="vmSyncHide" hidden data-i18n="st.vm.sync.hide">Hide</button></p>
-      <!-- Sync results (Peter, Nov 19 2026: "it seems to blow up my whole page"): grouped, folded, in a box that scrolls. -->
-      <div id="vmSync" class="vm-sync"></div>
-      <p><input id="vmSearch" type="search" data-i18n-ph="st.ci.search" placeholder="Box # or name" /></p>
-      <ul id="vmList" class="mb-check-out"></ul>
-    </div>
+    </details>
 
     <!-- At the bottom (Peter, Nov 19 2026): set once, rarely touched. -->
     <div class="card vm-connect" id="vmConnect">
@@ -94,6 +96,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     // One tab per service (src/data/virtual.json); the page remembers the tab in the address (#anytime).
     let providers: any[] = [];
     let canKeys = false;
+    let onlyNoId = false; // "Show only them": customers with no ID date yet
     let current = location.hash.slice(1) || 'anytime';
     const prov = () => providers.find((p) => p.id === current) ?? providers[0];
     function paintTabs() {
@@ -129,7 +132,14 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     function paint() {
       const q = ($('vmSearch') as HTMLInputElement).value.trim().toLowerCase().replace(/^#/, '');
       const ul = $('vmList'); ul.innerHTML = '';
-      const list = rows.filter((v) => v.provider === prov().id).filter((v) => !q || v.vno.toLowerCase().startsWith(q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
+      const mine = rows.filter((v) => v.provider === prov().id);
+      // The reminder (Peter, Nov 19 2026: "im going to have to remember to input the renters id"): how many still need an ID date.
+      const missing = mine.filter((v) => v.no_id).length;
+      if (!missing) onlyNoId = false;
+      $('vmNoId').hidden = !missing;
+      $('vmNoId').querySelector('span')!.textContent = tf('st.vm.noid.banner', { n: missing, provider: prov().name });
+      $('vmNoIdBtn').textContent = onlyNoId ? t('st.vm.noid.all') : t('st.vm.noid.show');
+      const list = mine.filter((v) => !onlyNoId || v.no_id).filter((v) => !q || v.vno.toLowerCase().startsWith(q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
       for (const v of list) {
         const li = document.createElement('li'); if (v.status === 'closed') li.classList.add('vm-closed');
         const who = document.createElement('div');
@@ -146,6 +156,23 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           who.append(' ', badge, hm); li.classList.add('mb-holdmail-row');
         } else if (s?.state === 'expiring') {
           const badge = document.createElement('span'); badge.className = 'mb-exp soon'; badge.textContent = tf('st.id.exp', { date: s.expires_on }); who.append(' ', badge);
+        }
+        // Type the ID's expiration date right here (from their ID in the service's dashboard); no file needed.
+        if (v.no_id || (s && s.state !== 'expiring')) {
+          const badge = document.createElement('span'); badge.className = 'mb-exp soon';
+          if (v.no_id) { badge.textContent = t('st.vm.noid.badge'); who.append(' ', badge); }
+          const f = document.createElement('div'); f.className = 'vm-iddate';
+          const date = document.createElement('input'); date.type = 'date'; date.setAttribute('aria-label', t('st.doc.expires'));
+          const lab = document.createElement('label'); lab.className = 'check'; const cb = document.createElement('input'); cb.type = 'checkbox';
+          lab.append(cb, ' ', t('st.doc.inperson')); lab.hidden = !!v.no_id;
+          const save = btn(t('st.vm.noid.save'), '', async () => {
+            try {
+              const r = await api('/api/mailbox-docs', { action: 'add_date', customer_id: v.doc_key, expires_on: date.value, in_person: cb.checked });
+              if (r.reinstated) alert(t('st.doc.reinstated'));
+              await load();
+            } catch (e: any) { say(e.message, true); }
+          });
+          f.append(date, save, lab); who.append(f);
         }
         li.append(who, btn(t('st.mb.edit'), 'kraft', () => edit(v)));
         const d = document.createElement('button'); d.type = 'button'; d.className = 'btn small'; d.dataset.mbdocs = v.doc_key; d.textContent = `${t('st.doc.btn')}${v.docs ? ` (${v.docs})` : ''}`; li.append(d);
@@ -223,6 +250,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         }
       } catch (e: any) { $('vmSyncSum').textContent = ''; say(e.message, true); }
     });
+    $('vmNoIdBtn').addEventListener('click', () => { onlyNoId = !onlyNoId; paint(); });
     $('vmSyncHide').addEventListener('click', () => { $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = ''; $('vmSyncHide').hidden = true; });
     function syncRow(r: any) {
       const li = document.createElement('li');
@@ -271,6 +299,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       field('phone').value = v.phone ?? ''; (form.elements.namedItem('names') as HTMLTextAreaElement).value = v.names.join('\n'); field('note').value = v.note ?? '';
       setAccount(v.customer_id, v.account);
       $('vmSave').textContent = t('st.vm.update'); $('vmCancel').hidden = false;
+      ($('vmAddBox') as HTMLDetailsElement).open = true;
       form.scrollIntoView({ behavior: 'smooth' });
     }
     form.addEventListener('submit', async (ev) => {

@@ -1169,6 +1169,11 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-keyinfo { font-weight: 600; margin: .25rem 0 .5rem; }
 .vm-sync:not(:empty) { margin-bottom: 1rem; max-height: 26rem; overflow-y: auto; border: 2px dashed #d8cfbf; border-radius: 10px; padding: .25rem .75rem; }
 .vm-sync-group { padding: .35rem 0; }
+.vm-addbox > summary { cursor: pointer; list-style: revert; }
+.vm-addbox > summary h3 { display: inline; }
+.vm-noid-banner { background: #fff6d6; border: 1px solid #e8c95a; border-radius: 10px; padding: .5rem .75rem; }
+.vm-iddate { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .35rem; }
+.vm-iddate input[type=date] { width: auto; }
 .vm-sync-group + .vm-sync-group { border-top: 1px solid #ece4d6; }
 .vm-sync-group > summary { cursor: pointer; font-weight: 700; padding: .25rem 0; }
 .vm-sync-group ul { margin-top: .25rem; }

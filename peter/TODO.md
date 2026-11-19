@@ -360,6 +360,8 @@ The store's virtual mailboxes run on **Anytime Mailbox** (see P13 and [physical-
 **Then build (Claude), once the docs are in:**
 - [x] **Sync now** (read only) ✅ 2026-11-19 15:39 CST: renters and their mailboxes lined up with our list by mailbox name; new, different, inactive, reopen and missing flagged, each with a button that uses the normal add / edit / close. **Peter to try with the real key.**
 - [ ] Authorized recipients into the Names list (List Authorized Recipient, per mailbox name).
+- [x] **ID dates without re-uploading** ✅ 2026-11-19 15:51 CST: their API has no documents, so staff type the ID's expiration date in the row ("On file at Anytime Mailbox"); a yellow "no ID date" bar and badge remind until every customer has one.
+- [ ] Ask Anytime Mailbox support: can operators export renters' verification documents or ID expiration dates? If yes, fill the dates automatically.
 - [ ] **Open their account** button (Get Renter Login URL).
 - [ ] **Write actions** behind a manager PIN, each audited: create a renter, assign or unassign a mailbox, add or delete an authorized recipient (from the Names list), and **deactivate** a renter when their ID hold turns into a suspension (reactivate on reinstatement), if Peter wants that automatic.
 
