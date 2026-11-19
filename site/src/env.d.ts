@@ -23,6 +23,7 @@ interface Env {
   RECEIPT_FORMAT?: string;    // "escpos" when the shop has a till-roll receipt printer; blank prints receipts as 4x6 ZPL on the Zebra
   // Customer updates. Blank means log instead of send.
   RESEND_API_KEY?: string; MAIL_FROM?: string; STAFF_EMAIL?: string;
+  ANYTIME_API_KEY?: string;   // Anytime Mailbox operator API key, once they give us access (to-do P18); none means the Virtual mail list is kept by hand
   DOCS_KEY?: string;          // locks mailbox holders' ID and 1583 files (lib/mailboxDocs.ts): a long random secret, set once and never changed (changing it makes stored files unreadable)
   TWILIO_ACCOUNT_SID?: string; TWILIO_AUTH_TOKEN?: string; TWILIO_FROM?: string;
   STRIPE_SECRET_KEY?: string;

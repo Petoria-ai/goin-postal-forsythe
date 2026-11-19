@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 13:13 CST · Virtual mail tab (Anytime Mailbox), and Mail check searching it
+
+- **Asked for:** "do you think its better to have 'Anytime Mailbox' as its own tab or incorporate with the physical boxes tab?" (its own tab, with one shared Mail check), then "lets go ahead and add it right now and start".
+- **What changed:**
+  - A new staff page, **Counter → Virtual mail** (in the staff menu on every counter page, after Mailboxes), for customers whose mail service runs on **Anytime Mailbox**.
+  - **Add a virtual customer:** their Anytime Mailbox #, name, email, phone, other names allowed (family, business; one per line), a note, and optionally their **website account** (so **Documents** works for their IDs and 1583). **Edit**, **Close** (with a reminder to close it in Anytime Mailbox too) and **Reopen**; a search box over the list.
+  - **Never a wall box number:** a virtual number inside a wall box range (1100–1220, 1221–1284, 1300–1323) is refused, and two open virtual mailboxes can't share a number.
+  - **Mail check** on the Mailboxes page now searches virtual customers too (number, name, business name, email or phone) and shows them in blue: **"ANYTIME MAILBOX: scan it in their app, not a wall box"**, with a button to the Virtual mail page. A closed one says to return it to sender.
+  - A **Connection** card says what's still waiting on Anytime Mailbox: API access and a key, and permission to show their logo (to-do P18). Until then the list is kept by hand. No logo is shown yet.
+  - Every add, edit, close and reopen is in the activity log, and the list is in Export.
+- **Files:** new [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), new [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), the staff menu line in every counter page and [site/src/pages/counter/index.astro](../site/src/pages/counter/index.astro), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/db/schema.sql](../site/db/schema.sql) (new table `virtual_mailboxes`), [site/src/env.d.ts](../site/src/env.d.ts) (`ANYTIME_API_KEY`, for later), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/virtual.test.ts](../site/tests/virtual.test.ts), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, **`npm run db:local`** (one new table), `npm run dev`. Open **Virtual mail** in the staff menu (PIN 1234), add a customer, then search their name in **Mail check** on the Mailboxes page.
+
 ## 2026-11-19 12:48 CST · Reminder: Anytime Mailbox API and logo (to-do P18)
 
 - **Asked for:** "when i get back to coding again. remind me to add 'Anytime Mailbox' Api and their logo on the website"

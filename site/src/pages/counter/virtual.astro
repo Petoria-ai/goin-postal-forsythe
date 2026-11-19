@@ -1,0 +1,153 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import MailboxDocs from '../../components/MailboxDocs.astro';
+
+// Staff page: virtual mailboxes on Anytime Mailbox (Peter, Nov 19 2026). Separate from the wall boxes (William's rule:
+// a virtual number is never a wall box number). Anytime Mailbox stays the record of these customers (their billing and
+// scans); this list lets staff recognize the mail (Mail check on the Mailboxes page searches it too) and keep the
+// customer's documents and allowed names. The Anytime Mailbox API and logo come later (to-do P18).
+---
+<Base title="Counter · Virtual mail">
+  <section class="hero">
+    <h1 data-i18n="st.vm.h1">Virtual mail</h1>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/settings" data-i18n="st.nav.settings">Settings</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/virtual" data-i18n="st.nav.virtual">Virtual mail</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="lead" data-i18n="st.vm.lead">Customers whose mail service runs on Anytime Mailbox. Their mail is scanned in Anytime Mailbox, never put in a wall box. Mail check on the Mailboxes page finds them too.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.show">Show</button>
+    </p>
+    <p id="msg" role="alert"></p>
+  </div>
+
+  <div id="vmMain" class="hidden">
+    <div class="card vm-connect" id="vmConnect">
+      <h3><span class="vm-badge">Anytime Mailbox</span> <span data-i18n="st.vm.conn.h">Connection</span></h3>
+      <p id="vmConnText" class="muted"></p>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="st.vm.add.h">Add a virtual customer</h3>
+      <form id="vmForm" class="vm-form" autocomplete="off">
+        <input type="hidden" name="id" />
+        <label><span data-i18n="st.vm.vno">Anytime Mailbox #</span> <input name="vno" required maxlength="20" /></label>
+        <label><span data-i18n="st.c.th.name">Name</span> <input name="name" required maxlength="80" /></label>
+        <label><span data-i18n="st.vm.email">Email</span> <input name="email" type="email" maxlength="120" /></label>
+        <label><span data-i18n="st.vm.phone">Phone</span> <input name="phone" inputmode="tel" maxlength="30" /></label>
+        <label class="vm-wide"><span data-i18n="st.vm.names">Other names allowed (family, business), one per line</span> <textarea name="names" rows="2"></textarea></label>
+        <label class="vm-wide"><span data-i18n="st.vm.note">Note</span> <input name="note" maxlength="300" /></label>
+        <div class="vm-wide vm-link">
+          <span data-i18n="st.vm.account">Website account (optional, for Documents)</span>
+          <span id="vmAccount" class="muted" data-i18n="st.vm.noacct">None linked</span>
+          <input id="vmFindQ" data-i18n-ph="st.mb.find.ph" placeholder="Name, email or phone" /> <button type="button" class="btn small kraft" id="vmFind" data-i18n="st.mb.find">Find</button>
+          <button type="button" class="linkish" id="vmUnlink" hidden data-i18n="st.vm.unlink">Unlink</button>
+          <ul id="vmFound" class="mb-found"></ul>
+          <input type="hidden" name="customer_id" />
+        </div>
+        <p class="btnrow vm-wide"><button type="submit" class="btn" id="vmSave" data-i18n="st.vm.save">Add</button> <button type="button" class="btn kraft" id="vmCancel" hidden data-i18n="st.vm.cancel">Cancel editing</button></p>
+      </form>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="st.vm.list.h">Virtual mailboxes</h3>
+      <p><input id="vmSearch" type="search" data-i18n-ph="st.ci.search" placeholder="Box # or name" /></p>
+      <ul id="vmList" class="mb-check-out"></ul>
+    </div>
+  </div>
+
+  <MailboxDocs />
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg');
+    const say = (text: string, err = false) => { msg.className = err ? 'err' : 'ok-msg'; msg.textContent = text; };
+    async function api(path: string, extra: Record<string, unknown>) {
+      const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error ?? 'Try again');
+      return j;
+    }
+    const btn = (label: string, cls: string, fn: () => void) => { const b = document.createElement('button'); b.type = 'button'; b.className = `btn small ${cls}`; b.textContent = label; b.addEventListener('click', fn); return b; };
+    const form = $('vmForm') as HTMLFormElement;
+    const field = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
+    let rows: any[] = [];
+
+    function paint() {
+      const q = ($('vmSearch') as HTMLInputElement).value.trim().toLowerCase().replace(/^#/, '');
+      const ul = $('vmList'); ul.innerHTML = '';
+      const list = rows.filter((v) => !q || v.vno.toLowerCase().startsWith(q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
+      for (const v of list) {
+        const li = document.createElement('li'); if (v.status === 'closed') li.classList.add('vm-closed');
+        const who = document.createElement('div');
+        who.innerHTML = '<strong></strong> <span class="vm-badge small">Anytime Mailbox</span><br /><span class="muted"></span>';
+        who.querySelector('strong')!.textContent = `V#${v.vno} · ${v.name}${v.status === 'closed' ? ` · ${t('mb.state.closed')}` : ''}`;
+        who.querySelector('.muted')!.textContent = [v.phone, v.email, v.names.length ? `${t('st.nm.also')} ${v.names.join(', ')}` : '', v.account ? tf('st.vm.linked', { name: v.account }) : '', v.note].filter(Boolean).join(' · ');
+        li.append(who, btn(t('st.mb.edit'), 'kraft', () => edit(v)));
+        if (v.customer_id) { const d = document.createElement('button'); d.type = 'button'; d.className = 'btn small'; d.dataset.mbdocs = v.customer_id; d.textContent = t('st.doc.btn'); li.append(d); }
+        li.append(btn(v.status === 'closed' ? t('st.vm.reopen') : t('st.vm.close'), 'kraft', async () => {
+          if (v.status !== 'closed' && !confirm(tf('st.vm.closeq', { vno: v.vno, name: v.name }))) return;
+          try { await api('/api/virtual', { action: v.status === 'closed' ? 'reopen' : 'close', id: v.id }); await load(); } catch (e: any) { say(e.message, true); }
+        }));
+        ul.appendChild(li);
+      }
+      if (!list.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.vm.none'); ul.appendChild(li); }
+    }
+    async function load() {
+      try {
+        const j = await api('/api/virtual', { action: 'list' });
+        $('vmMain').classList.remove('hidden');
+        rows = j.virtual;
+        $('vmConnText').textContent = j.connected ? t('st.vm.conn.on') : t('st.vm.conn.off');
+        $('vmConnect').classList.toggle('on', j.connected);
+        paint();
+      } catch (e: any) { say(e.message, true); }
+    }
+    function setAccount(id: string | null, name: string | null) {
+      field('customer_id').value = id ?? '';
+      $('vmAccount').textContent = name ?? t('st.vm.noacct');
+      $('vmUnlink').hidden = !id; $('vmFound').innerHTML = '';
+    }
+    function resetForm() {
+      form.reset(); field('id').value = ''; setAccount(null, null);
+      $('vmSave').textContent = t('st.vm.save'); $('vmCancel').hidden = true;
+    }
+    function edit(v: any) {
+      field('id').value = String(v.id); field('vno').value = v.vno; field('name').value = v.name; field('email').value = v.email ?? '';
+      field('phone').value = v.phone ?? ''; (form.elements.namedItem('names') as HTMLTextAreaElement).value = v.names.join('\n'); field('note').value = v.note ?? '';
+      setAccount(v.customer_id, v.account);
+      $('vmSave').textContent = t('st.vm.update'); $('vmCancel').hidden = false;
+      form.scrollIntoView({ behavior: 'smooth' });
+    }
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const id = field('id').value;
+      const body = { action: id ? 'update' : 'add', id: id ? Number(id) : undefined, vno: field('vno').value, name: field('name').value, email: field('email').value, phone: field('phone').value,
+        names: (form.elements.namedItem('names') as HTMLTextAreaElement).value.split('\n').map((s) => s.trim()).filter(Boolean), note: field('note').value, customer_id: field('customer_id').value || null };
+      try { const r = await api('/api/virtual', body); say(tf(id ? 'st.vm.updated' : 'st.vm.added', { vno: r.virtual.vno, name: r.virtual.name })); resetForm(); await load(); }
+      catch (e: any) { say(e.message, true); }
+    });
+    $('vmCancel').addEventListener('click', resetForm);
+    $('vmUnlink').addEventListener('click', () => setAccount(null, null));
+    $('vmFind').addEventListener('click', async () => {
+      try {
+        const j = await api('/api/mailbox', { action: 'find', q: ($('vmFindQ') as HTMLInputElement).value });
+        const ul = $('vmFound'); ul.innerHTML = '';
+        for (const c of j.customers) {
+          const li = document.createElement('li');
+          li.append(btn(t('st.mb.pick'), 'kraft', () => setAccount(c.id, c.name)), ` ${c.name} · ${[c.phone, c.email].filter(Boolean).join(' · ')}`);
+          ul.appendChild(li);
+        }
+        if (!j.customers.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nofound'); ul.appendChild(li); }
+      } catch (e: any) { say(e.message, true); }
+    });
+    $('vmSearch').addEventListener('input', paint);
+    $('load').addEventListener('click', load);
+    $('pin').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') load(); });
+    window.addEventListener('mbdocs:changed', () => { if (!$('vmMain').classList.contains('hidden')) load(); });
+  </script>
+</Base>

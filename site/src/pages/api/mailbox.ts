@@ -11,7 +11,7 @@ import {
   assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
   countItemsIn, listMailboxItems, getMailboxItem, deleteMailboxItem, clearMailboxItems, getMailboxSettings, saveMailboxSettings,
   listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox, moveMailboxItem, exportTable,
-  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits,
+  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits, listVirtual,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs, ID_WARN_DAYS, sendIdNoticeNow, idExpiryNotices } from '../../lib/mailboxJobs';
@@ -198,7 +198,15 @@ export const POST: APIRoute = async ({ request }) => {
       }
       // The box's current holder first, then past holders, newest first.
       hits.sort((a, c) => (a.status === 'active' ? 0 : 1) - (c.status === 'active' ? 0 : 1) || c.id - a.id);
-      return json({ boxes: await Promise.all(hits.slice(0, 20).map(view)) });
+      // Virtual mailboxes (Anytime Mailbox) too, so staff know that mail goes to Anytime Mailbox, not a wall box.
+      const lq = q.toLowerCase().replace(/^#/, '');
+      const digitsQ = lq.replace(/\D/g, '');
+      const virtual = (await listVirtual(env)).filter((v) => {
+        const names: string[] = JSON.parse(v.names);
+        return v.vno.toLowerCase() === lq || v.vno.toLowerCase().startsWith(lq) || v.name.toLowerCase().includes(lq) || names.some((n) => n.toLowerCase().includes(lq))
+          || (!!v.email && v.email.toLowerCase().includes(lq)) || (digitsQ.length >= 4 && !!v.phone && v.phone.replace(/\D/g, '').includes(digitsQ));
+      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status }));
+      return json({ boxes: await Promise.all(hits.slice(0, 20).map(view)), virtual });
     }
     if (b.action === 'find') {
       const { customers } = await searchCustomers(env, String(b.q ?? '').slice(0, 60), 10);

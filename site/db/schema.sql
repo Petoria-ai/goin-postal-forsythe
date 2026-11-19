@@ -661,6 +661,25 @@ CREATE TABLE IF NOT EXISTS mailbox_names (
 );
 CREATE INDEX IF NOT EXISTS mailbox_names_box ON mailbox_names(mailbox_id);
 
+-- Virtual mailboxes (Peter, Nov 19 2026): customers whose mail service runs on Anytime Mailbox. Kept here so Mail
+-- check finds them and staff know their mail goes to Anytime Mailbox for scanning, not into a wall box. Their number
+-- is Anytime Mailbox's and never the same as a wall box number. customer_id links a website account (optional).
+CREATE TABLE IF NOT EXISTS virtual_mailboxes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  vno TEXT NOT NULL,                    -- their Anytime Mailbox number
+  name TEXT NOT NULL,
+  email TEXT,
+  phone TEXT,
+  names TEXT NOT NULL DEFAULT '[]',     -- other names allowed (family, a business), JSON list
+  customer_id TEXT,
+  status TEXT NOT NULL DEFAULT 'active', -- active, closed
+  note TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  closed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS virtual_mailboxes_vno ON virtual_mailboxes(vno);
+
 -- The key deposit for each box (Peter, Nov 18 2026): paid or not, when, and who marked it. No row means unpaid.
 CREATE TABLE IF NOT EXISTS mailbox_keys (
   mailbox_id INTEGER PRIMARY KEY,

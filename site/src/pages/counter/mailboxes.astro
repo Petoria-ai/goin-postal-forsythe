@@ -13,7 +13,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
 <Base title="Counter · Mailboxes">
   <section class="hero">
     <h1 data-i18n="st.mb.h1">Mailboxes</h1>
-    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/settings" data-i18n="st.nav.settings">Settings</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
+    <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/settings" data-i18n="st.nav.settings">Settings</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/virtual" data-i18n="st.nav.virtual">Virtual mail</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
     <p class="lead" data-i18n="st.mb.lead">Online reservations, the boxes assigned to website accounts, renewals and reminders. IDs, the 1583 and payments still go in the register.</p>
   </section>
 
@@ -668,7 +668,17 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       const ul = $('checkOut'); ul.innerHTML = '';
       try {
         const j = await api({ action: 'search', q: ($('checkQ') as HTMLInputElement).value });
-        if (!j.boxes.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nomatch'); ul.appendChild(li); return; }
+        // Virtual mailboxes (Anytime Mailbox): their mail is scanned there, never put in a wall box.
+        for (const v of j.virtual ?? []) {
+          const li = document.createElement('li'); li.className = 'vm-hit';
+          const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span class="muted"></span>';
+          who.querySelector('strong')!.textContent = `V#${v.vno} · ${v.name}`;
+          who.querySelector('.muted')!.textContent = v.status === 'closed' ? t('mb.state.closed') : (v.names.length ? `${t('st.nm.also')} ${v.names.join(', ')}` : '');
+          const tag = document.createElement('span'); tag.className = 'mb-mail mb-mail-virtual'; tag.textContent = v.status === 'closed' ? t('st.vm.do.closed') : t('st.vm.do');
+          const open = document.createElement('a'); open.className = 'btn small kraft'; open.href = '/counter/virtual'; open.textContent = t('st.nav.virtual');
+          li.append(who, tag, open); ul.appendChild(li);
+        }
+        if (!j.boxes.length && !(j.virtual ?? []).length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nomatch'); ul.appendChild(li); return; }
         for (const x of j.boxes) {
           const li = document.createElement('li');
           const who = document.createElement('div');
