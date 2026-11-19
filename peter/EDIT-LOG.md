@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 15:26 CST · Virtual mail: the Connection card (API key) moved to the bottom
+
+- **Asked for:** "alright lets put that api key connection area at the very bottom of the page".
+- **What changed:** on Counter → Virtual mail, the **Connection** card (the Operator API key box) is now the last card, under the virtual mailboxes list. Add a virtual customer and the list come first. Nothing else changed.
+- **Files:** [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro)
+- **How to check it:** `git pull`, `npm run dev`, Counter → Virtual mail, scroll to the bottom.
+
 ## 2026-11-19 15:22 CST · Paste the Anytime Mailbox key on the website (owner PIN only)
 
 - **Asked for:** "wouldnt it be better i input the api key on the website just so its easier to transfer ownership or something?", then "yes lets build it.. i already put it in the notepad dev.. but i think its better to be able to attach on the website".

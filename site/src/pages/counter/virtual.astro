@@ -25,20 +25,6 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
 
   <div id="vmMain" class="hidden">
     <nav class="vm-tabs" role="tablist" id="vmTabs" aria-label="Virtual mailbox services"></nav>
-    <div class="card vm-connect" id="vmConnect">
-      <h3><span class="vm-badge" id="vmProvBadge"></span> <span data-i18n="st.vm.conn.h">Connection</span></h3>
-      <p id="vmConnText" class="muted"></p>
-      <p id="vmKeyInfo" class="vm-keyinfo"></p>
-      <form id="vmKeyForm" class="vm-keyform" autocomplete="off" hidden>
-        <label><span data-i18n="st.vm.key.label">Operator API key</span>
-          <input type="password" name="key" autocomplete="new-password" spellcheck="false" maxlength="500" /></label>
-        <button type="submit" class="btn small" data-i18n="st.vm.key.save">Save key</button>
-        <button type="button" class="btn small kraft" id="vmKeyTest" data-i18n="st.vm.key.test">Test</button>
-        <button type="button" class="btn small" id="vmKeyRemove" data-i18n="st.vm.key.remove">Remove key</button>
-        <p class="muted small" data-i18n="st.vm.key.owner">Owner PIN only. The key is locked before it's saved and is never shown again, only its last four characters. Never paste it in chat or email.</p>
-      </form>
-    </div>
-
     <div class="card">
       <h3 data-i18n="st.vm.add.h">Add a virtual customer</h3>
       <form id="vmForm" class="vm-form" autocomplete="off">
@@ -65,6 +51,21 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <h3 data-i18n="st.vm.list.h">Virtual mailboxes</h3>
       <p><input id="vmSearch" type="search" data-i18n-ph="st.ci.search" placeholder="Box # or name" /></p>
       <ul id="vmList" class="mb-check-out"></ul>
+    </div>
+
+    <!-- At the bottom (Peter, Nov 19 2026): set once, rarely touched. -->
+    <div class="card vm-connect" id="vmConnect">
+      <h3><span class="vm-badge" id="vmProvBadge"></span> <span data-i18n="st.vm.conn.h">Connection</span></h3>
+      <p id="vmConnText" class="muted"></p>
+      <p id="vmKeyInfo" class="vm-keyinfo"></p>
+      <form id="vmKeyForm" class="vm-keyform" autocomplete="off" hidden>
+        <label><span data-i18n="st.vm.key.label">Operator API key</span>
+          <input type="password" name="key" autocomplete="new-password" spellcheck="false" maxlength="500" /></label>
+        <button type="submit" class="btn small" data-i18n="st.vm.key.save">Save key</button>
+        <button type="button" class="btn small kraft" id="vmKeyTest" data-i18n="st.vm.key.test">Test</button>
+        <button type="button" class="btn small" id="vmKeyRemove" data-i18n="st.vm.key.remove">Remove key</button>
+        <p class="muted small" data-i18n="st.vm.key.owner">Owner PIN only. The key is locked before it's saved and is never shown again, only its last four characters. Never paste it in chat or email.</p>
+      </form>
     </div>
   </div>
 
