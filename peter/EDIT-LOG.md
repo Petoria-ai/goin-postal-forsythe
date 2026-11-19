@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 15:22 CST · Paste the Anytime Mailbox key on the website (owner PIN only)
+
+- **Asked for:** "wouldnt it be better i input the api key on the website just so its easier to transfer ownership or something?", then "yes lets build it.. i already put it in the notepad dev.. but i think its better to be able to attach on the website".
+- **What changed:**
+  - **Counter → Virtual mail → Anytime Mailbox → Connection** now has an **Operator API key** box with **Save key**, **Test** and **Remove key**. Only an **owner PIN** sees the box. Counter staff see only whether a key is saved.
+  - **The key is locked** (encrypted, like the ID photos) before it's saved, and the website never shows it again, only "ends in ABCD", who saved it and when. It isn't in the Export page or the audit log; the log only says "API key saved".
+  - **A key in `.dev.vars` or on Cloudflare** (`ANYTIME_API_KEY`) is used first, and the box then says "Key set on the server". To use the website box instead, delete that line from `.dev.vars`.
+  - **Test** says what's still missing: Anytime Mailbox's API address from their documentation (to-do P18). Once that's added, the same button will really try the key.
+  - On the live site, keys can only be saved once William has set `DOCS_KEY` (the same lock as the ID photos).
+  - Any future virtual mailbox service gets its own key box on its own tab.
+- **Files:** new [site/src/lib/serviceKeys.ts](../site/src/lib/serviceKeys.ts), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/data/virtual.json](../site/src/data/virtual.json) (`api_base`, empty until their docs), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/service-keys.test.ts](../site/tests/service-keys.test.ts), [site/tests/virtual.test.ts](../site/tests/virtual.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, `npm run dev` (no new tables). Delete the `ANYTIME_API_KEY=` line from `.dev.vars` and restart `npm run dev`, then Counter → Virtual mail, load with the **owner PIN (9999)**, paste the new key, **Save key**.
+
 ## 2026-11-19 14:28 CST · Virtual customers: ID dates, ID hold and HOLD MAIL; Anytime Mailbox API plan in P18
 
 - **Asked for:** "i suppose it doesnt hurt to have the functionality there in item 5 / because i want to start tracking their id's and expirations.. and i want to know whether i should be holding their mail or not" (after the Anytime Mailbox API screenshots).

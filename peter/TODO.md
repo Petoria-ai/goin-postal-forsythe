@@ -354,7 +354,8 @@ The store's virtual mailboxes run on **Anytime Mailbox** (see P13 and [physical-
 
 **Still needed before the API work:**
 - [ ] Anytime Mailbox's **API documentation**: the web address it lives at, how it signs in (key in a header?), and the fields a renter comes back with.
-- [ ] A **new API key** (the first one was pasted in chat, so replace it). It goes in `site/.dev.vars` as `ANYTIME_API_KEY=` on Peter's PC, and on the live site through the secure key form. Never in chat or in a file that's uploaded.
+- [ ] A **new API key** (the first one was pasted in chat, so replace it). ✅ 2026-11-19 15:22 CST: the place for it is built: **Virtual mail → Anytime Mailbox → Connection → Operator API key**, owner PIN only, locked before it's saved, never shown again. Never in chat or in a file that's uploaded.
+- [ ] Their API address goes in `site/src/data/virtual.json` (`api_base`); then **Test** really tries the key.
 
 **Then build (Claude), once the docs are in:**
 - [ ] **Sync now** (read only first): pull renters, their mailboxes and authorized recipients into the Anytime Mailbox tab, matched by number; flag differences instead of overwriting.

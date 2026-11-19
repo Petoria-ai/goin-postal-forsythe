@@ -28,6 +28,15 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     <div class="card vm-connect" id="vmConnect">
       <h3><span class="vm-badge" id="vmProvBadge"></span> <span data-i18n="st.vm.conn.h">Connection</span></h3>
       <p id="vmConnText" class="muted"></p>
+      <p id="vmKeyInfo" class="vm-keyinfo"></p>
+      <form id="vmKeyForm" class="vm-keyform" autocomplete="off" hidden>
+        <label><span data-i18n="st.vm.key.label">Operator API key</span>
+          <input type="password" name="key" autocomplete="new-password" spellcheck="false" maxlength="500" /></label>
+        <button type="submit" class="btn small" data-i18n="st.vm.key.save">Save key</button>
+        <button type="button" class="btn small kraft" id="vmKeyTest" data-i18n="st.vm.key.test">Test</button>
+        <button type="button" class="btn small" id="vmKeyRemove" data-i18n="st.vm.key.remove">Remove key</button>
+        <p class="muted small" data-i18n="st.vm.key.owner">Owner PIN only. The key is locked before it's saved and is never shown again, only its last four characters. Never paste it in chat or email.</p>
+      </form>
     </div>
 
     <div class="card">
@@ -79,6 +88,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     let rows: any[] = [];
     // One tab per service (src/data/virtual.json); the page remembers the tab in the address (#anytime).
     let providers: any[] = [];
+    let canKeys = false;
     let current = location.hash.slice(1) || 'anytime';
     const prov = () => providers.find((p) => p.id === current) ?? providers[0];
     function paintTabs() {
@@ -97,6 +107,13 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('vmProvBadge').textContent = p.name;
       $('vmConnText').textContent = p.connected ? tf('st.vm.conn.on', { provider: p.name }) : tf('st.vm.conn.off', { provider: p.name });
       $('vmConnect').classList.toggle('on', !!p.connected);
+      // The key: who set it and its last four characters, never the key (lib/serviceKeys.ts).
+      const k = p.key ?? {};
+      $('vmKeyInfo').textContent = k.source === 'server' ? tf('st.vm.key.server', { last4: k.last4 })
+        : k.source === 'site' ? `${tf('st.vm.key.on', { last4: k.last4, by: k.by ?? '', date: String(k.at ?? '').slice(0, 10) })}${p.api_base ? '' : ` ${tf('st.vm.key.wait', { provider: p.name })}`}`
+        : t('st.vm.key.none');
+      const kf = $('vmKeyForm') as HTMLFormElement; kf.hidden = !canKeys; kf.reset();
+      $('vmKeyRemove').hidden = k.source !== 'site';
       const l = $('vmVnoLabel'); l.dataset.i18nVars = JSON.stringify({ provider: p.name }); l.textContent = tf('st.vm.vno', { provider: p.name });
     }
     function paintAll() { paintTabs(); paintProvider(); paint(); }
@@ -136,10 +153,29 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       try {
         const j = await api('/api/virtual', { action: 'list' });
         $('vmMain').classList.remove('hidden');
-        rows = j.virtual; providers = j.providers;
+        rows = j.virtual; providers = j.providers; canKeys = !!j.can_manage_keys;
         paintAll();
       } catch (e: any) { say(e.message, true); }
     }
+    ($('vmKeyForm') as HTMLFormElement).addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const input = ($('vmKeyForm') as HTMLFormElement).elements.namedItem('key') as HTMLInputElement;
+      try {
+        const j = await api('/api/virtual', { action: 'key_save', provider: prov().id, key: input.value });
+        input.value = ''; prov().key = j.key; paintProvider(); say(t('st.vm.key.saved'));
+      } catch (e: any) { say(e.message, true); }
+    });
+    $('vmKeyRemove').addEventListener('click', async () => {
+      if (!confirm(tf('st.vm.key.removeq', { provider: prov().name }))) return;
+      try { const j = await api('/api/virtual', { action: 'key_remove', provider: prov().id }); prov().key = j.key; paintProvider(); say(t('st.vm.key.removed')); }
+      catch (e: any) { say(e.message, true); }
+    });
+    $('vmKeyTest').addEventListener('click', async () => {
+      try {
+        const j = await api('/api/virtual', { action: 'key_test', provider: prov().id });
+        say(j.result === 'no_key' ? t('st.vm.key.none') : tf('st.vm.key.wait', { provider: prov().name }), !j.ok);
+      } catch (e: any) { say(e.message, true); }
+    });
     function setAccount(id: string | null, name: string | null) {
       field('customer_id').value = id ?? '';
       $('vmAccount').textContent = name ?? t('st.vm.noacct');

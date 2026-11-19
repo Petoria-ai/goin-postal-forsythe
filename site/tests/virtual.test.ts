@@ -29,7 +29,7 @@ describe('virtual mailboxes', () => {
 
   it('lists, edits, closes and reopens', async () => {
     const list = await v({ pin: '1234', action: 'list' });
-    expect(list.body.connected).toBe(false);
+    expect(list.body.providers[0].connected).toBe(false);
     const row = list.body.virtual.find((x: any) => x.vno === '4521');
     expect(row.names).toEqual(['Virtual Ventures LLC']);
     await v({ pin: '1234', action: 'update', id: row.id, vno: '4521', name: 'Vera Virtual', phone: '318-555-0190', email: 'vera@example.com', names: ['Virtual Ventures LLC'] });

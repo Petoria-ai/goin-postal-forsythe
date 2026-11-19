@@ -2,19 +2,21 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
-import { authenticate } from '../../lib/auth';
+import { authenticate, atLeast } from '../../lib/auth';
+import { serviceKeyInfo, saveServiceKey, removeServiceKey, serviceKey, cleanKey, keysReady } from '../../lib/serviceKeys';
 import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, virtualDocKey, reassignDocs, countMailboxDocs, latestPhotoIdExpiry, type VirtualInput } from '../../shipping/store';
 import { idState, day } from '../../lib/mailbox';
 import { SIZES } from '../../lib/mailbox';
 import cfg from '../../data/virtual.json';
 
-export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean }[];
+export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean; api_base: string | null }[];
 const providerOf = (id: unknown) => PROVIDERS.find((p) => p.id === String(id ?? '')) ?? null;
 
 // Virtual mailboxes (Peter, Nov 19 2026), for Counter → Virtual mail: one tab per service in src/data/virtual.json
 // (Anytime Mailbox first). Any staff PIN: list, add {provider, vno, name, email?, phone?, names?: string[], customer_id?, note?}, update {id, ...same}, close {id}, reopen {id}.
 // Anytime Mailbox stays the record of these customers (billing, scans); this list lets staff recognize their mail.
-// When Anytime Mailbox gives us API access (ANYTIME_API_KEY), this is where the sync goes (to-do P18).
+// Owner PIN only: key_save {provider, key}, key_remove {provider}; any staff: key_test {provider}. The key is
+// encrypted and never sent back (lib/serviceKeys.ts). When the API address is known (api_base), the sync goes here (P18).
 
 const clean = (v: unknown, max: number) => { const s = String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max); return s || null; };
 /** A virtual number must never look like a wall box number, or mail could go in the wrong box. */
@@ -46,8 +48,8 @@ export const POST: APIRoute = async ({ request }) => {
       return json({
         virtual: await Promise.all(rows.map(async (v) => ({ ...v, names: JSON.parse(v.names), account: v.customer_id ? (await getCustomer(env, v.customer_id))?.name ?? null : null,
           doc_key: virtualDocKey(v), docs: docs.get(virtualDocKey(v)) ?? 0, id_state: v.status === 'active' ? idState(ids.get(virtualDocKey(v)), today) : null }))),
-        providers: PROVIDERS.map((p) => ({ ...p, connected: p.id === 'anytime' ? !!env.ANYTIME_API_KEY : false })),
-        connected: !!env.ANYTIME_API_KEY,
+        providers: await Promise.all(PROVIDERS.map(async (p) => { const key = await serviceKeyInfo(env, p.id); return { ...p, key, connected: !!key.source && !!p.api_base }; })),
+        can_manage_keys: atLeast(user, 'owner'), keys_ready: keysReady(env),
       });
     }
     if (b.action === 'add' || b.action === 'update') {
@@ -69,6 +71,27 @@ export const POST: APIRoute = async ({ request }) => {
       if (existing && !existing.customer_id && v.customer_id) await reassignDocs(env, `V-${v.id}`, v.customer_id);
       await logAudit(env, who, 'virtual.update', `V#${v.vno}`, v.name);
       return json({ ok: true, virtual: v });
+    }
+    if (b.action === 'key_save' || b.action === 'key_remove' || b.action === 'key_test') {
+      const prov = providerOf(b.provider);
+      if (!prov) return json({ error: 'Pick which virtual mailbox service.' }, 400);
+      if (b.action === 'key_test') {
+        const key = await serviceKey(env, prov.id);
+        if (!key) return json({ ok: false, result: 'no_key' });
+        if (!prov.api_base) return json({ ok: false, result: 'no_address' });
+        return json({ ok: false, result: 'not_built' }); // the call itself comes with their API documentation (P18)
+      }
+      if (!atLeast(user, 'owner')) return json({ error: 'Only an owner PIN can add, change or remove the key.' }, 403);
+      if (b.action === 'key_remove') {
+        await removeServiceKey(env, prov.id);
+        await logAudit(env, who, 'virtual.key_remove', prov.name, 'API key removed');
+        return json({ ok: true, key: await serviceKeyInfo(env, prov.id) });
+      }
+      const key = cleanKey(b.key);
+      if (!key) return json({ error: 'Paste the whole key: one piece of text with no spaces.' }, 400);
+      await saveServiceKey(env, prov.id, key, user.name);
+      await logAudit(env, who, 'virtual.key_save', prov.name, 'API key saved'); // never the key itself
+      return json({ ok: true, key: await serviceKeyInfo(env, prov.id) });
     }
     if (b.action === 'close' || b.action === 'reopen') {
       const cur = await getVirtual(env, Number(b.id));
