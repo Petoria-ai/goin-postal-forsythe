@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 13:27 CST · Virtual mail: one tab per service, starting with Anytime Mailbox; to-do P19
+
+- **Asked for:** "im going to possibly add other virtual mailbox applications.. so lets make this tab for 'Anytime Mailbox' ... in the virtual tab section. i want another tab labeled 'Anytime Mailbox'", then "this area looks alittle clunky.. i feel some arent needed here. add to the todo list to clean this up" (the staff menu line).
+- **What changed:**
+  - **Counter → Virtual mail** now has a **tab per service**. The first is **Anytime Mailbox**, showing how many open customers it has, e.g. "Anytime Mailbox (2)". Each tab has its own connection card, add form ("Anytime Mailbox #"), and list.
+  - **Adding another service later** is one line in `site/src/data/virtual.json` (an id and a name); its tab appears by itself.
+  - Customers already entered belong to Anytime Mailbox. The same number can be used by two different services, but not twice in one.
+  - **Mail check** names the service: "Anytime Mailbox #4521 · ... ANYTIME MAILBOX: scan it in their app, not a wall box", and its button opens that service's tab.
+  - **To-do P19:** tidy up the staff menu (group the 20 links, hide by role, one shared menu).
+- **Files:** new [site/src/data/virtual.json](../site/src/data/virtual.json), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/db/schema.sql](../site/db/schema.sql) (new table `virtual_mailbox_providers`), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/virtual.test.ts](../site/tests/virtual.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, **`npm run db:local`** (one new table), `npm run dev`, then Counter → **Virtual mail**.
+
 ## 2026-11-19 13:13 CST · Virtual mail tab (Anytime Mailbox), and Mail check searching it
 
 - **Asked for:** "do you think its better to have 'Anytime Mailbox' as its own tab or incorporate with the physical boxes tab?" (its own tab, with one shared Mail check), then "lets go ahead and add it right now and start".

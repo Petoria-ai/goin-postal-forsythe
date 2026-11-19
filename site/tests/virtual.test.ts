@@ -49,3 +49,14 @@ describe('virtual mailboxes', () => {
     expect((await mb({ pin: '1234', action: 'search', q: 'nobody-here' })).body.virtual).toEqual([]);
   });
 });
+
+describe('one tab per virtual mailbox service', () => {
+  it('lists the services, keeps each customer with theirs, and Mail check names the service', async () => {
+    const l = await v({ pin: '1234', action: 'list' });
+    expect(l.body.providers.map((p: any) => [p.id, p.name])).toEqual([['anytime', 'Anytime Mailbox']]);
+    expect(l.body.virtual.every((x: any) => x.provider === 'anytime')).toBe(true);
+    expect((await v({ pin: '1234', action: 'add', provider: 'nope', vno: '7777', name: 'X' })).status).toBe(400);
+    const r = await mb({ pin: '1234', action: 'search', q: 'vera' });
+    expect(r.body.virtual[0]).toMatchObject({ provider: 'anytime', provider_name: 'Anytime Mailbox' });
+  });
+});

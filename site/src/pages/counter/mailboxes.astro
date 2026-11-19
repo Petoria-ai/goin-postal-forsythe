@@ -672,10 +672,10 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         for (const v of j.virtual ?? []) {
           const li = document.createElement('li'); li.className = 'vm-hit';
           const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span class="muted"></span>';
-          who.querySelector('strong')!.textContent = `V#${v.vno} · ${v.name}`;
+          who.querySelector('strong')!.textContent = `${v.provider_name} #${v.vno} · ${v.name}`;
           who.querySelector('.muted')!.textContent = v.status === 'closed' ? t('mb.state.closed') : (v.names.length ? `${t('st.nm.also')} ${v.names.join(', ')}` : '');
-          const tag = document.createElement('span'); tag.className = 'mb-mail mb-mail-virtual'; tag.textContent = v.status === 'closed' ? t('st.vm.do.closed') : t('st.vm.do');
-          const open = document.createElement('a'); open.className = 'btn small kraft'; open.href = '/counter/virtual'; open.textContent = t('st.nav.virtual');
+          const tag = document.createElement('span'); tag.className = 'mb-mail mb-mail-virtual'; tag.textContent = v.status === 'closed' ? t('st.vm.do.closed') : tf('st.vm.do', { provider: v.provider_name.toUpperCase() });
+          const open = document.createElement('a'); open.className = 'btn small kraft'; open.href = `/counter/virtual#${v.provider}`; open.textContent = t('st.nav.virtual');
           li.append(who, tag, open); ul.appendChild(li);
         }
         if (!j.boxes.length && !(j.virtual ?? []).length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nomatch'); ul.appendChild(li); return; }

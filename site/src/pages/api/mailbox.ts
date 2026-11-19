@@ -18,6 +18,8 @@ import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, 
 import { fullness, packageState, daysHeld, PKG, checkReason, pendingClaim, idState } from '../../lib/mailbox';
 import { checkPhoto, savePiecePhoto, readPiecePhoto, deletePiecePhotos } from '../../lib/mailboxPhotos';
 import { buildMailboxReport, mailboxReportCsv, type MailboxReportData } from '../../lib/mailboxReport';
+import virtualCfg from '../../data/virtual.json';
+const VIRTUAL = virtualCfg.providers as { id: string; name: string }[];
 
 // Physical mailboxes on the website (Peter, Nov 15 and 17 2026).
 // Customer (signed in): reserve {size, term}, cancel_reservation, renew_checkout {id, term} (Stripe; the box is
@@ -205,7 +207,7 @@ export const POST: APIRoute = async ({ request }) => {
         const names: string[] = JSON.parse(v.names);
         return v.vno.toLowerCase() === lq || v.vno.toLowerCase().startsWith(lq) || v.name.toLowerCase().includes(lq) || names.some((n) => n.toLowerCase().includes(lq))
           || (!!v.email && v.email.toLowerCase().includes(lq)) || (digitsQ.length >= 4 && !!v.phone && v.phone.replace(/\D/g, '').includes(digitsQ));
-      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status }));
+      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status, provider: v.provider, provider_name: VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider }));
       return json({ boxes: await Promise.all(hits.slice(0, 20).map(view)), virtual });
     }
     if (b.action === 'find') {

@@ -15,6 +15,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P19 | [Tidy up the staff menu](#p19-tidy-up-the-staff-menu) | ⏸ Peter to say which pages staff really use | Peter's list |
 | P18 | [Anytime Mailbox on the website: their API and logo](#p18-anytime-mailbox-on-the-website) | ⏳ Tab built Nov 19; waiting on Anytime Mailbox | Anytime Mailbox: API access and logo permission |
 | P17 | [Mailbox service: rules to check and extras to add](#p17-mailbox-service-rules-to-check-and-extras-to-add) | ⏳ Some built Nov 18 | Postmaster, insurance agent, accountant, attorney |
 | P16 | [Store domain, email, and checking in mail by email](#p16-store-domain-email-and-checking-in-mail-by-email) | ⏳ Ask Goin' Postal corporate first | Corporate's answer; then the domain on Cloudflare (William) |
@@ -323,6 +324,16 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P19. Tidy up the staff menu
+
+**Added:** 2026-11-19 13:27 CST. **Peter:** "this area looks alittle clunky.. i feel some arent needed here. add to the todo list to clean this up." (the "Staff: Queue · Batch · Fulfillment · ..." line, 20 links on every counter page).
+
+- [ ] **Peter:** mark which staff pages are used every day, which now and then, and which not at all (Queue, Batch, Fulfillment, Pickups, Customers, Accounts, Drop-offs, Scan a QR, Exceptions, Claims, Reports, End of day, Invoices, Prices, Staff, Settings, Mailboxes, Virtual mail, Export).
+- [ ] **Group them** into a few menus instead of one long line, for example: **Shipping** (Queue, Batch, Drop-offs, Pickups, Scan a QR, Exceptions, Claims), **Customers** (Customers, Accounts, Invoices), **Mailboxes** (Mailboxes, Virtual mail), **Store** (Reports, End of day, Prices, Staff, Settings, Export).
+- [ ] **Hide by role:** counter staff don't need Prices, Staff, Settings or Export; managers and owners see everything.
+- [ ] **One shared menu** (a component) so adding a page means one change instead of editing all 23 counter pages (William's layout today: the menu is a line copied into every page).
+- [ ] Pages nobody uses could leave the menu but still work by address, so nothing breaks.
 
 ## P18. Anytime Mailbox on the website
 

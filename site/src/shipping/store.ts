@@ -161,12 +161,13 @@ const mem = {
   mbNames: [] as MailboxName[],
   mbKeys: new Map<number, MailboxKey>(),
   virtual: [] as VirtualMailbox[],
+  virtualProviders: new Map<number, string>(),
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos', 'mailbox_doc_dates', 'mailbox_names', 'mailbox_keys', 'virtual_mailboxes'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos', 'mailbox_doc_dates', 'mailbox_names', 'mailbox_keys', 'virtual_mailboxes', 'virtual_mailbox_providers'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -222,6 +223,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailbox_names': return mem.mbNames;
     case 'mailbox_keys': return [...mem.mbKeys.values()];
     case 'virtual_mailboxes': return mem.virtual;
+    case 'virtual_mailbox_providers': return [...mem.virtualProviders].map(([virtual_id, provider]) => ({ virtual_id, provider }));
     default: return [];
   }
 };
@@ -1010,27 +1012,37 @@ export async function listKeyDeposits(env: Env): Promise<Map<number, MailboxKey>
 }
 
 // ---- Virtual mailboxes on Anytime Mailbox (Peter, Nov 19 2026) -----------------------------------------
-export interface VirtualMailbox { id: number; vno: string; name: string; email: string | null; phone: string | null; names: string; customer_id: string | null; status: 'active' | 'closed'; note: string | null; created_at: string; updated_at: string; closed_at: string | null }
+export interface VirtualMailbox { id: number; provider: string; vno: string; name: string; email: string | null; phone: string | null; names: string; customer_id: string | null; status: 'active' | 'closed'; note: string | null; created_at: string; updated_at: string; closed_at: string | null }
 export type VirtualInput = Pick<VirtualMailbox, 'vno' | 'name' | 'email' | 'phone' | 'names' | 'customer_id' | 'note'>;
+const DEFAULT_PROVIDER = 'anytime';
+async function virtualProviders(env: Env): Promise<Map<number, string>> {
+  if (env.DB) return new Map((await env.DB.prepare('SELECT virtual_id, provider FROM virtual_mailbox_providers').all<{ virtual_id: number; provider: string }>()).results.map((r) => [r.virtual_id, r.provider]));
+  return mem.virtualProviders;
+}
 export async function listVirtual(env: Env): Promise<VirtualMailbox[]> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM virtual_mailboxes ORDER BY status, vno').all<VirtualMailbox>()).results;
-  return [...mem.virtual].sort((a, b) => a.status.localeCompare(b.status) || a.vno.localeCompare(b.vno));
+  const prov = await virtualProviders(env);
+  const rows = env.DB ? (await env.DB.prepare('SELECT * FROM virtual_mailboxes ORDER BY status, vno').all<Omit<VirtualMailbox, 'provider'>>()).results
+    : [...mem.virtual].sort((a, b) => a.status.localeCompare(b.status) || a.vno.localeCompare(b.vno));
+  return rows.map((r) => ({ ...r, provider: prov.get(r.id) ?? DEFAULT_PROVIDER }));
 }
 export async function getVirtual(env: Env, id: number): Promise<VirtualMailbox | null> {
-  if (env.DB) return (await env.DB.prepare('SELECT * FROM virtual_mailboxes WHERE id = ?1').bind(id).first<VirtualMailbox>()) ?? null;
-  return mem.virtual.find((v) => v.id === id) ?? null;
+  return (await listVirtual(env)).find((v) => v.id === id) ?? null;
 }
-export async function addVirtual(env: Env, v: VirtualInput): Promise<VirtualMailbox> {
+export async function addVirtual(env: Env, v: VirtualInput, provider = DEFAULT_PROVIDER): Promise<VirtualMailbox> {
   const t = now();
   const row = { ...v, status: 'active' as const, created_at: t, updated_at: t, closed_at: null };
-  if (env.DB) { const x = await env.DB.prepare('INSERT INTO virtual_mailboxes (vno, name, email, phone, names, customer_id, status, note, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) RETURNING id').bind(v.vno, v.name, v.email, v.phone, v.names, v.customer_id, 'active', v.note, t, t).first<{ id: number }>(); return { id: x!.id, ...row }; }
-  const full = { id: mem.seq++, ...row }; mem.virtual.push(full); return full;
+  let id: number;
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO virtual_mailboxes (vno, name, email, phone, names, customer_id, status, note, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) RETURNING id').bind(v.vno, v.name, v.email, v.phone, v.names, v.customer_id, 'active', v.note, t, t).first<{ id: number }>(); id = x!.id; }
+  else { id = mem.seq++; mem.virtual.push({ id, provider, ...row }); }
+  if (env.DB) await env.DB.prepare('INSERT INTO virtual_mailbox_providers (virtual_id, provider) VALUES (?1, ?2) ON CONFLICT(virtual_id) DO UPDATE SET provider = ?2').bind(id, provider).run();
+  else mem.virtualProviders.set(id, provider);
+  return { id, provider, ...row };
 }
 export async function updateVirtual(env: Env, id: number, patch: Partial<VirtualInput & Pick<VirtualMailbox, 'status' | 'closed_at'>>) {
   const cur = await getVirtual(env, id); if (!cur) return null;
   const next = { ...cur, ...patch, updated_at: now() };
   if (env.DB) await env.DB.prepare('UPDATE virtual_mailboxes SET vno = ?1, name = ?2, email = ?3, phone = ?4, names = ?5, customer_id = ?6, status = ?7, note = ?8, updated_at = ?9, closed_at = ?10 WHERE id = ?11').bind(next.vno, next.name, next.email, next.phone, next.names, next.customer_id, next.status, next.note, next.updated_at, next.closed_at, id).run();
-  else Object.assign(mem.virtual.find((v) => v.id === id)!, next);
+  else Object.assign(mem.virtual.find((v) => v.id === id)!, next, { provider: (mem.virtual.find((v) => v.id === id) as any).provider });
   return next;
 }
 

@@ -12,7 +12,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
   <section class="hero">
     <h1 data-i18n="st.vm.h1">Virtual mail</h1>
     <p class="staff-nav"><span data-i18n="st.staff">Staff:</span> <a href="/counter/queue" data-i18n="st.nav.queue">Queue</a> · <a href="/counter/batch" data-i18n="st.nav.batch">Batch</a> · <a href="/counter/fulfillment" data-i18n="st.nav.fulfillment">Fulfillment</a> · <a href="/counter/pickups" data-i18n="st.nav.pickups">Pickups</a> · <a href="/counter/customers" data-i18n="st.nav.customers">Customers</a> · <a href="/counter/accounts" data-i18n="st.nav.accounts">Accounts</a> · <a href="/counter/dropoff" data-i18n="st.nav.dropoffs">Drop-offs</a> · <a href="/counter/scan" data-i18n="st.nav.scan">Scan a QR</a> · <a href="/counter/exceptions" data-i18n="st.nav.exceptions">Exceptions</a> · <a href="/counter/claims" data-i18n="st.nav.claims">Claims</a> · <a href="/counter/reports" data-i18n="st.nav.reports">Reports</a> · <a href="/counter/close" data-i18n="st.nav.close">End of day</a> · <a href="/counter/invoices" data-i18n="st.nav.invoices">Invoices</a> · <a href="/counter/rules" data-i18n="st.nav.prices">Prices</a> · <a href="/counter/staff" data-i18n="st.nav.staff">Staff</a> · <a href="/counter/settings" data-i18n="st.nav.settings">Settings</a> · <a href="/counter/mailboxes" data-i18n="st.nav.mailboxes">Mailboxes</a> · <a href="/counter/virtual" data-i18n="st.nav.virtual">Virtual mail</a> · <a href="/counter/export" data-i18n="st.nav.export">Export</a></p>
-    <p class="lead" data-i18n="st.vm.lead">Customers whose mail service runs on Anytime Mailbox. Their mail is scanned in Anytime Mailbox, never put in a wall box. Mail check on the Mailboxes page finds them too.</p>
+    <p class="lead" data-i18n="st.vm.lead">Customers whose mail service runs on a virtual mailbox service, one tab each. Their mail is scanned in that service's app, never put in a wall box. Mail check on the Mailboxes page finds them too.</p>
   </section>
 
   <div class="card">
@@ -24,8 +24,9 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
   </div>
 
   <div id="vmMain" class="hidden">
+    <nav class="vm-tabs" role="tablist" id="vmTabs" aria-label="Virtual mailbox services"></nav>
     <div class="card vm-connect" id="vmConnect">
-      <h3><span class="vm-badge">Anytime Mailbox</span> <span data-i18n="st.vm.conn.h">Connection</span></h3>
+      <h3><span class="vm-badge" id="vmProvBadge"></span> <span data-i18n="st.vm.conn.h">Connection</span></h3>
       <p id="vmConnText" class="muted"></p>
     </div>
 
@@ -33,7 +34,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <h3 data-i18n="st.vm.add.h">Add a virtual customer</h3>
       <form id="vmForm" class="vm-form" autocomplete="off">
         <input type="hidden" name="id" />
-        <label><span data-i18n="st.vm.vno">Anytime Mailbox #</span> <input name="vno" required maxlength="20" /></label>
+        <label><span id="vmVnoLabel" data-i18n="st.vm.vno">Anytime Mailbox #</span> <input name="vno" required maxlength="20" /></label>
         <label><span data-i18n="st.c.th.name">Name</span> <input name="name" required maxlength="80" /></label>
         <label><span data-i18n="st.vm.email">Email</span> <input name="email" type="email" maxlength="120" /></label>
         <label><span data-i18n="st.vm.phone">Phone</span> <input name="phone" inputmode="tel" maxlength="30" /></label>
@@ -76,21 +77,44 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     const form = $('vmForm') as HTMLFormElement;
     const field = (n: string) => form.elements.namedItem(n) as HTMLInputElement;
     let rows: any[] = [];
+    // One tab per service (src/data/virtual.json); the page remembers the tab in the address (#anytime).
+    let providers: any[] = [];
+    let current = location.hash.slice(1) || 'anytime';
+    const prov = () => providers.find((p) => p.id === current) ?? providers[0];
+    function paintTabs() {
+      const nav = $('vmTabs'); nav.innerHTML = '';
+      for (const p of providers) {
+        const b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'tab');
+        b.className = `vm-tab${p.id === prov().id ? ' on' : ''}`; b.setAttribute('aria-selected', String(p.id === prov().id));
+        const n = rows.filter((v) => v.provider === p.id && v.status === 'active').length;
+        b.textContent = `${p.name}${n ? ` (${n})` : ''}`;
+        b.addEventListener('click', () => { current = p.id; history.replaceState(null, '', `#${p.id}`); resetForm(); paintAll(); });
+        nav.appendChild(b);
+      }
+    }
+    function paintProvider() {
+      const p = prov();
+      $('vmProvBadge').textContent = p.name;
+      $('vmConnText').textContent = p.connected ? tf('st.vm.conn.on', { provider: p.name }) : tf('st.vm.conn.off', { provider: p.name });
+      $('vmConnect').classList.toggle('on', !!p.connected);
+      const l = $('vmVnoLabel'); l.dataset.i18nVars = JSON.stringify({ provider: p.name }); l.textContent = tf('st.vm.vno', { provider: p.name });
+    }
+    function paintAll() { paintTabs(); paintProvider(); paint(); }
 
     function paint() {
       const q = ($('vmSearch') as HTMLInputElement).value.trim().toLowerCase().replace(/^#/, '');
       const ul = $('vmList'); ul.innerHTML = '';
-      const list = rows.filter((v) => !q || v.vno.toLowerCase().startsWith(q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
+      const list = rows.filter((v) => v.provider === prov().id).filter((v) => !q || v.vno.toLowerCase().startsWith(q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
       for (const v of list) {
         const li = document.createElement('li'); if (v.status === 'closed') li.classList.add('vm-closed');
         const who = document.createElement('div');
-        who.innerHTML = '<strong></strong> <span class="vm-badge small">Anytime Mailbox</span><br /><span class="muted"></span>';
-        who.querySelector('strong')!.textContent = `V#${v.vno} · ${v.name}${v.status === 'closed' ? ` · ${t('mb.state.closed')}` : ''}`;
+        who.innerHTML = '<strong></strong><br /><span class="muted"></span>';
+        who.querySelector('strong')!.textContent = `${prov().name} #${v.vno} · ${v.name}${v.status === 'closed' ? ` · ${t('mb.state.closed')}` : ''}`;
         who.querySelector('.muted')!.textContent = [v.phone, v.email, v.names.length ? `${t('st.nm.also')} ${v.names.join(', ')}` : '', v.account ? tf('st.vm.linked', { name: v.account }) : '', v.note].filter(Boolean).join(' · ');
         li.append(who, btn(t('st.mb.edit'), 'kraft', () => edit(v)));
         if (v.customer_id) { const d = document.createElement('button'); d.type = 'button'; d.className = 'btn small'; d.dataset.mbdocs = v.customer_id; d.textContent = t('st.doc.btn'); li.append(d); }
         li.append(btn(v.status === 'closed' ? t('st.vm.reopen') : t('st.vm.close'), 'kraft', async () => {
-          if (v.status !== 'closed' && !confirm(tf('st.vm.closeq', { vno: v.vno, name: v.name }))) return;
+          if (v.status !== 'closed' && !confirm(tf('st.vm.closeq', { vno: v.vno, name: v.name, provider: prov().name }))) return;
           try { await api('/api/virtual', { action: v.status === 'closed' ? 'reopen' : 'close', id: v.id }); await load(); } catch (e: any) { say(e.message, true); }
         }));
         ul.appendChild(li);
@@ -101,10 +125,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       try {
         const j = await api('/api/virtual', { action: 'list' });
         $('vmMain').classList.remove('hidden');
-        rows = j.virtual;
-        $('vmConnText').textContent = j.connected ? t('st.vm.conn.on') : t('st.vm.conn.off');
-        $('vmConnect').classList.toggle('on', j.connected);
-        paint();
+        rows = j.virtual; providers = j.providers;
+        paintAll();
       } catch (e: any) { say(e.message, true); }
     }
     function setAccount(id: string | null, name: string | null) {
@@ -126,7 +148,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     form.addEventListener('submit', async (ev) => {
       ev.preventDefault();
       const id = field('id').value;
-      const body = { action: id ? 'update' : 'add', id: id ? Number(id) : undefined, vno: field('vno').value, name: field('name').value, email: field('email').value, phone: field('phone').value,
+      const body = { action: id ? 'update' : 'add', id: id ? Number(id) : undefined, provider: prov().id, vno: field('vno').value, name: field('name').value, email: field('email').value, phone: field('phone').value,
         names: (form.elements.namedItem('names') as HTMLTextAreaElement).value.split('\n').map((s) => s.trim()).filter(Boolean), note: field('note').value, customer_id: field('customer_id').value || null };
       try { const r = await api('/api/virtual', body); say(tf(id ? 'st.vm.updated' : 'st.vm.added', { vno: r.virtual.vno, name: r.virtual.name })); resetForm(); await load(); }
       catch (e: any) { say(e.message, true); }

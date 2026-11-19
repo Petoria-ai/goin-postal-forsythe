@@ -5,9 +5,13 @@ import { json } from '../../lib/validate';
 import { authenticate } from '../../lib/auth';
 import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, type VirtualInput } from '../../shipping/store';
 import { SIZES } from '../../lib/mailbox';
+import cfg from '../../data/virtual.json';
 
-// Virtual mailboxes on Anytime Mailbox (Peter, Nov 19 2026), for Counter → Virtual mail. Any staff PIN:
-// list, add {vno, name, email?, phone?, names?: string[], customer_id?, note?}, update {id, ...same}, close {id}, reopen {id}.
+export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean }[];
+const providerOf = (id: unknown) => PROVIDERS.find((p) => p.id === String(id ?? '')) ?? null;
+
+// Virtual mailboxes (Peter, Nov 19 2026), for Counter → Virtual mail: one tab per service in src/data/virtual.json
+// (Anytime Mailbox first). Any staff PIN: list, add {provider, vno, name, email?, phone?, names?: string[], customer_id?, note?}, update {id, ...same}, close {id}, reopen {id}.
 // Anytime Mailbox stays the record of these customers (billing, scans); this list lets staff recognize their mail.
 // When Anytime Mailbox gives us API access (ANYTIME_API_KEY), this is where the sync goes (to-do P18).
 
@@ -37,17 +41,21 @@ export const POST: APIRoute = async ({ request }) => {
       const rows = await listVirtual(env);
       return json({
         virtual: await Promise.all(rows.map(async (v) => ({ ...v, names: JSON.parse(v.names), account: v.customer_id ? (await getCustomer(env, v.customer_id))?.name ?? null : null }))),
+        providers: PROVIDERS.map((p) => ({ ...p, connected: p.id === 'anytime' ? !!env.ANYTIME_API_KEY : false })),
         connected: !!env.ANYTIME_API_KEY,
       });
     }
     if (b.action === 'add' || b.action === 'update') {
       const input = await readInput(b);
       if (typeof input === 'string') return json({ error: input }, 400);
-      const dupe = (await listVirtual(env)).find((v) => v.status === 'active' && v.vno.toLowerCase() === input.vno.toLowerCase() && v.id !== Number(b.id));
-      if (dupe) return json({ error: `Virtual #${input.vno} is already ${dupe.name}.` }, 409);
+      const existing = b.action === 'update' ? await getVirtual(env, Number(b.id)) : null;
+      const prov = providerOf(existing?.provider ?? b.provider ?? PROVIDERS[0].id);
+      if (!prov) return json({ error: 'Pick which virtual mailbox service.' }, 400);
+      const dupe = (await listVirtual(env)).find((v) => v.status === 'active' && v.provider === prov.id && v.vno.toLowerCase() === input.vno.toLowerCase() && v.id !== Number(b.id));
+      if (dupe) return json({ error: `${prov.name} #${input.vno} is already ${dupe.name}.` }, 409);
       if (b.action === 'add') {
-        const v = await addVirtual(env, input);
-        await logAudit(env, who, 'virtual.add', `V#${v.vno}`, v.name);
+        const v = await addVirtual(env, input, prov.id);
+        await logAudit(env, who, 'virtual.add', `${prov.name} #${v.vno}`, v.name);
         return json({ ok: true, virtual: v });
       }
       const v = await updateVirtual(env, Number(b.id), input);

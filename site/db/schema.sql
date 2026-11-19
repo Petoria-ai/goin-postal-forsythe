@@ -679,6 +679,11 @@ CREATE TABLE IF NOT EXISTS virtual_mailboxes (
   closed_at TEXT
 );
 CREATE INDEX IF NOT EXISTS virtual_mailboxes_vno ON virtual_mailboxes(vno);
+-- Which virtual mailbox service each one is with (Peter, Nov 19 2026: one tab per service). No row = anytime.
+CREATE TABLE IF NOT EXISTS virtual_mailbox_providers (
+  virtual_id INTEGER PRIMARY KEY,
+  provider TEXT NOT NULL               -- an id from src/data/virtual.json
+);
 
 -- The key deposit for each box (Peter, Nov 18 2026): paid or not, when, and who marked it. No row means unpaid.
 CREATE TABLE IF NOT EXISTS mailbox_keys (

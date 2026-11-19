@@ -1,0 +1,10 @@
+{
+  "_note": "Virtual mailbox services the store sells (Peter, Nov 19 2026). Each one gets its own tab on Counter \u2192 Virtual mail. To add one, copy a line and give it a new id (letters only) and its name. 'api' is true once we connect its API.",
+  "providers": [
+    {
+      "id": "anytime",
+      "name": "Anytime Mailbox",
+      "api": false
+    }
+  ]
+}
