@@ -5,7 +5,7 @@
 import { store } from '../data/store';
 import { sendEmail, sendSms } from '../shipping/notify';
 import { getCustomer, listActiveMailboxes, listAllMailboxes, updateMailbox, getMailbox, logAudit, claimRenewal, getRenewal, setRenewalPaidThrough, type MailboxRow,
-  addMailboxItem, countItemsIn, listItemsIn, addMailboxCharge, listDocDates, markDocReminded, listAllMailboxDocs, mailboxesFor, listMailboxCharges, settleMailboxCharges, getMailboxSettings, saveMailboxSettings, type MailboxCharge } from '../shipping/store';
+  addMailboxItem, countItemsIn, listItemsIn, addMailboxCharge, listDocDates, markDocReminded, listAllMailboxDocs, mailboxesFor, docOwner, listMailboxCharges, settleMailboxCharges, getMailboxSettings, saveMailboxSettings, type MailboxCharge } from '../shipping/store';
 import { chargeSavedCard } from './stripe';
 import { idState, addMonths, addressFor, day, dueReminder, reminderText, mailAction, onExpiredList, HOLD_MONTHS as HOLD, fullness, OVERAGE_FEE, MIN_CHARGE, priceFor, money, PKG, packageFeesDue, daysHeld, freeUntil, returnOn } from './mailbox';
 
@@ -291,8 +291,8 @@ export async function idExpiryNotices(env: Env, today = day(new Date())) {
     const stage = !st ? null : st.state === 'expiring' ? '30' : st.state === 'hold' || !photo ? 'expired' : 'suspended';
     const reminded: string[] = JSON.parse(dd.reminded);
     if (!stage || reminded.includes(stage)) continue;
-    if (!(await mailboxesFor(env, doc.customer_id)).length) continue;
-    const c = await getCustomer(env, doc.customer_id);
+    const c = await docOwner(env, doc.customer_id);
+    if (!c?.active) continue; // only people with an open wall box or virtual mailbox
     const { body, subject, what } = idNoticeText(doc.kind, dd.expires_on, stage, st && st.state === 'hold' ? st.suspend_on : null);
     try {
       if (c?.phone) await sendSms(env, c.phone, `${store.name}: ${body} Questions: ${store.phone}`);
@@ -334,7 +334,7 @@ export async function sendIdNoticeNow(env: Env, customerId: string, kind: string
   const st = idState(best.dd!.expires_on, today, 3650);
   const stage: '30' | 'expired' | 'suspended' = !st || st.state === 'expiring' ? '30' : st.state === 'hold' || kind !== 'photo_id' ? 'expired' : 'suspended';
   const { body, subject } = idNoticeText(kind, best.dd!.expires_on, stage, st && st.state === 'hold' ? st.suspend_on : null);
-  const c = await getCustomer(env, customerId);
+  const c = await docOwner(env, customerId);
   // sendSms/sendEmail return true only in mock mode, so "sent" means "we had a number/address and it went".
   const sms = c?.phone ? (await sendSms(env, c.phone, `${store.name}: ${body} Questions: ${store.phone}`), true) : false;
   const email = c?.email ? (await sendEmail(env, c.email, subject, `${body}\n\nQuestions? Call us at ${store.phone}.`), true) : false;

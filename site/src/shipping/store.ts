@@ -1046,6 +1046,32 @@ export async function updateVirtual(env: Env, id: number, patch: Partial<Virtual
   return next;
 }
 
+/** The documents key for a virtual customer: their website account if linked, else "V-<id>" (Peter, Nov 19 2026). */
+export const virtualDocKey = (v: { id: number; customer_id: string | null }) => v.customer_id ?? `V-${v.id}`;
+/**
+ * Who a document owner id is: a website account (wall box holder or a linked virtual customer) or a virtual customer
+ * with no account ("V-<id>"). active: they have an open wall box or an open virtual mailbox; virtual: their virtual
+ * mailboxes (for labels).
+ */
+export async function docOwner(env: Env, id: string): Promise<{ id: string; name: string; email: string | null; phone: string | null; active: boolean; virtual: VirtualMailbox[] } | null> {
+  const all = await listVirtual(env);
+  const m = /^V-(\d+)$/.exec(id);
+  if (m) {
+    const v = all.find((x) => x.id === Number(m[1]));
+    return v ? { id, name: v.name, email: v.email, phone: v.phone, active: v.status === 'active', virtual: [v] } : null;
+  }
+  const c = await getCustomer(env, id);
+  if (!c) return null;
+  const virtual = all.filter((x) => x.customer_id === id);
+  const active = (await mailboxesFor(env, id)).length > 0 || virtual.some((x) => x.status === 'active');
+  return { id, name: c.name, email: c.email, phone: c.phone, active, virtual };
+}
+/** Moves a holder's documents to another owner id (a virtual customer gets linked to a website account). */
+export async function reassignDocs(env: Env, from: string, to: string) {
+  if (env.DB) { await env.DB.prepare('UPDATE mailbox_documents SET customer_id = ?1 WHERE customer_id = ?2').bind(to, from).run(); return; }
+  for (const d of mem.mbDocs) if (d.customer_id === from) d.customer_id = to;
+}
+
 /** Online renewals by the holder (Peter, Nov 17 2026): created before Stripe Checkout, paid once. */
 export interface MailboxRenewal { id: number; code: string; mailbox_id: number; customer_id: string; term: number; amount: number; status: 'pending' | 'paid'; stripe_session_id: string | null; paid_through: string | null; created_at: string; paid_at: string | null }
 export async function createRenewal(env: Env, r: { mailbox_id: number; customer_id: string; term: number; amount: number }): Promise<MailboxRenewal> {

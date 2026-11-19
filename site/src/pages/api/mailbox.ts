@@ -11,7 +11,7 @@ import {
   assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
   countItemsIn, listMailboxItems, getMailboxItem, deleteMailboxItem, clearMailboxItems, getMailboxSettings, saveMailboxSettings,
   listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox, moveMailboxItem, exportTable,
-  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits, listVirtual,
+  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits, listVirtual, docOwner, virtualDocKey,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs, ID_WARN_DAYS, sendIdNoticeNow, idExpiryNotices } from '../../lib/mailboxJobs';
@@ -122,7 +122,7 @@ export const POST: APIRoute = async ({ request }) => {
     // One box for the staff page: its holder, status, and what to do with its mail today.
     const people = new Map<string, any>();
     const person = async (id: string) => {
-      if (!people.has(id)) people.set(id, await getCustomer(env, id));
+      if (!people.has(id)) people.set(id, await docOwner(env, id));
       const c = people.get(id); return c ? { name: c.name, email: c.email, phone: c.phone } : { name: '?', email: null, phone: null };
     };
     let docCounts: Map<string, number> | null = null;
@@ -158,7 +158,10 @@ export const POST: APIRoute = async ({ request }) => {
         boxes: views.filter((x) => x.mail.do === 'box').map((x) => ({ ...x, due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
         ids_expiring: await (async () => {
           const docs = new Map((await listAllMailboxDocs(env)).map((d) => [d.id, d]));
-          const holders = new Set(open.map((x) => x.customer_id));
+          // Wall box holders and open virtual customers (their documents key), with a label for each.
+          const vlist = (await listVirtual(env)).filter((v) => v.status === 'active');
+          const holders = new Set([...open.map((x) => x.customer_id), ...vlist.map(virtualDocKey)]);
+          const vLabel = (key: string) => { const v = vlist.find((x) => virtualDocKey(x) === key); return v ? `${VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider} #${v.vno}` : null; };
           const soon = new Date(Date.parse(today + 'T00:00:00Z') + ID_WARN_DAYS * 86_400_000).toISOString().slice(0, 10);
           const out = [];
           const allDates = await listDocDates(env);
@@ -167,7 +170,7 @@ export const POST: APIRoute = async ({ request }) => {
           for (const dd of allDates) {
             const d = docs.get(dd.doc_id);
             if (!d || !holders.has(d.customer_id) || dd.expires_on > soon || newest.get(`${d.customer_id}|${d.kind}`) !== dd.expires_on) continue;
-            out.push({ customer_id: d.customer_id, customer: await person(d.customer_id), kind: d.kind, expires_on: dd.expires_on, expired: dd.expires_on < today, id_state: d.kind === 'photo_id' ? idState(dd.expires_on, today) : null, box_no: open.find((x) => x.customer_id === d.customer_id)?.box_no ?? null });
+            out.push({ customer_id: d.customer_id, customer: await person(d.customer_id), kind: d.kind, expires_on: dd.expires_on, expired: dd.expires_on < today, id_state: d.kind === 'photo_id' ? idState(dd.expires_on, today) : null, box_no: open.find((x) => x.customer_id === d.customer_id)?.box_no ?? null, virtual: vLabel(d.customer_id) });
           }
           return out.sort((a, c) => a.expires_on.localeCompare(c.expires_on));
         })(),
@@ -203,11 +206,12 @@ export const POST: APIRoute = async ({ request }) => {
       // Virtual mailboxes (Anytime Mailbox) too, so staff know that mail goes to Anytime Mailbox, not a wall box.
       const lq = q.toLowerCase().replace(/^#/, '');
       const digitsQ = lq.replace(/\D/g, '');
+      const photoIdsAll = await latestPhotoIdExpiry(env);
       const virtual = (await listVirtual(env)).filter((v) => {
         const names: string[] = JSON.parse(v.names);
         return v.vno.toLowerCase() === lq || v.vno.toLowerCase().startsWith(lq) || v.name.toLowerCase().includes(lq) || names.some((n) => n.toLowerCase().includes(lq))
           || (!!v.email && v.email.toLowerCase().includes(lq)) || (digitsQ.length >= 4 && !!v.phone && v.phone.replace(/\D/g, '').includes(digitsQ));
-      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status, provider: v.provider, provider_name: VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider }));
+      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status, provider: v.provider, provider_name: VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider, doc_key: virtualDocKey(v), id_state: v.status === 'active' ? idState(photoIdsAll.get(virtualDocKey(v)), today) : null }));
       return json({ boxes: await Promise.all(hits.slice(0, 20).map(view)), virtual });
     }
     if (b.action === 'find') {
@@ -320,7 +324,7 @@ export const POST: APIRoute = async ({ request }) => {
     // staff PIN; charging is one customer at a time (charge_now, renew_now) and only for a manager or owner. There is
     // deliberately no "charge everyone" here: only the morning run (src/worker.ts) bills in bulk.
     if (b.action === 'id_remind') { // the Remind button on IDs to update: send that holder's ID notice now
-      const c = await getCustomer(env, String(b.customer_id ?? ''));
+      const c = await docOwner(env, String(b.customer_id ?? ''));
       if (!c) return json({ error: 'No such customer' }, 404);
       const r = await sendIdNoticeNow(env, c.id, String(b.kind ?? 'photo_id'), today);
       if (!r) return json({ error: 'No ID with an expiration date on file for them.' }, 404);

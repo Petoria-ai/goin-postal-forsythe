@@ -111,8 +111,19 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         who.innerHTML = '<strong></strong><br /><span class="muted"></span>';
         who.querySelector('strong')!.textContent = `${prov().name} #${v.vno} · ${v.name}${v.status === 'closed' ? ` · ${t('mb.state.closed')}` : ''}`;
         who.querySelector('.muted')!.textContent = [v.phone, v.email, v.names.length ? `${t('st.nm.also')} ${v.names.join(', ')}` : '', v.account ? tf('st.vm.linked', { name: v.account }) : '', v.note].filter(Boolean).join(' · ');
+        // The ID on file (Peter, Nov 19 2026): expired means hold their mail; suspended after the grace days.
+        const s = v.id_state;
+        if (s && s.state !== 'expiring') {
+          const badge = document.createElement('span'); badge.className = 'mb-mail mb-mail-rts';
+          badge.textContent = s.state === 'suspended' ? tf('st.id.susp', { date: s.expired_on }) : tf('st.id.hold', { date: s.expired_on, susp: s.suspend_on });
+          const hm = document.createElement('div'); hm.className = 'mb-holdmail'; hm.innerHTML = '<strong></strong> <span></span>';
+          hm.querySelector('strong')!.textContent = t('st.id.holdmail'); hm.querySelector('span')!.textContent = tf('st.id.holdhow.v', { provider: prov().name });
+          who.append(' ', badge, hm); li.classList.add('mb-holdmail-row');
+        } else if (s?.state === 'expiring') {
+          const badge = document.createElement('span'); badge.className = 'mb-exp soon'; badge.textContent = tf('st.id.exp', { date: s.expires_on }); who.append(' ', badge);
+        }
         li.append(who, btn(t('st.mb.edit'), 'kraft', () => edit(v)));
-        if (v.customer_id) { const d = document.createElement('button'); d.type = 'button'; d.className = 'btn small'; d.dataset.mbdocs = v.customer_id; d.textContent = t('st.doc.btn'); li.append(d); }
+        const d = document.createElement('button'); d.type = 'button'; d.className = 'btn small'; d.dataset.mbdocs = v.doc_key; d.textContent = `${t('st.doc.btn')}${v.docs ? ` (${v.docs})` : ''}`; li.append(d);
         li.append(btn(v.status === 'closed' ? t('st.vm.reopen') : t('st.vm.close'), 'kraft', async () => {
           if (v.status !== 'closed' && !confirm(tf('st.vm.closeq', { vno: v.vno, name: v.name, provider: prov().name }))) return;
           try { await api('/api/virtual', { action: v.status === 'closed' ? 'reopen' : 'close', id: v.id }); await load(); } catch (e: any) { say(e.message, true); }

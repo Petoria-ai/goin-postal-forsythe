@@ -3,7 +3,8 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate } from '../../lib/auth';
-import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, type VirtualInput } from '../../shipping/store';
+import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, virtualDocKey, reassignDocs, countMailboxDocs, latestPhotoIdExpiry, type VirtualInput } from '../../shipping/store';
+import { idState, day } from '../../lib/mailbox';
 import { SIZES } from '../../lib/mailbox';
 import cfg from '../../data/virtual.json';
 
@@ -39,8 +40,12 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     if (b.action === 'list') {
       const rows = await listVirtual(env);
+      const docs = await countMailboxDocs(env);
+      const ids = await latestPhotoIdExpiry(env);
+      const today = day(new Date());
       return json({
-        virtual: await Promise.all(rows.map(async (v) => ({ ...v, names: JSON.parse(v.names), account: v.customer_id ? (await getCustomer(env, v.customer_id))?.name ?? null : null }))),
+        virtual: await Promise.all(rows.map(async (v) => ({ ...v, names: JSON.parse(v.names), account: v.customer_id ? (await getCustomer(env, v.customer_id))?.name ?? null : null,
+          doc_key: virtualDocKey(v), docs: docs.get(virtualDocKey(v)) ?? 0, id_state: v.status === 'active' ? idState(ids.get(virtualDocKey(v)), today) : null }))),
         providers: PROVIDERS.map((p) => ({ ...p, connected: p.id === 'anytime' ? !!env.ANYTIME_API_KEY : false })),
         connected: !!env.ANYTIME_API_KEY,
       });
@@ -60,6 +65,8 @@ export const POST: APIRoute = async ({ request }) => {
       }
       const v = await updateVirtual(env, Number(b.id), input);
       if (!v) return json({ error: 'No such virtual mailbox' }, 404);
+      // Linking a website account for the first time: their documents (kept under "V-<id>") move to the account.
+      if (existing && !existing.customer_id && v.customer_id) await reassignDocs(env, `V-${v.id}`, v.customer_id);
       await logAudit(env, who, 'virtual.update', `V#${v.vno}`, v.name);
       return json({ ok: true, virtual: v });
     }

@@ -16,7 +16,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
 | P19 | [Tidy up the staff menu](#p19-tidy-up-the-staff-menu) | ⏸ Peter to say which pages staff really use | Peter's list |
-| P18 | [Anytime Mailbox on the website: their API and logo](#p18-anytime-mailbox-on-the-website) | ⏳ Tab built Nov 19; waiting on Anytime Mailbox | Anytime Mailbox: API access and logo permission |
+| P18 | [Anytime Mailbox on the website: their API and logo](#p18-anytime-mailbox-on-the-website) | ⏳ Tab and ID holds built Nov 19; waiting on their API docs | Anytime Mailbox: API access and logo permission |
 | P17 | [Mailbox service: rules to check and extras to add](#p17-mailbox-service-rules-to-check-and-extras-to-add) | ⏳ Some built Nov 18 | Postmaster, insurance agent, accountant, attorney |
 | P16 | [Store domain, email, and checking in mail by email](#p16-store-domain-email-and-checking-in-mail-by-email) | ⏳ Ask Goin' Postal corporate first | Corporate's answer; then the domain on Cloudflare (William) |
 | P15 | [A card on file before a mailbox starts](#p15-a-card-on-file-before-a-mailbox-starts) | ⏸ Peter to decide the details | Stripe live; the mailbox agreement (attorney) |
@@ -348,7 +348,19 @@ The store's virtual mailboxes run on **Anytime Mailbox** (see P13 and [physical-
 
 **Built already** ✅ 2026-11-19 13:13 CST: **Counter → Virtual mail**, its own tab (Peter chose a separate tab with one shared Mail check): the virtual customer list kept by hand (number, names, contact, linked website account for Documents), never a wall box number, and Mail check finds them ("scan it in their app, not a wall box").
 
-**Then build (Claude), once Anytime Mailbox answers:**
+**Built** ✅ 2026-11-19 14:28 CST: **IDs and mail holds for virtual customers** (no API needed): Documents on every virtual customer (kept under the virtual record until a website account is linked), ID expiration badges, ID HOLD and the red HOLD MAIL block on the tab and in Mail check, IDs to update with Remind, and the automatic ID notices.
+
+**What their API offers** (Peter's screenshots, Nov 19 2026): Mailboxes (create, list, assign, unassign, delete; list, add and delete authorized recipients) and Renters (create, list, retrieve, update, update email, activate, deactivate, delete, list a renter's mailboxes, get a renter login link, combine renters). It can't log mail. Peter: "it doesnt hurt to have the functionality there".
+
+**Still needed before the API work:**
+- [ ] Anytime Mailbox's **API documentation**: the web address it lives at, how it signs in (key in a header?), and the fields a renter comes back with.
+- [ ] A **new API key** (the first one was pasted in chat, so replace it). It goes in `site/.dev.vars` as `ANYTIME_API_KEY=` on Peter's PC, and on the live site through the secure key form. Never in chat or in a file that's uploaded.
+
+**Then build (Claude), once the docs are in:**
+- [ ] **Sync now** (read only first): pull renters, their mailboxes and authorized recipients into the Anytime Mailbox tab, matched by number; flag differences instead of overwriting.
+- [ ] **Open their account** button (Get Renter Login URL).
+- [ ] **Write actions** behind a manager PIN, each audited: create a renter, assign or unassign a mailbox, add or delete an authorized recipient (from the Names list), and **deactivate** a renter when their ID hold turns into a suspension (reactivate on reinstatement), if Peter wants that automatic.
+
 - [ ] A **"Virtual mailbox, powered by Anytime Mailbox"** card on the Mailboxes page and in Services, with their logo and our sign-up link.
 - [ ] If the API allows it: virtual customers on Counter → Mailboxes (separate from wall boxes, never sharing a number), and mail logged in one place for both.
 - [ ] Keep the rule from William's notes: virtual and physical boxes stay separate.

@@ -3,7 +3,7 @@ import type { APIRoute } from 'astro';
 import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, atLeast } from '../../lib/auth';
-import { getCustomer, listMailboxDocs, listAllMailboxes, logAudit, setDocExpiry, listDocDates, getMailboxDoc, latestPhotoIdExpiry } from '../../shipping/store';
+import { docOwner, listMailboxDocs, listAllMailboxes, logAudit, setDocExpiry, listDocDates, getMailboxDoc, latestPhotoIdExpiry } from '../../shipping/store';
 import { saveDoc, openDoc, removeDoc, KINDS, docsReady, type DocKind } from '../../lib/mailboxDocs';
 import { addMonths, day, endedOn, KEEP_MONTHS, isDay, idState } from '../../lib/mailbox';
 
@@ -25,7 +25,7 @@ export const POST: APIRoute = async ({ request }) => {
   const canOpen = atLeast(user, 'manager');
   try {
     if (b.action === 'list') {
-      const customer = await getCustomer(env, String(b.customer_id ?? ''));
+      const customer = await docOwner(env, String(b.customer_id ?? ''));
       if (!customer) return json({ error: 'No such customer' }, 404);
       const today = day(new Date());
       const boxes = (await listAllMailboxes(env)).filter((x) => x.customer_id === customer.id);
@@ -36,13 +36,13 @@ export const POST: APIRoute = async ({ request }) => {
         customer: { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone },
         docs: await (async () => { const dates = new Map((await listDocDates(env)).map((d) => [d.doc_id, d.expires_on])); return (await listMailboxDocs(env, customer.id)).map((d) => ({ ...d, expires_on: dates.get(d.id) ?? null })); })(),
         can_open: canOpen, ready: docsReady(env), kinds: KINDS,
-        boxes: boxes.map((x) => x.box_no),
+        boxes: [...boxes.map((x) => x.box_no), ...customer.virtual.map((v) => `V${v.vno}`)],
         last_ended: lastEnded, delete_after: lastEnded ? addMonths(lastEnded, KEEP_MONTHS) : null,
         id_state: idState((await latestPhotoIdExpiry(env)).get(customer.id), today),
       });
     }
     if (b.action === 'add') {
-      const customer = await getCustomer(env, String(b.customer_id ?? ''));
+      const customer = await docOwner(env, String(b.customer_id ?? ''));
       if (!customer) return json({ error: 'No such customer' }, 404);
       const kind = String(b.kind ?? '') as DocKind;
       if (!(KINDS as readonly string[]).includes(kind)) return json({ error: 'Pick what kind of document it is.' }, 400);

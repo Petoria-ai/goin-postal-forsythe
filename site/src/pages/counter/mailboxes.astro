@@ -349,7 +349,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         for (const d of j.ids_expiring) {
           const li = document.createElement('li');
           const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span></span>';
-          who.querySelector('strong')!.textContent = `${d.box_no ? `#${d.box_no} · ` : ''}${d.customer.name}`;
+          who.querySelector('strong')!.textContent = `${d.box_no ? `#${d.box_no} · ` : d.virtual ? `${d.virtual} · ` : ''}${d.customer.name}`;
           const sp = who.querySelector('span')!; sp.className = `mb-exp${d.expired ? ' expired' : ' soon'}`;
           sp.textContent = `${t(`st.doc.kind.${d.kind}`)}: ${d.expired ? tf('st.doc.expired', { date: d.expires_on }) : tf('st.doc.expireson', { date: d.expires_on })}`;
           const idb = idBadge(d.id_state); if (idb && d.id_state.state !== 'expiring') who.append(' ', idb);
@@ -360,7 +360,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
             const hm = document.createElement('div'); hm.className = 'mb-holdmail';
             hm.innerHTML = '<strong></strong> <span></span>';
             hm.querySelector('strong')!.textContent = t('st.id.holdmail');
-            hm.querySelector('span')!.textContent = `${tf('st.id.holdhow', { box: d.box_no ?? '' })}${inBox ? ` ${tf('st.id.inbox', { n: inBox })}` : ''}`;
+            hm.querySelector('span')!.textContent = d.box_no ? `${tf('st.id.holdhow', { box: d.box_no })}${inBox ? ` ${tf('st.id.inbox', { n: inBox })}` : ''}` : tf('st.id.holdhow.v', { provider: String(d.virtual ?? '').replace(/ #.*$/, '') });
             who.appendChild(hm);
           }
           li.append(who, btn(t('st.mb.remind'), 'kraft', async () => {
@@ -676,7 +676,14 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           who.querySelector('.muted')!.textContent = v.status === 'closed' ? t('mb.state.closed') : (v.names.length ? `${t('st.nm.also')} ${v.names.join(', ')}` : '');
           const tag = document.createElement('span'); tag.className = 'mb-mail mb-mail-virtual'; tag.textContent = v.status === 'closed' ? t('st.vm.do.closed') : tf('st.vm.do', { provider: v.provider_name.toUpperCase() });
           const open = document.createElement('a'); open.className = 'btn small kraft'; open.href = `/counter/virtual#${v.provider}`; open.textContent = t('st.nav.virtual');
-          li.append(who, tag, open); ul.appendChild(li);
+          const vb = idBadge(v.id_state);
+          if (vb && v.id_state.state !== 'expiring') {
+            const hm = document.createElement('div'); hm.className = 'mb-holdmail'; hm.innerHTML = '<strong></strong> <span></span>';
+            hm.querySelector('strong')!.textContent = t('st.id.holdmail'); hm.querySelector('span')!.textContent = tf('st.id.holdhow.v', { provider: v.provider_name });
+            who.append(hm); li.classList.add('mb-holdmail-row');
+            li.append(who, vb, docBtn({ customer_id: v.doc_key, docs: 0 }), open);
+          } else li.append(who, tag, docBtn({ customer_id: v.doc_key, docs: 0 }), open);
+          ul.appendChild(li);
         }
         if (!j.boxes.length && !(j.virtual ?? []).length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nomatch'); ul.appendChild(li); return; }
         for (const x of j.boxes) {

@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-19 14:28 CST · Virtual customers: ID dates, ID hold and HOLD MAIL; Anytime Mailbox API plan in P18
+
+- **Asked for:** "i suppose it doesnt hurt to have the functionality there in item 5 / because i want to start tracking their id's and expirations.. and i want to know whether i should be holding their mail or not" (after the Anytime Mailbox API screenshots).
+- **What changed:**
+  - **Documents for every virtual customer**, even without a website account. Each row on the Anytime Mailbox tab has a **Documents** button with a count, e.g. "Documents (1)", for their photo ID (with its expiration date) and 1583.
+  - **The same ID rules as wall boxes:** a yellow badge when the ID expires within 30 days; when it has expired, a red **ID HOLD** badge and a red **HOLD MAIL** block: "Don't scan or forward their mail in Anytime Mailbox. Keep it behind the counter until they bring a current ID." After 30 days the badge says suspended. They're reinstated only by a new ID checked in person, with a future date.
+  - **Mail check** shows the red HOLD MAIL block for a virtual customer on hold, instead of "scan it in their app".
+  - **IDs to update** on the Mailboxes page includes virtual customers ("Anytime Mailbox #4521 · name"), with the **Remind** button. The automatic 30-day, expired and suspended texts and emails go to them too.
+  - **Linking a website account later** moves the documents onto the account, so nothing is lost.
+  - **To-do P18** now lists what the Anytime Mailbox API can do for us (create renters, assign boxes, authorized recipients, activate and deactivate, a Sync button) and what's needed first: their API docs (web address and how it signs in).
+- **Files:** [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/api/mailbox-docs.ts](../site/src/pages/api/mailbox-docs.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/lib/mailboxJobs.ts](../site/src/lib/mailboxJobs.ts), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), new [site/tests/virtual-ids.test.ts](../site/tests/virtual-ids.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, `npm run dev` (no new tables, so no `db:local` this time). Counter → Virtual mail → **Documents** on a customer → upload a photo ID with a past expiration date → the row turns red with HOLD MAIL; Mail check by their number shows the same.
+
 ## 2026-11-19 13:27 CST · Virtual mail: one tab per service, starting with Anytime Mailbox; to-do P19
 
 - **Asked for:** "im going to possibly add other virtual mailbox applications.. so lets make this tab for 'Anytime Mailbox' ... in the virtual tab section. i want another tab labeled 'Anytime Mailbox'", then "this area looks alittle clunky.. i feel some arent needed here. add to the todo list to clean this up" (the staff menu line).
