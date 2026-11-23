@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 17:07 CST · "IDs to update" on the Virtual mail tab
+
+- **Asked for:** "can you make a section in the virtual mailboxes similar to the physical boxes. section like 'IDs to update'".
+- **What changed:** Counter → Virtual mail has its own **IDs to update** card, under the customer list (in its own scrolling box):
+  - Each customer whose photo ID **has expired** (first, with ID HOLD / suspended and the red HOLD MAIL) or **expires within 30 days**, soonest first.
+  - On each: **Remind** (sends their ID text and email now), **Documents**, and a date box with **Save new ID date** for when they bring a current ID. For an expired one, tick "I checked this ID in person" to reinstate them.
+  - At the bottom: "Also on hold: N waiting on verification at Anytime Mailbox (no ID date yet)", with **Show only them**, which filters the list above to those customers.
+  - The automatic ID texts and emails keep going out on their own, as before.
+- **Files:** [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts)
+- **How to check it:** `git pull`, refresh Counter → Virtual mail, scroll below the customer list.
+
 ## 2026-11-23 14:05 CST · Virtual customers without an ID date are on HOLD MAIL (unverified renters)
 
 - **Asked for:** "renters would be 'assigned' to a box. but they didn't fully finish the whole verification process. does the api even allow us to see whats not verified or not?" (the red ⚠ in Anytime Mailbox's dashboard), then Retrieve Renter's fields, then "would hae to go with option 1. one by one".

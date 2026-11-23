@@ -37,6 +37,14 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <ul id="vmList" class="mb-check-out vm-list"></ul>
     </div>
 
+    <!-- IDs to update for virtual customers (Peter, Nov 23 2026: "similar to the physical boxes"). -->
+    <div class="card" id="vmIdsCard">
+      <h3 data-i18n="st.ids.h">IDs to update</h3>
+      <p class="muted" id="vmIdsLead"></p>
+      <ul id="vmIdsList" class="mb-check-out vm-list vm-ids"></ul>
+      <p id="vmIdsWaiting" class="muted" hidden><span></span> <button type="button" class="linkish" id="vmIdsShow" data-i18n="st.vm.noid.show">Show only them</button></p>
+    </div>
+
     <!-- Folded near the bottom (Peter, Nov 19 2026): Sync brings customers in; adding by hand is the exception. -->
     <details class="card vm-addbox" id="vmAddBox">
       <summary><h3 data-i18n="st.vm.addhand">Add someone by hand</h3></summary>
@@ -152,7 +160,57 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = ''; $('vmSyncHide').hidden = true;
       const l = $('vmVnoLabel'); l.dataset.i18nVars = JSON.stringify({ provider: p.name }); l.textContent = tf('st.vm.vno', { provider: p.name });
     }
-    function paintAll() { paintTabs(); paintProvider(); paint(); }
+    function paintAll() { paintTabs(); paintProvider(); paint(); paintIds(); }
+    // IDs to update: expired (on hold / suspended) first, then expiring within 30 days; each with Remind, a new date and Documents.
+    function paintIds() {
+      const p = prov();
+      $('vmIdsLead').textContent = tf('st.vm.ids.p', { provider: p.name });
+      const mine = rows.filter((v) => v.provider === p.id && v.status === 'active');
+      const rank = (v: any) => (v.id_state?.state === 'suspended' ? 0 : v.id_state?.state === 'hold' ? 1 : 2);
+      const due = mine.filter((v) => v.id_state).sort((a, b) => rank(a) - rank(b) || String(a.id_state.expires_on ?? a.id_state.expired_on).localeCompare(String(b.id_state.expires_on ?? b.id_state.expired_on)));
+      const ul = $('vmIdsList'); ul.innerHTML = '';
+      if (!due.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.chk.none'); ul.appendChild(li); }
+      for (const v of due) {
+        const s = v.id_state; const expired = s.state !== 'expiring';
+        const li = document.createElement('li');
+        const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span></span>';
+        who.querySelector('strong')!.textContent = `#${v.vno} · ${v.name}`;
+        const sp = who.querySelector('span')!; sp.className = `mb-exp${expired ? ' expired' : ' soon'}`;
+        sp.textContent = `${t('st.doc.kind.photo_id')}: ${expired ? tf('st.doc.expired', { date: s.expired_on }) : tf('st.doc.expireson', { date: s.expires_on })}`;
+        if (expired) {
+          const badge = document.createElement('span'); badge.className = 'mb-mail mb-mail-rts';
+          badge.textContent = s.state === 'suspended' ? tf('st.id.susp', { date: s.expired_on }) : tf('st.id.hold', { date: s.expired_on, susp: s.suspend_on });
+          const hm = document.createElement('div'); hm.className = 'mb-holdmail'; hm.innerHTML = '<strong></strong> <span></span>';
+          hm.querySelector('strong')!.textContent = t('st.id.holdmail'); hm.querySelector('span')!.textContent = tf('st.id.holdhow.v', { provider: p.name });
+          who.append(' ', badge, hm); li.classList.add('mb-holdmail-row');
+        }
+        // The new ID's date, typed when they bring it (an expired one needs the in-person tick to reinstate).
+        const f = document.createElement('div'); f.className = 'vm-iddate';
+        const date = document.createElement('input'); date.type = 'date'; date.setAttribute('aria-label', t('st.doc.expires'));
+        const lab = document.createElement('label'); lab.className = 'check'; const cb = document.createElement('input'); cb.type = 'checkbox';
+        lab.append(cb, ' ', t('st.doc.inperson')); lab.hidden = !expired;
+        const save = btn(t('st.vm.ids.newdate'), '', async () => {
+          try {
+            const r = await api('/api/mailbox-docs', { action: 'add_date', customer_id: v.doc_key, expires_on: date.value, in_person: cb.checked });
+            if (r.reinstated) alert(t('st.doc.reinstated'));
+            await load();
+          } catch (e: any) { say(e.message, true); }
+        });
+        f.append(date, save, lab); who.append(f);
+        const remind = btn(t('st.mb.remind'), 'kraft', async () => {
+          try {
+            const r = await api('/api/mailbox', { action: 'id_remind', customer_id: v.doc_key, kind: 'photo_id' });
+            say(tf('st.ids.sent', { name: r.name, how: [r.sms ? t('st.mb.text') : '', r.email ? t('st.mb.email') : ''].filter(Boolean).join(' + ') || '—' }));
+          } catch (e: any) { say(e.message, true); }
+        });
+        const d = document.createElement('button'); d.type = 'button'; d.className = 'btn small'; d.dataset.mbdocs = v.doc_key; d.textContent = `${t('st.doc.btn')}${v.docs ? ` (${v.docs})` : ''}`;
+        li.append(who, remind, d); ul.appendChild(li);
+      }
+      // Customers with no ID date (waiting on verification) are on hold too; they're listed in the main list.
+      const waiting = mine.filter((v) => v.no_id).length;
+      $('vmIdsWaiting').hidden = !waiting;
+      $('vmIdsWaiting').querySelector('span')!.textContent = tf('st.vm.ids.waiting', { n: waiting, provider: p.name });
+    }
 
     function paint() {
       const q = ($('vmSearch') as HTMLInputElement).value.trim().toLowerCase().replace(/^#/, '');
@@ -276,7 +334,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
                 try { await api('/api/virtual', li.addBody()); li.markDone(); ok++; }
                 catch (e: any) { bad++; li.querySelector('.muted')!.textContent = e.message; li.classList.add('vm-sync-bad'); }
               }
-              const k = await api('/api/virtual', { action: 'list' }); rows = k.virtual; paintTabs(); paint();
+              const k = await api('/api/virtual', { action: 'list' }); rows = k.virtual; paintTabs(); paint(); paintIds();
               say(tf('st.vm.sync.added', { n: ok, bad }), bad > 0);
             });
             p.append(all); box.appendChild(p); // above the group, so it shows even when the group is folded
@@ -290,7 +348,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
                 if (li.classList.contains('vm-sync-done')) continue;
                 try { await api('/api/virtual', li.closeBody()); li.markDone(); ok++; } catch (e: any) { li.querySelector('.muted')!.textContent = e.message; li.classList.add('vm-sync-bad'); }
               }
-              const k = await api('/api/virtual', { action: 'list' }); rows = k.virtual; paintTabs(); paint();
+              const k = await api('/api/virtual', { action: 'list' }); rows = k.virtual; paintTabs(); paint(); paintIds();
               say(tf('st.vm.sync.closed', { n: ok }));
             });
             p.append(all); box.appendChild(p);
@@ -359,6 +417,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       } catch (e: any) { out.textContent = e.message; }
     });
     $('vmNoIdBtn').addEventListener('click', () => { onlyNoId = !onlyNoId; paint(); });
+    $('vmIdsShow').addEventListener('click', () => { onlyNoId = true; paint(); $('vmList').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     $('vmSyncHide').addEventListener('click', () => { $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = ''; $('vmSyncHide').hidden = true; });
     function syncRow(r: any) {
       const li = document.createElement('li');
@@ -369,7 +428,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       const fieldName = (f: string) => t(f === 'name' ? 'st.c.th.name' : f === 'email' ? 'st.vm.email' : 'st.vm.phone');
       const done = (b: HTMLButtonElement) => { b.disabled = true; li.classList.add('vm-sync-done'); };
       const save = async (b: HTMLButtonElement, body: Record<string, unknown>) => {
-        try { await api('/api/virtual', body); done(b); const j = await api('/api/virtual', { action: 'list' }); rows = j.virtual; paintTabs(); paint(); }
+        try { await api('/api/virtual', body); done(b); const j = await api('/api/virtual', { action: 'list' }); rows = j.virtual; paintTabs(); paint(); paintIds(); }
         catch (e: any) { say(e.message, true); }
       };
       const fromRenter = (l?: any) => ({ provider: prov().id, vno: r.vno, name: ren.name || l?.name, email: ren.email ?? l?.email, phone: ren.phone ?? l?.phone,
