@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 13:42 CST · Virtual mailboxes list scrolls inside its own box
+
+- **Asked for:** "i dont like how when i have 80 customers in my virtual mailboxes and it flooded my whole page. can you make it contained in the virtual mailbox area and has a scroll feature?"
+- **What changed:** on Counter → Virtual mail, the customer list sits in its own box (about two-thirds of the screen tall) that scrolls inside, so the page below it (Add someone by hand, Connection) stays close. Search, Sync and the yellow "no ID date" bar stay above the box. Nothing else changed.
+- **Files:** [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/styles/global.css](../site/src/styles/global.css)
+- **How to check it:** `git pull`, `npm run dev`, Counter → Virtual mail, scroll inside the list.
+
 ## 2026-11-23 13:21 CST · Deactivate or delete at Anytime Mailbox, from Edit → Danger zone
 
 - **Asked for:** "if i close the account on the website.. would it actualyl close the account in anytime mailbox?" (no, it only read from them), then "yes, but I want it to be little harder to close their account.. possibly add it in the edit button with like more of a heads up if someone presses it. it'll delete on the anytime mailbox side / i also want to add a delete option as well because one of the nonverified renters happened to not be a active", and "yes" to owners only for Delete, owners and managers for Deactivate.

@@ -33,7 +33,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <div id="vmSync" class="vm-sync"></div>
       <p id="vmNoId" class="vm-noid-banner" hidden><span></span> <button type="button" class="linkish" id="vmNoIdBtn"></button></p>
       <p><input id="vmSearch" type="search" data-i18n-ph="st.ci.search" placeholder="Box # or name" /></p>
-      <ul id="vmList" class="mb-check-out"></ul>
+      <!-- Its own scrolling box (Peter, Nov 23 2026: 80 customers "flooded my whole page"). -->
+      <ul id="vmList" class="mb-check-out vm-list"></ul>
     </div>
 
     <!-- Folded near the bottom (Peter, Nov 19 2026): Sync brings customers in; adding by hand is the exception. -->
