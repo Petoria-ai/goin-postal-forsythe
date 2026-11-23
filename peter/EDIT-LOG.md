@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 13:59 CST · Check at Anytime Mailbox shows more about their box list
+
+- **Asked for:** Peter's Check of "Mailbox 104": renter "active", box assigned Aug 5 2026, box status "(not given)".
+- **What that means:** going by the renter's details, Anytime Mailbox's API calls 104 active and set up. The box-status list was read but had no box named exactly "Mailbox 104", so the one field that may say it isn't active never got looked at.
+- **What changed:** Check now also shows how many boxes that list returned and how many of each status, the first few box names in it (to see how they're written there), and any box in it with the same number or the same renter. Still read only.
+- **Files:** [site/src/lib/anytime.ts](../site/src/lib/anytime.ts), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/tests/anytime.test.ts](../site/tests/anytime.test.ts)
+- **How to check it:** `git pull`, refresh, **Edit** on 104, **Check** again.
+
 ## 2026-11-23 13:56 CST · "Check at Anytime Mailbox" button in Edit (to find out why box 104 wasn't flagged)
 
 - **Asked for:** "dont tink it works the way im intending too.. because mailbox number 104 isnt a active renter".

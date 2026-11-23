@@ -342,6 +342,11 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           ...(j.holders.length ? j.holders.map((h: any) => `Renter ${h.id}: status "${h.status}", box assigned ${h.assigned ?? '(no date)'}`) : ['No renter has this box']),
           `Box status: ${j.box_status ?? '(not given)'}${j.box_check === 'status' ? '' : ` (${j.box_check})`}`,
           `Sync says: ${j.sync_says}`,
+          ...(j.box_list ? [
+            `Box list read: ${j.box_list.count} boxes (${Object.entries(j.box_list.by_status).map(([k, n]) => `${k}: ${n}`).join(', ')})`,
+            `First names in that list: ${j.box_list.sample.join(', ') || '(none)'}`,
+            ...(j.box_list.near.length ? j.box_list.near.map((m: any) => `Close match: "${m.name}" status "${m.status}" renter ${m.renter_id ?? '(none)'}`) : ['Close match: none']),
+          ] : []),
         ].join('\n');
       } catch (e: any) { out.textContent = e.message; }
     });

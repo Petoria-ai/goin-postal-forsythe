@@ -136,8 +136,17 @@ export const POST: APIRoute = async ({ request }) => {
       const holders = r.renters.filter((x) => x.mailboxes.some((m) => m.toLowerCase() === k))
         .map((x) => ({ id: x.id, name: x.name, status: x.status, assigned: x.boxes.find((m) => m.name.toLowerCase() === k)?.assigned ?? null }));
       const box_status = boxes?.ok ? boxes.status.get(k) ?? null : null;
+      // For finding out why a box doesn't match: how many boxes their list gave, by status, and any whose name or renter is close.
+      const digits = cur.vno.replace(/\D/g, '');
+      const ids = new Set(holders.map((h) => h.id));
+      const box_list = boxes?.ok ? {
+        count: boxes.raw.length,
+        by_status: boxes.raw.reduce((a: Record<string, number>, m) => { a[m.status || '(blank)'] = (a[m.status || '(blank)'] ?? 0) + 1; return a; }, {}),
+        near: boxes.raw.filter((m) => (digits && m.name.replace(/\D/g, '') === digits) || ids.has(Number(m.renter_id))).slice(0, 5),
+        sample: boxes.raw.slice(0, 3).map((m) => m.name),
+      } : null;
       return json({ ok: true, vno: cur.vno, holders, box_status, box_check: boxes?.ok ? 'status' : `could not read box statuses (${boxes ? `${boxes.result}${boxes.status ? ` ${boxes.status}` : ''}` : 'no path'})`,
-        sync_says: verdict(holders, box_status) });
+        sync_says: verdict(holders, box_status), box_list });
     }
     if (b.action === 'renter_lookup' || b.action === 'renter_deactivate' || b.action === 'renter_delete') {
       const cur = await getVirtual(env, Number(b.id));

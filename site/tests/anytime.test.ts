@@ -111,6 +111,8 @@ describe('Check at Anytime Mailbox (one box, read only)', () => {
     expect(r.body).toMatchObject({ ok: true, vno: 'P2', box_status: 'pending-assignment', box_check: 'status' });
     expect(r.body.holders[0]).toMatchObject({ id: 31001, status: 'active' });
     expect(r.body.sync_says).toMatch(/Not verified/);
+    expect(r.body.box_list).toMatchObject({ count: 3, by_status: { 'pending-assignment': 2, assigned: 1 } });
+    expect(r.body.box_list.near.map((m: any) => m.name)).toContain('P2');
     expect(calls.at(-1)).toMatch(/^GET /);
     expect(calls.some((c) => c.includes('status=active%2Cinactive%2Cdeleted'))).toBe(true);
   });

@@ -64,8 +64,9 @@ export async function listRenters(base: string, path: string, key: string, f: ty
  * by box name. "assigned" means the renter is verified and set up; "pending-assignment" means they signed up but aren't
  * verified yet (Peter, Nov 23 2026: renters who weren't really active were coming in as active).
  */
-export async function listBoxStatus(base: string, path: string, key: string, f: typeof fetch = fetch): Promise<{ ok: true; status: Map<string, string> } | ApiFail> {
+export async function listBoxStatus(base: string, path: string, key: string, f: typeof fetch = fetch): Promise<{ ok: true; status: Map<string, string>; raw: { name: string; status: string; renter_id: unknown }[] } | ApiFail> {
   const out = new Map<string, string>();
+  const raw: { name: string; status: string; renter_id: unknown }[] = [];
   let after: number | null = null;
   for (let i = 0; i < MAX_PAGES; i++) {
     const q: Record<string, string> = { limit: '100' };
@@ -79,11 +80,11 @@ export async function listBoxStatus(base: string, path: string, key: string, f: 
     const j: any = await res.json().catch(() => null);
     const boxes = j?.data?.mailboxes;
     if (!res.ok || !j?.success || !Array.isArray(boxes)) return { ok: false, result: 'error', status: res.status };
-    for (const m of boxes) out.set(String(m?.name ?? '').trim().toLowerCase(), String(m?.status ?? ''));
+    for (const m of boxes) { out.set(String(m?.name ?? '').trim().toLowerCase(), String(m?.status ?? '')); raw.push({ name: String(m?.name ?? ''), status: String(m?.status ?? ''), renter_id: m?.renter_id ?? null }); }
     if (!j.data.has_more || !boxes.length) break;
     after = Number(boxes[boxes.length - 1]?.id);
   }
-  return { ok: true, status: out };
+  return { ok: true, status: out, raw };
 }
 
 const digits = (p: string | null) => (p ?? '').replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '');
