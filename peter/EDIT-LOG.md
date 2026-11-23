@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 17:09 CST · "IDs to update" scrolls inside its own box (virtual and physical)
+
+- **Asked for:** "also in the 'Ids to update' section, we need a scroll feature in that section".
+- **What changed:** both **IDs to update** lists, on Counter → Virtual mail and on Counter → Mailboxes, sit in their own box (about half the screen tall) that scrolls inside, so a long list doesn't stretch the page. On the Virtual mail tab, a style mix-up had let the customer list's taller size win; that's fixed too.
+- **Files:** [site/src/styles/global.css](../site/src/styles/global.css), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro)
+- **How to check it:** `git pull`, refresh either page, scroll inside IDs to update.
+
 ## 2026-11-23 17:07 CST · "IDs to update" on the Virtual mail tab
 
 - **Asked for:** "can you make a section in the virtual mailboxes similar to the physical boxes. section like 'IDs to update'".
