@@ -162,11 +162,11 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       const missing = mine.filter((v) => v.no_id).length;
       if (!missing) onlyNoId = false;
       $('vmNoId').hidden = !missing;
-      $('vmNoId').querySelector('span')!.textContent = tf('st.vm.noid.banner', { n: missing, provider: prov().name });
+      $('vmNoId').querySelector('span')!.textContent = tf('st.vm.noid.banner2', { n: missing, provider: prov().name });
       $('vmNoIdBtn').textContent = onlyNoId ? t('st.vm.noid.all') : t('st.vm.noid.show');
       const list = mine.filter((v) => !onlyNoId || v.no_id).filter((v) => !q || v.vno.toLowerCase().startsWith(q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
       for (const v of list) {
-        const li = document.createElement('li'); if (v.status === 'closed') li.classList.add('vm-closed');
+        const li = document.createElement('li'); if (v.status === 'closed') li.classList.add('vm-closed'); li.dataset.id = String(v.id);
         const who = document.createElement('div');
         who.innerHTML = '<strong></strong><br /><span class="muted"></span>';
         who.querySelector('strong')!.textContent = `${prov().name} #${v.vno} · ${v.name}${v.status === 'closed' ? ` · ${t('mb.state.closed')}` : ''}`;
@@ -184,8 +184,14 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         }
         // Type the ID's expiration date right here (from their ID in the service's dashboard); no file needed.
         if (v.no_id || (s && s.state !== 'expiring')) {
-          const badge = document.createElement('span'); badge.className = 'mb-exp soon';
-          if (v.no_id) { badge.textContent = t('st.vm.noid.badge'); who.append(' ', badge); }
+          // No ID date = no verified ID on file = HOLD MAIL (Peter, Nov 23 2026, option 1): Anytime Mailbox's API can't say who
+          // finished verification (the red ⚠ in their dashboard), so the date is typed only once they're verified.
+          if (v.no_id) {
+            const badge = document.createElement('span'); badge.className = 'mb-mail mb-mail-rts'; badge.textContent = t('st.vm.noid.badge'); who.append(' ', badge);
+            const hm = document.createElement('div'); hm.className = 'mb-holdmail'; hm.innerHTML = '<strong></strong> <span></span>';
+            hm.querySelector('strong')!.textContent = t('st.id.holdmail'); hm.querySelector('span')!.textContent = tf('st.vm.noid.hold', { provider: prov().name });
+            who.append(hm); li.classList.add('mb-holdmail-row');
+          }
           const f = document.createElement('div'); f.className = 'vm-iddate';
           const date = document.createElement('input'); date.type = 'date'; date.setAttribute('aria-label', t('st.doc.expires'));
           const lab = document.createElement('label'); lab.className = 'check'; const cb = document.createElement('input'); cb.type = 'checkbox';
@@ -194,7 +200,9 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
             try {
               const r = await api('/api/mailbox-docs', { action: 'add_date', customer_id: v.doc_key, expires_on: date.value, in_person: cb.checked });
               if (r.reinstated) alert(t('st.doc.reinstated'));
+              const next = list.slice(list.indexOf(v) + 1).find((x: any) => x.no_id)?.id;
               await load();
+              if (next) { const n = document.querySelector<HTMLInputElement>(`#vmList li[data-id="${next}"] .vm-iddate input[type=date]`); n?.scrollIntoView({ block: 'center' }); n?.focus(); }
             } catch (e: any) { say(e.message, true); }
           });
           f.append(date, save, lab); who.append(f);

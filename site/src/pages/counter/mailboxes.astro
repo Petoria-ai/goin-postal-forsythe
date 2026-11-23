@@ -683,8 +683,13 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
             who.append(hm); li.classList.add('mb-holdmail-row');
             li.append(who, vb, docBtn({ customer_id: v.doc_key, docs: 0 }), open);
           } else {
-            if (v.no_id) { const nb = document.createElement('span'); nb.className = 'mb-exp soon'; nb.textContent = t('st.vm.noid.badge'); who.append(' ', nb); }
-            li.append(who, tag, docBtn({ customer_id: v.doc_key, docs: 0 }), open);
+            if (v.no_id) { // no verified ID on file yet: hold their mail
+              const nb = document.createElement('span'); nb.className = 'mb-mail mb-mail-rts'; nb.textContent = t('st.vm.noid.badge');
+              const hm = document.createElement('div'); hm.className = 'mb-holdmail'; hm.innerHTML = '<strong></strong> <span></span>';
+              hm.querySelector('strong')!.textContent = t('st.id.holdmail'); hm.querySelector('span')!.textContent = tf('st.vm.noid.hold', { provider: v.provider_name });
+              who.append(hm); li.classList.add('mb-holdmail-row');
+              li.append(who, nb, docBtn({ customer_id: v.doc_key, docs: 0 }), open);
+            } else li.append(who, tag, docBtn({ customer_id: v.doc_key, docs: 0 }), open);
           }
           ul.appendChild(li);
         }

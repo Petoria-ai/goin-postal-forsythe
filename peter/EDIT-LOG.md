@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 14:05 CST · Virtual customers without an ID date are on HOLD MAIL (unverified renters)
+
+- **Asked for:** "renters would be 'assigned' to a box. but they didn't fully finish the whole verification process. does the api even allow us to see whats not verified or not?" (the red ⚠ in Anytime Mailbox's dashboard), then Retrieve Renter's fields, then "would hae to go with option 1. one by one".
+- **The answer:** no. List Renters, Retrieve Renter and List Mailboxes have no verification field (only active / inactive / deleted and assigned / pending-assignment). The ⚠ is only in their dashboard.
+- **What changed:**
+  - A virtual customer with **no ID date** now shows the red **HOLD MAIL: "No verified ID on file. Don't scan or forward their mail in Anytime Mailbox; keep it behind the counter. Type their ID date once Anytime Mailbox shows them verified (no ⚠)."**, on the Virtual mail tab and in **Mail check**.
+  - Typing their ID date (once the ⚠ is gone in Anytime Mailbox) takes them off hold right away.
+  - The bar at the top now reads "N customers are on HOLD MAIL until their ID date is typed in", with **Show only them**.
+  - **One by one:** after **Save ID date**, the cursor jumps to the next customer still waiting, ready to type the next date.
+- **Files:** [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts)
+- **How to check it:** `git pull`, refresh Virtual mail → **Show only them** → with Anytime Mailbox's dashboard open, type a date for each one without a ⚠ and press **Save ID date** (or Enter on the button); leave the ⚠ ones as they are.
+
 ## 2026-11-23 13:59 CST · Check at Anytime Mailbox shows more about their box list
 
 - **Asked for:** Peter's Check of "Mailbox 104": renter "active", box assigned Aug 5 2026, box status "(not given)".

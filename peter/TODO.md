@@ -361,7 +361,8 @@ The store's virtual mailboxes run on **Anytime Mailbox** (see P13 and [physical-
 - [x] **Sync now** (read only) ✅ 2026-11-19 15:39 CST: renters and their mailboxes lined up with our list by mailbox name; new, different, inactive, reopen and missing flagged, each with a button that uses the normal add / edit / close. **Peter to try with the real key.**
 - [ ] Authorized recipients into the Names list (List Authorized Recipient, per mailbox name).
 - [x] **ID dates without re-uploading** ✅ 2026-11-19 15:51 CST: their API has no documents, so staff type the ID's expiration date in the row ("On file at Anytime Mailbox"); a yellow "no ID date" bar and badge remind until every customer has one.
-- [ ] Ask Anytime Mailbox support: can operators export renters' verification documents or ID expiration dates? If yes, fill the dates automatically.
+- [ ] Ask Anytime Mailbox support: can operators export renters' verification documents or ID expiration dates, or a renter's verification status (the red ⚠)? Their API has none of these (checked Nov 23). If yes, fill the dates automatically.
+- [x] **Unverified renters held** ✅ 2026-11-23 14:05 CST: no ID date = HOLD MAIL for virtual customers; Peter types each date once the ⚠ is gone (option 1).
 - [ ] **Open their account** button (Get Renter Login URL).
 - [ ] **Write actions** behind a manager PIN, each audited: create a renter, assign or unassign a mailbox, add or delete an authorized recipient (from the Names list), and **deactivate** a renter when their ID hold turns into a suspension (reactivate on reinstatement), if Peter wants that automatic.
   - ✅ 2026-11-23 13:21 CST: **Deactivate** (manager or owner) and **Delete** (owner only) built in Edit → Danger zone, with a look-up and the box number typed to confirm. **Waiting on** the method and path of Deactivate Renter and Delete Renter from their docs (`deactivate` / `delete` in `virtual.json`).
