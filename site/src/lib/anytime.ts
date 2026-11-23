@@ -2,7 +2,8 @@
 // Base https://connect.anytimemailbox.com/v1, "Authorization: Bearer <key>". List Renters pages with limit (1-100)
 // and starting_after (the id of the last renter), filters by status (active, inactive, deleted; comma-separated),
 // and answers { success, data: { has_more, renters: [{ id, first_name, last_name, company, phone, email, status,
-// mailboxes: [{ id, name, assigned }] }] } }. Nothing here changes anything at Anytime Mailbox.
+// mailboxes: [{ id, name, assigned }] }] } }. Only renterAction() changes anything there (Deactivate / Delete Renter,
+// owner or manager in api/virtual.ts, typed confirmation).
 
 export type Renter = { id: number; name: string; company: string; email: string | null; phone: string | null; status: string; mailboxes: string[] };
 export type ApiFail = { ok: false; result: 'rejected' | 'not_found' | 'error'; status?: number; message?: string };
@@ -93,4 +94,26 @@ export function compare(renters: Renter[], locals: Local[]): { rows: SyncRow[]; 
   }
   for (const l of locals) if (l.status === 'active' && !seen.has(l.vno.toLowerCase())) rows.push({ kind: 'missing', vno: l.vno, local: l });
   return { rows, matched };
+}
+
+/** The renter at Anytime Mailbox who has this box (active or inactive), to show staff before a change. */
+export async function findRenter(base: string, path: string, key: string, vno: string, f: typeof fetch = fetch): Promise<{ ok: true; renter: Renter | null } | ApiFail> {
+  const r = await listRenters(base, path, key, f);
+  if (!r.ok) return r;
+  return { ok: true, renter: r.renters.find((x) => x.mailboxes.some((m) => m.toLowerCase() === vno.toLowerCase())) ?? null };
+}
+
+export type CallSpec = { method: string; path: string };
+/** Deactivate Renter or Delete Renter, exactly as their docs give the method and path ({renter_id} is filled in). */
+export async function renterAction(base: string, spec: CallSpec, key: string, renterId: number, f: typeof fetch = fetch): Promise<{ ok: true } | ApiFail> {
+  if (!Number.isInteger(renterId) || renterId <= 0) return { ok: false, result: 'error', message: 'No renter id' };
+  const url = `${base.replace(/\/$/, '')}${spec.path.replace('{renter_id}', String(renterId))}`;
+  let res: Response;
+  try { res = await f(url, { method: spec.method.toUpperCase(), headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' } }); }
+  catch (e: any) { return { ok: false, result: 'error', message: `Couldn't reach Anytime Mailbox (${e?.message ?? 'network'})` }; }
+  if (res.status === 401 || res.status === 403) return { ok: false, result: 'rejected', status: res.status };
+  if (res.status === 404) return { ok: false, result: 'not_found', status: 404 };
+  const j: any = await res.json().catch(() => null);
+  if (!res.ok || j?.success === false) return { ok: false, result: 'error', status: res.status, message: String(j?.error?.message ?? j?.message ?? '').slice(0, 200) || undefined };
+  return { ok: true };
 }

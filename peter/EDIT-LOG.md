@@ -4,6 +4,22 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 13:21 CST · Deactivate or delete at Anytime Mailbox, from Edit → Danger zone
+
+- **Asked for:** "if i close the account on the website.. would it actualyl close the account in anytime mailbox?" (no, it only read from them), then "yes, but I want it to be little harder to close their account.. possibly add it in the edit button with like more of a heads up if someone presses it. it'll delete on the anytime mailbox side / i also want to add a delete option as well because one of the nonverified renters happened to not be a active", and "yes" to owners only for Delete, owners and managers for Deactivate.
+- **What changed:**
+  - **Close is off the list row.** Each row keeps Edit and Documents; a closed one still has Reopen.
+  - **Edit → Danger zone** (red box under the form; only for a manager or owner PIN, only for an open customer):
+    - **Close on our list only**: like the old Close; nothing changes at Anytime Mailbox.
+    - **Deactivate at Anytime Mailbox** (manager or owner): stops their account there and closes them here.
+    - **Delete at Anytime Mailbox** (owner only): for sign-ups that never got verified. Removes their account there; they stay on our list as closed.
+  - **The heads-up:** the site first looks them up at Anytime Mailbox and shows exactly who it will change (renter number, name, boxes, status). **Yes, do it** stays grey until you **type their mailbox number**. If their account changed in between, it stops.
+  - **Records:** the audit log gets who, when and which renter; their row gets a note like "Deactivated at Anytime Mailbox 2026-11-23 by Peter". Nothing is erased on the website; ID dates and documents stay.
+  - **Waiting on one thing:** the exact Deactivate Renter and Delete Renter addresses from their docs. Until those are in `site/src/data/virtual.json`, both buttons say they're waiting and **send nothing**.
+  - **Note on PINs:** the shared counter PIN (1234) counts as a manager once an owner PIN exists (how the PINs already work), so it can Deactivate but never Delete. Personal counter PINs on the Staff page can't do either.
+- **Files:** [site/src/lib/anytime.ts](../site/src/lib/anytime.ts), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/data/virtual.json](../site/src/data/virtual.json), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css), new [site/tests/anytime-danger.test.ts](../site/tests/anytime-danger.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, `npm run dev`, Virtual mail with the owner PIN → **Edit** on someone → scroll to the red **Danger zone**. Until the paths are added, the buttons only say what they're waiting on.
+
 ## 2026-11-19 15:51 CST · Virtual customers: ID date without uploading, a "no ID date" reminder, and Add by hand folded away
 
 - **Asked for:** "is there anyway i can grab all the renters info? because now when i add the renter to my list.. i gotta reupload their documents..", then "well im going to have to remember to input the renters id to the website..", then "seems like this website tool would only serve as a find a mailbox finder and lets me know if its expired or not. so i wont need add a virtual mailbox owner at the top i believe?"

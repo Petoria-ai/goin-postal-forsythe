@@ -57,6 +57,25 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         </div>
         <p class="btnrow vm-wide"><button type="submit" class="btn" id="vmSave" data-i18n="st.vm.save">Add</button> <button type="button" class="btn kraft" id="vmCancel" hidden data-i18n="st.vm.cancel">Cancel editing</button></p>
       </form>
+      <!-- Danger zone (Peter, Nov 23 2026): only while editing someone, only for a manager or owner PIN. -->
+      <div id="vmDanger" class="vm-danger" hidden>
+        <h4 data-i18n="st.vm.danger.h">Danger zone</h4>
+        <p class="muted small" id="vmDangerLead"></p>
+        <p class="btnrow">
+          <button type="button" class="btn small kraft" id="vmCloseOnly" data-i18n="st.vm.danger.closeonly">Close on our list only</button>
+          <button type="button" class="btn small vm-danger-btn" id="vmDeact"></button>
+          <button type="button" class="btn small vm-danger-btn" id="vmDel"></button>
+        </p>
+      </div>
+      <dialog id="vmDangerDlg" class="vm-danger-dlg">
+        <form method="dialog" id="vmDangerForm">
+          <h3 id="vmDangerTitle"></h3>
+          <p id="vmDangerText"></p>
+          <label><span id="vmDangerTypeLabel"></span> <input name="confirm" autocomplete="off" spellcheck="false" /></label>
+          <p class="btnrow"><button type="button" class="btn vm-danger-btn" id="vmDangerGo" disabled data-i18n="st.vm.danger.go">Yes, do it</button>
+            <button type="submit" class="btn kraft" data-i18n="st.vm.danger.cancel">Cancel</button></p>
+        </form>
+      </dialog>
     </details>
 
     <!-- At the bottom (Peter, Nov 19 2026): set once, rarely touched. -->
@@ -96,6 +115,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     // One tab per service (src/data/virtual.json); the page remembers the tab in the address (#anytime).
     let providers: any[] = [];
     let canKeys = false;
+    let role = 'counter';
     let onlyNoId = false; // "Show only them": customers with no ID date yet
     let current = location.hash.slice(1) || 'anytime';
     const prov = () => providers.find((p) => p.id === current) ?? providers[0];
@@ -176,9 +196,9 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         }
         li.append(who, btn(t('st.mb.edit'), 'kraft', () => edit(v)));
         const d = document.createElement('button'); d.type = 'button'; d.className = 'btn small'; d.dataset.mbdocs = v.doc_key; d.textContent = `${t('st.doc.btn')}${v.docs ? ` (${v.docs})` : ''}`; li.append(d);
-        li.append(btn(v.status === 'closed' ? t('st.vm.reopen') : t('st.vm.close'), 'kraft', async () => {
-          if (v.status !== 'closed' && !confirm(tf('st.vm.closeq', { vno: v.vno, name: v.name, provider: prov().name }))) return;
-          try { await api('/api/virtual', { action: v.status === 'closed' ? 'reopen' : 'close', id: v.id }); await load(); } catch (e: any) { say(e.message, true); }
+        // Closing moved into Edit → Danger zone (Peter, Nov 23 2026); a closed one can still be reopened here.
+        if (v.status === 'closed') li.append(btn(t('st.vm.reopen'), 'kraft', async () => {
+          try { await api('/api/virtual', { action: 'reopen', id: v.id }); await load(); } catch (e: any) { say(e.message, true); }
         }));
         ul.appendChild(li);
       }
@@ -188,7 +208,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       try {
         const j = await api('/api/virtual', { action: 'list' });
         $('vmMain').classList.remove('hidden');
-        rows = j.virtual; providers = j.providers; canKeys = !!j.can_manage_keys;
+        rows = j.virtual; providers = j.providers; canKeys = !!j.can_manage_keys; role = j.role ?? 'counter';
         paintAll();
       } catch (e: any) { say(e.message, true); }
     }
@@ -205,7 +225,9 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       try { await api('/api/virtual', { action: 'key_remove', provider: prov().id }); await load(); say(t('st.vm.key.removed')); }
       catch (e: any) { say(e.message, true); }
     });
-    const apiFail = (j: any) => j.result === 'no_key' ? t('st.vm.key.none') : j.result === 'no_address' ? tf('st.vm.key.wait', { provider: prov().name })
+    const apiFail = (j: any) => j.result === 'no_path' ? tf('st.vm.danger.nopath', { provider: prov().name })
+      : j.result === 'no_renter' ? tf('st.vm.danger.norenter', { provider: prov().name, vno: editing?.vno ?? '' })
+      : j.result === 'no_key' ? t('st.vm.key.none') : j.result === 'no_address' ? tf('st.vm.key.wait', { provider: prov().name })
       : j.result === 'rejected' ? tf('st.vm.key.bad', { provider: prov().name }) : j.result === 'not_found' ? t('st.vm.key.path')
       : `${tf('st.vm.key.err', { provider: prov().name })}${j.status ? ` (${j.status})` : ''}${j.message ? ` ${j.message}` : ''}`;
     $('vmKeyTest').addEventListener('click', async () => {
@@ -250,6 +272,45 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         }
       } catch (e: any) { $('vmSyncSum').textContent = ''; say(e.message, true); }
     });
+    // Danger zone: close here only, or deactivate / delete at the service after a look-up and the box number typed.
+    $('vmCloseOnly').addEventListener('click', async () => {
+      const v = editing; if (!v || !confirm(tf('st.vm.closeq', { vno: v.vno, name: v.name, provider: prov().name }))) return;
+      try { await api('/api/virtual', { action: 'close', id: v.id }); resetForm(); await load(); } catch (e: any) { say(e.message, true); }
+    });
+    const dlg = $('vmDangerDlg') as HTMLDialogElement;
+    const conf = ($('vmDangerForm') as HTMLFormElement).elements.namedItem('confirm') as HTMLInputElement;
+    let pending: { action: string; renter_id: number } | null = null;
+    async function danger(kind: 'deactivate' | 'delete') {
+      const v = editing; if (!v) return;
+      const p = prov();
+      say(tf('st.vm.danger.looking', { provider: p.name }));
+      try {
+        const j = await api('/api/virtual', { action: 'renter_lookup', id: v.id });
+        if (!j.ok) { say(apiFail(j), true); return; }
+        if (!(kind === 'delete' ? j.can_delete : j.can_deactivate)) { say(tf('st.vm.danger.nopath', { provider: p.name }), true); return; }
+        const r = j.renter; say('');
+        const vars = { name: v.name, vno: v.vno, provider: p.name, rid: r.id, rname: r.name || '—', boxes: r.mailboxes.join(', '), status: r.status };
+        $('vmDangerTitle').textContent = kind === 'delete' ? tf('st.vm.danger.del', { provider: p.name }) : tf('st.vm.danger.deact', { provider: p.name });
+        $('vmDangerText').textContent = tf(kind === 'delete' ? 'st.vm.danger.delq' : 'st.vm.danger.deactq', vars);
+        $('vmDangerTypeLabel').textContent = tf('st.vm.danger.type', { vno: v.vno });
+        conf.value = ''; ($('vmDangerGo') as HTMLButtonElement).disabled = true;
+        pending = { action: kind === 'delete' ? 'renter_delete' : 'renter_deactivate', renter_id: r.id };
+        dlg.showModal(); conf.focus();
+      } catch (e: any) { say(e.message, true); }
+    }
+    $('vmDeact').addEventListener('click', () => danger('deactivate'));
+    $('vmDel').addEventListener('click', () => danger('delete'));
+    conf.addEventListener('input', () => { ($('vmDangerGo') as HTMLButtonElement).disabled = conf.value.trim().replace(/^#/, '').toLowerCase() !== String(editing?.vno ?? '').toLowerCase(); });
+    $('vmDangerGo').addEventListener('click', async () => {
+      if (!pending || !editing) return;
+      const go = $('vmDangerGo') as HTMLButtonElement; go.disabled = true;
+      try {
+        const j = await api('/api/virtual', { ...pending, id: editing.id, confirm: conf.value });
+        dlg.close();
+        if (!j.ok) { say(apiFail(j), true); return; }
+        say(tf('st.vm.danger.done', { provider: prov().name })); resetForm(); await load();
+      } catch (e: any) { dlg.close(); say(e.message, true); }
+    });
     $('vmNoIdBtn').addEventListener('click', () => { onlyNoId = !onlyNoId; paint(); });
     $('vmSyncHide').addEventListener('click', () => { $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = ''; $('vmSyncHide').hidden = true; });
     function syncRow(r: any) {
@@ -290,8 +351,9 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('vmAccount').textContent = name ?? t('st.vm.noacct');
       $('vmUnlink').hidden = !id; $('vmFound').innerHTML = '';
     }
+    let editing: any = null;
     function resetForm() {
-      form.reset(); field('id').value = ''; setAccount(null, null);
+      form.reset(); field('id').value = ''; setAccount(null, null); editing = null; $('vmDanger').hidden = true;
       $('vmSave').textContent = t('st.vm.save'); $('vmCancel').hidden = true;
     }
     function edit(v: any) {
@@ -300,6 +362,12 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       setAccount(v.customer_id, v.account);
       $('vmSave').textContent = t('st.vm.update'); $('vmCancel').hidden = false;
       ($('vmAddBox') as HTMLDetailsElement).open = true;
+      editing = v;
+      const p = prov(); const mgr = role === 'manager' || role === 'owner';
+      $('vmDanger').hidden = !mgr || v.status !== 'active';
+      $('vmDangerLead').textContent = tf('st.vm.danger.lead', { provider: p.name });
+      $('vmDeact').textContent = tf('st.vm.danger.deact', { provider: p.name });
+      $('vmDel').textContent = tf('st.vm.danger.del', { provider: p.name }); $('vmDel').hidden = role !== 'owner';
       form.scrollIntoView({ behavior: 'smooth' });
     }
     form.addEventListener('submit', async (ev) => {

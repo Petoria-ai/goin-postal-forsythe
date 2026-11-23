@@ -1,12 +1,14 @@
 {
-  "_note": "Virtual mailbox services the store sells (Peter, Nov 19 2026). Each one gets its own tab on Counter → Virtual mail. To add one, copy a line and give it a new id (letters only) and its name. 'api' is true once we connect its API. 'api_base' is the web address of its API from the service's documentation and 'renters_path' the List Renters path (to-do P18); the key is pasted on the service's tab by an owner.",
+  "_note": "Virtual mailbox services the store sells (Peter, Nov 19 2026). Each one gets its own tab on Counter → Virtual mail. To add one, copy a line and give it a new id (letters only) and its name. 'api' is true once we connect its API. 'api_base' is the web address of its API from the service's documentation and 'renters_path' the List Renters path (to-do P18); the key is pasted on the service's tab by an owner. 'deactivate' and 'delete' are the Deactivate Renter and Delete Renter calls as {\"method\": \"POST\", \"path\": \"/renters/{renter_id}/...\"}, copied exactly from their docs; null keeps those buttons off.",
   "providers": [
     {
       "id": "anytime",
       "name": "Anytime Mailbox",
       "api": false,
       "api_base": "https://connect.anytimemailbox.com/v1",
-      "renters_path": "/renters"
+      "renters_path": "/renters",
+      "deactivate": null,
+      "delete": null
     }
   ]
 }

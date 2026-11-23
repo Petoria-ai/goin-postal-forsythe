@@ -1171,6 +1171,11 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-sync-group { padding: .35rem 0; }
 .vm-addbox > summary { cursor: pointer; list-style: revert; }
 .vm-addbox > summary h3 { display: inline; }
+.vm-danger { margin-top: 1.25rem; border: 2px solid #b3261e; border-radius: 10px; padding: .5rem .9rem; background: #fff5f4; }
+.vm-danger h4 { color: #b3261e; margin: .25rem 0; }
+.vm-danger-btn { background: #b3261e; color: #fff; }
+.vm-danger-dlg { max-width: 34rem; border: 3px solid #b3261e; border-radius: 12px; }
+.vm-danger-dlg h3 { color: #b3261e; }
 .vm-noid-banner { background: #fff6d6; border: 1px solid #e8c95a; border-radius: 10px; padding: .5rem .75rem; }
 .vm-iddate { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin-top: .35rem; }
 .vm-iddate input[type=date] { width: auto; }

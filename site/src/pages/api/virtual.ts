@@ -6,11 +6,11 @@ import { authenticate, atLeast } from '../../lib/auth';
 import { serviceKeyInfo, saveServiceKey, removeServiceKey, serviceKey, cleanKey, keysReady } from '../../lib/serviceKeys';
 import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, virtualDocKey, reassignDocs, countMailboxDocs, latestPhotoIdExpiry, type VirtualInput } from '../../shipping/store';
 import { idState, day } from '../../lib/mailbox';
-import { testKey, listRenters, compare } from '../../lib/anytime';
+import { testKey, listRenters, compare, findRenter, renterAction, type CallSpec } from '../../lib/anytime';
 import { SIZES } from '../../lib/mailbox';
 import cfg from '../../data/virtual.json';
 
-export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean; api_base: string | null; renters_path?: string }[];
+export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean; api_base: string | null; renters_path?: string; deactivate?: CallSpec | null; delete?: CallSpec | null }[];
 /** Services we can read from (lib/anytime.ts speaks Anytime Mailbox's API). */
 const canSync = (p: { id: string; api_base: string | null; renters_path?: string }) => p.id === 'anytime' && !!p.api_base && !!p.renters_path;
 const providerOf = (id: unknown) => PROVIDERS.find((p) => p.id === String(id ?? '')) ?? null;
@@ -53,7 +53,7 @@ export const POST: APIRoute = async ({ request }) => {
           doc_key: virtualDocKey(v), docs: docs.get(virtualDocKey(v)) ?? 0, id_state: v.status === 'active' ? idState(ids.get(virtualDocKey(v)), today) : null,
           no_id: v.status === 'active' && !ids.has(virtualDocKey(v)) }))),
         providers: await Promise.all(PROVIDERS.map(async (p) => { const key = await serviceKeyInfo(env, p.id); return { ...p, key, connected: !!key.source && canSync(p) }; })),
-        can_manage_keys: atLeast(user, 'owner'), keys_ready: keysReady(env),
+        can_manage_keys: atLeast(user, 'owner'), keys_ready: keysReady(env), role: user.role,
       });
     }
     if (b.action === 'add' || b.action === 'update') {
@@ -111,6 +111,35 @@ export const POST: APIRoute = async ({ request }) => {
       const c = compare(r.renters, locals);
       await logAudit(env, who, 'virtual.sync_preview', prov.name, `${r.renters.length} renters · ${c.matched} match · ${c.rows.length} to look at`);
       return json({ ok: true, renters: r.renters.length, ...c });
+    }
+    // Deactivate or delete a renter AT the service (Peter, Nov 23 2026: "a little harder to close their account ... it'll
+    // delete on the anytime mailbox side"). Deactivate: manager or owner. Delete: owner only. renter_lookup shows who it is
+    // first; the change needs confirm = their mailbox number, typed. Then they're closed on our list too (nothing erased here).
+    if (b.action === 'renter_lookup' || b.action === 'renter_deactivate' || b.action === 'renter_delete') {
+      const cur = await getVirtual(env, Number(b.id));
+      if (!cur) return json({ error: 'No such virtual mailbox' }, 404);
+      const prov = providerOf(cur.provider);
+      if (!prov) return json({ error: 'Unknown service' }, 400);
+      const del = b.action === 'renter_delete';
+      if (!atLeast(user, del ? 'owner' : 'manager')) return json({ error: del ? 'Only an owner PIN can delete an account at the service.' : 'Only a manager or owner PIN can deactivate an account at the service.' }, 403);
+      const key = await serviceKey(env, prov.id);
+      if (!key) return json({ ok: false, result: 'no_key' });
+      if (!canSync(prov)) return json({ ok: false, result: 'no_address' });
+      const spec = del ? prov.delete : prov.deactivate;
+      if (b.action !== 'renter_lookup' && !spec) return json({ ok: false, result: 'no_path' });
+      const found = await findRenter(prov.api_base!, prov.renters_path!, key, cur.vno);
+      if (!found.ok) return json(found);
+      if (!found.renter) return json({ ok: false, result: 'no_renter' });
+      if (b.action === 'renter_lookup') return json({ ok: true, renter: found.renter, can_deactivate: !!prov.deactivate, can_delete: !!prov.delete });
+      if (String(b.confirm ?? '').trim().replace(/^#/, '').toLowerCase() !== cur.vno.toLowerCase()) return json({ error: `Type the mailbox number (${cur.vno}) to confirm.` }, 400);
+      if (Number(b.renter_id) !== found.renter.id) return json({ error: 'Their account changed since you looked. Close this and try again.' }, 409);
+      const r = await renterAction(prov.api_base!, spec!, key, found.renter.id);
+      const what = del ? 'delete' : 'deactivate';
+      await logAudit(env, who, `virtual.renter_${what}`, `${prov.name} #${cur.vno}`, `${prov.name} renter ${found.renter.id} (${found.renter.name}) · ${r.ok ? 'done' : `failed: ${r.result}${r.status ? ` ${r.status}` : ''}`}`);
+      if (!r.ok) return json(r);
+      const stamp = `${del ? 'Deleted' : 'Deactivated'} at ${prov.name} ${new Date().toISOString().slice(0, 10)} by ${user.name}`;
+      const v = await updateVirtual(env, cur.id, { status: 'closed', closed_at: new Date().toISOString(), note: [cur.note, stamp].filter(Boolean).join(' · ').slice(0, 300) });
+      return json({ ok: true, virtual: v });
     }
     if (b.action === 'close' || b.action === 'reopen') {
       const cur = await getVirtual(env, Number(b.id));

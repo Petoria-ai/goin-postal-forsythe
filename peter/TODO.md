@@ -364,6 +364,7 @@ The store's virtual mailboxes run on **Anytime Mailbox** (see P13 and [physical-
 - [ ] Ask Anytime Mailbox support: can operators export renters' verification documents or ID expiration dates? If yes, fill the dates automatically.
 - [ ] **Open their account** button (Get Renter Login URL).
 - [ ] **Write actions** behind a manager PIN, each audited: create a renter, assign or unassign a mailbox, add or delete an authorized recipient (from the Names list), and **deactivate** a renter when their ID hold turns into a suspension (reactivate on reinstatement), if Peter wants that automatic.
+  - ✅ 2026-11-23 13:21 CST: **Deactivate** (manager or owner) and **Delete** (owner only) built in Edit → Danger zone, with a look-up and the box number typed to confirm. **Waiting on** the method and path of Deactivate Renter and Delete Renter from their docs (`deactivate` / `delete` in `virtual.json`).
 
 - [ ] A **"Virtual mailbox, powered by Anytime Mailbox"** card on the Mailboxes page and in Services, with their logo and our sign-up link.
 - [ ] If the API allows it: virtual customers on Counter → Mailboxes (separate from wall boxes, never sharing a number), and mail logged in one place for both.
