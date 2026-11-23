@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 13:51 CST · Sync brings in only verified renters; Close all for the ones already imported
+
+- **Asked for:** "why did you import renters that arent even active?..", then "well im going one by one per renter.. its already happened to like 2-3 renters.. i could only imagine how many others arent active.. fix this for me.. its annoying".
+- **Why it happened:** Anytime Mailbox's API calls a renter "active" as soon as they sign up, even before they're verified. Sync trusted that word.
+- **What changed:**
+  - Sync now also reads **every box's status** at Anytime Mailbox (List Mailboxes). A renter only counts when their box is **assigned** (verified and set up). A box that is still **pending-assignment** doesn't count. If box statuses can't be read, Sync uses whether the box has an assigned date instead, and says so next to the totals.
+  - **Signed up but not verified yet** renters go in their own folded group, "Signed up at Anytime Mailbox but not verified yet: not added (N)". They're never in **Add all**.
+  - **The ones already imported** show at the top: "Not verified at Anytime Mailbox, open here (N)", with **Close all N on our list** (and a Close button on each). That closes them on the website only; nothing changes at Anytime Mailbox. Once they're verified there, the next Sync offers them again.
+  - The List Mailboxes path wasn't in the screenshots; the site uses `/mailboxes` (`mailboxes_path` in `virtual.json`). If it's different, Sync still works using the assigned dates.
+- **Files:** [site/src/lib/anytime.ts](../site/src/lib/anytime.ts), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/data/virtual.json](../site/src/data/virtual.json), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/anytime.test.ts](../site/tests/anytime.test.ts)
+- **How to check it:** `git pull`, `npm run dev`, Virtual mail → **Sync now** → **Close all N on our list** at the top.
+
 ## 2026-11-23 13:42 CST · Virtual mailboxes list scrolls inside its own box
 
 - **Asked for:** "i dont like how when i have 80 customers in my virtual mailboxes and it flooded my whole page. can you make it contained in the virtual mailbox area and has a scroll feature?"

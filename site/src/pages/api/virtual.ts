@@ -6,11 +6,11 @@ import { authenticate, atLeast } from '../../lib/auth';
 import { serviceKeyInfo, saveServiceKey, removeServiceKey, serviceKey, cleanKey, keysReady } from '../../lib/serviceKeys';
 import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, virtualDocKey, reassignDocs, countMailboxDocs, latestPhotoIdExpiry, type VirtualInput } from '../../shipping/store';
 import { idState, day } from '../../lib/mailbox';
-import { testKey, listRenters, compare, findRenter, renterAction, type CallSpec } from '../../lib/anytime';
+import { testKey, listRenters, listBoxStatus, compare, findRenter, renterAction, type CallSpec } from '../../lib/anytime';
 import { SIZES } from '../../lib/mailbox';
 import cfg from '../../data/virtual.json';
 
-export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean; api_base: string | null; renters_path?: string; deactivate?: CallSpec | null; delete?: CallSpec | null }[];
+export const PROVIDERS = cfg.providers as { id: string; name: string; api: boolean; api_base: string | null; renters_path?: string; mailboxes_path?: string; deactivate?: CallSpec | null; delete?: CallSpec | null }[];
 /** Services we can read from (lib/anytime.ts speaks Anytime Mailbox's API). */
 const canSync = (p: { id: string; api_base: string | null; renters_path?: string }) => p.id === 'anytime' && !!p.api_base && !!p.renters_path;
 const providerOf = (id: unknown) => PROVIDERS.find((p) => p.id === String(id ?? '')) ?? null;
@@ -108,9 +108,12 @@ export const POST: APIRoute = async ({ request }) => {
       const r = await listRenters(prov.api_base!, prov.renters_path!, key);
       if (!r.ok) return json(r);
       const locals = (await listVirtual(env)).filter((v) => v.provider === prov.id).map((v) => ({ id: v.id, vno: v.vno, name: v.name, email: v.email, phone: v.phone, names: JSON.parse(v.names), status: v.status }));
-      const c = compare(r.renters, locals);
-      await logAudit(env, who, 'virtual.sync_preview', prov.name, `${r.renters.length} renters · ${c.matched} match · ${c.rows.length} to look at`);
-      return json({ ok: true, renters: r.renters.length, ...c });
+      // Box statuses (assigned vs pending-assignment) say who is really verified; if they can't be read, the assigned dates do.
+      const boxes = prov.mailboxes_path ? await listBoxStatus(prov.api_base!, prov.mailboxes_path, key) : null;
+      const c = compare(r.renters, locals, boxes?.ok ? boxes.status : null);
+      const box_check = boxes?.ok ? 'status' : 'assigned_date';
+      await logAudit(env, who, 'virtual.sync_preview', prov.name, `${r.renters.length} renters · ${c.matched} match · ${c.rows.length} to look at · verified by ${box_check}`);
+      return json({ ok: true, renters: r.renters.length, ...c, box_check });
     }
     // Deactivate or delete a renter AT the service (Peter, Nov 23 2026: "a little harder to close their account ... it'll
     // delete on the anytime mailbox side"). Deactivate: manager or owner. Delete: owner only. renter_lookup shows who it is

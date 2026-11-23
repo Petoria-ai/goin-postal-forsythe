@@ -5,7 +5,7 @@
 // mailboxes: [{ id, name, assigned }] }] } }. Only renterAction() changes anything there (Deactivate / Delete Renter,
 // owner or manager in api/virtual.ts, typed confirmation).
 
-export type Renter = { id: number; name: string; company: string; email: string | null; phone: string | null; status: string; mailboxes: string[] };
+export type Renter = { id: number; name: string; company: string; email: string | null; phone: string | null; status: string; mailboxes: string[]; assigned: Record<string, boolean> };
 export type ApiFail = { ok: false; result: 'rejected' | 'not_found' | 'error'; status?: number; message?: string };
 
 const MAX_PAGES = 50; // 5,000 renters; far more than one store has
@@ -19,6 +19,8 @@ function toRenter(r: any): Renter {
     phone: String(r?.phone ?? '').trim() || null,
     status: String(r?.status ?? ''),
     mailboxes: Array.isArray(r?.mailboxes) ? r.mailboxes.map((m: any) => String(m?.name ?? '').trim()).filter(Boolean) : [],
+    // Whether each box has an "assigned" date: the fallback check when box statuses can't be read.
+    assigned: Object.fromEntries((Array.isArray(r?.mailboxes) ? r.mailboxes : []).map((m: any) => [String(m?.name ?? '').trim().toLowerCase(), !!m?.assigned])),
   };
 }
 
@@ -56,6 +58,33 @@ export async function listRenters(base: string, path: string, key: string, f: ty
   return { ok: true, renters: all };
 }
 
+/**
+ * Every box's status at Anytime Mailbox (List Mailboxes: { data: { has_more, mailboxes: [{ id, name, status, renter_id }] } }),
+ * by box name. "assigned" means the renter is verified and set up; "pending-assignment" means they signed up but aren't
+ * verified yet (Peter, Nov 23 2026: renters who weren't really active were coming in as active).
+ */
+export async function listBoxStatus(base: string, path: string, key: string, f: typeof fetch = fetch): Promise<{ ok: true; status: Map<string, string> } | ApiFail> {
+  const out = new Map<string, string>();
+  let after: number | null = null;
+  for (let i = 0; i < MAX_PAGES; i++) {
+    const q: Record<string, string> = { limit: '100' };
+    if (after !== null) q.starting_after = String(after);
+    const url = `${base.replace(/\/$/, '')}${path}?${new URLSearchParams(q)}`;
+    let res: Response;
+    try { res = await f(url, { headers: { Authorization: `Bearer ${key}`, Accept: 'application/json' } }); }
+    catch (e: any) { return { ok: false, result: 'error', message: e?.message }; }
+    if (res.status === 401 || res.status === 403) return { ok: false, result: 'rejected', status: res.status };
+    if (res.status === 404) return { ok: false, result: 'not_found', status: 404 };
+    const j: any = await res.json().catch(() => null);
+    const boxes = j?.data?.mailboxes;
+    if (!res.ok || !j?.success || !Array.isArray(boxes)) return { ok: false, result: 'error', status: res.status };
+    for (const m of boxes) out.set(String(m?.name ?? '').trim().toLowerCase(), String(m?.status ?? ''));
+    if (!j.data.has_more || !boxes.length) break;
+    after = Number(boxes[boxes.length - 1]?.id);
+  }
+  return { ok: true, status: out };
+}
+
 const digits = (p: string | null) => (p ?? '').replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '');
 const same = (a: string | null, b: string | null) => (a ?? '').trim().toLowerCase() === (b ?? '').trim().toLowerCase();
 
@@ -65,10 +94,14 @@ export type SyncRow =
   | { kind: 'diff'; vno: string; renter: Renter; local: Local; fields: ('name' | 'email' | 'phone')[] }
   | { kind: 'inactive'; vno: string; renter: Renter; local: Local }
   | { kind: 'reopen'; vno: string; renter: Renter; local: Local }
-  | { kind: 'missing'; vno: string; local: Local };
+  | { kind: 'missing'; vno: string; local: Local }
+  | { kind: 'unverified'; vno: string; renter: Renter; local: Local }   // open on our list, but not verified there
+  | { kind: 'pending'; vno: string; renter: Renter };                   // signed up there, not verified: not added
 
 /** Compares Anytime Mailbox's renters with the hand-kept list, by mailbox name (our "Anytime Mailbox #"). */
-export function compare(renters: Renter[], locals: Local[]): { rows: SyncRow[]; matched: number } {
+export function compare(renters: Renter[], locals: Local[], boxStatus: Map<string, string> | null = null): { rows: SyncRow[]; matched: number } {
+  // A box counts only when it is really set up: status "assigned" (or, without statuses, it has an assigned date).
+  const verified = (r: Renter, k: string) => { const s = boxStatus?.get(k); return s !== undefined ? s === 'assigned' : r.assigned[k] !== false; };
   const byVno = new Map(locals.map((l) => [l.vno.toLowerCase(), l]));
   const seen = new Set<string>();
   const rows: SyncRow[] = [];
@@ -80,6 +113,11 @@ export function compare(renters: Renter[], locals: Local[]): { rows: SyncRow[]; 
       seen.add(k);
       const l = byVno.get(k);
       const active = r.status === 'active';
+      if (active && !verified(r, k)) {
+        if (!l) rows.push({ kind: 'pending', vno, renter: r });
+        else if (l.status === 'active') rows.push({ kind: 'unverified', vno, renter: r, local: l });
+        continue;
+      }
       if (!l) { if (active) rows.push({ kind: 'new', vno, renter: r }); continue; }
       if (!active && l.status === 'active') { rows.push({ kind: 'inactive', vno, renter: r, local: l }); continue; }
       if (active && l.status !== 'active') { rows.push({ kind: 'reopen', vno, renter: r, local: l }); continue; }

@@ -17,6 +17,10 @@ const RENTERS = [
   renter(30900, 'Ina', 'Gone', ['G7'], { status: 'inactive' }),
 ];
 const calls: string[] = [];
+const renterExtra: any[] = [];
+// Box statuses for List Mailboxes: P1 is a sign-up not verified yet; S1, B255, A103, G7, Z9 are set up.
+let BOXES: { id: number; name: string; status: string }[] = [];
+let boxesDown = false;
 
 describe('Anytime Mailbox: Test and Sync now (read only)', () => {
   beforeAll(async () => {
@@ -24,8 +28,12 @@ describe('Anytime Mailbox: Test and Sync now (read only)', () => {
       calls.push(`${init?.method ?? 'GET'} ${u}`);
       if (init?.headers?.Authorization !== `Bearer ${KEY}`) return new Response('{}', { status: 401 });
       const q = new URL(u).searchParams;
+      if (new URL(u).pathname.endsWith('/mailboxes')) {
+        if (boxesDown) return new Response('nope', { status: 404 });
+        return new Response(JSON.stringify({ success: true, data: { has_more: false, mailboxes: BOXES } }), { status: 200 });
+      }
       const after = Number(q.get('starting_after') ?? 0);
-      const rest = RENTERS.filter((r) => r.id > after && q.get('status')!.split(',').includes(r.status));
+      const rest = [...RENTERS, ...renterExtra].filter((r) => r.id > after && q.get('status')!.split(',').includes(r.status));
       const lim = 2; // pretend pages of two, to test paging
       return new Response(JSON.stringify({ success: true, data: { has_more: rest.length > lim, renters: rest.slice(0, lim) } }), { status: 200 });
     });
@@ -43,7 +51,7 @@ describe('Anytime Mailbox: Test and Sync now (read only)', () => {
     const r = await listRenters('https://connect.anytimemailbox.com/v1', '/renters', KEY);
     expect(r.ok && r.renters.map((x) => x.id)).toEqual([30743, 30800, 30900]);
     expect(calls.some((c) => c.includes('starting_after=30800'))).toBe(true);
-    expect(calls.every((c) => c.startsWith('GET https://connect.anytimemailbox.com/v1/renters?'))).toBe(true);
+    expect(calls.filter((c) => c.includes('/v1/renters?')).length).toBe(2);
   });
 
   it('compares with our list: new, different, inactive there, missing there, and matches', async () => {
@@ -67,7 +75,31 @@ describe('Anytime Mailbox: Test and Sync now (read only)', () => {
   });
 
   it('compare() keeps closed boxes closed and flags ones to reopen', () => {
-    const ren: Renter[] = [{ id: 1, name: 'A B', company: '', email: null, phone: null, status: 'active', mailboxes: ['Q1'] }];
+    const ren: Renter[] = [{ id: 1, name: 'A B', company: '', email: null, phone: null, status: 'active', mailboxes: ['Q1'], assigned: { q1: true } }];
     expect(compare(ren, [{ id: 9, vno: 'q1', name: 'A B', email: null, phone: null, names: [], status: 'closed' }]).rows[0].kind).toBe('reopen');
   });
+
+describe('only verified renters count (Peter, Nov 23 2026)', () => {
+  it('a sign-up whose box is pending is not added, and one already imported is flagged to close here', async () => {
+    renterExtra.push(renter(31000, 'Pat', 'Pending', ['P1'], { email: 'pat@example.com' }), renter(31001, 'Ivy', 'Imported', ['P2']));
+    BOXES = [{ id: 1, name: 'P1', status: 'pending-assignment' }, { id: 2, name: 'P2', status: 'pending-assignment' }, { id: 3, name: 'A103', status: 'assigned' }];
+    await v({ pin: '1234', action: 'add', vno: 'P2', name: 'Ivy Imported' }); // came in before this check
+    const r = await v({ pin: '1234', action: 'sync_preview', provider: 'anytime' });
+    expect(r.body.box_check).toBe('status');
+    const by = Object.fromEntries(r.body.rows.map((x: any) => [x.vno, x.kind]));
+    expect(by.P1).toBe('pending');
+    expect(by.P2).toBe('unverified');
+    expect(by.A103).toBe('new'); // assigned: a real customer
+    expect(r.body.rows.filter((x: any) => x.kind === 'new').map((x: any) => x.vno)).not.toContain('P1');
+  });
+
+  it("without box statuses, a box with no assigned date doesn't count either", async () => {
+    boxesDown = true;
+    renterExtra.push({ ...renter(31002, 'No', 'Date', ['P3']), mailboxes: [{ id: 9, name: 'P3', assigned: null }] });
+    const r = await v({ pin: '1234', action: 'sync_preview', provider: 'anytime' });
+    expect(r.body.box_check).toBe('assigned_date');
+    expect(r.body.rows.find((x: any) => x.vno === 'P3').kind).toBe('pending');
+    boxesDown = false;
+  });
+});
 });
