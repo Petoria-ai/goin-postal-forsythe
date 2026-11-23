@@ -7,6 +7,7 @@ import { serviceKeyInfo, saveServiceKey, removeServiceKey, serviceKey, cleanKey,
 import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, virtualDocKey, reassignDocs, countMailboxDocs, latestPhotoIdExpiry, type VirtualInput } from '../../shipping/store';
 import { idState, day } from '../../lib/mailbox';
 import { testKey, listRenters, listBoxStatus, compare, findRenter, renterAction, type CallSpec } from '../../lib/anytime';
+import { verdict } from '../../lib/anytime';
 import { SIZES } from '../../lib/mailbox';
 import cfg from '../../data/virtual.json';
 
@@ -118,6 +119,26 @@ export const POST: APIRoute = async ({ request }) => {
     // Deactivate or delete a renter AT the service (Peter, Nov 23 2026: "a little harder to close their account ... it'll
     // delete on the anytime mailbox side"). Deactivate: manager or owner. Delete: owner only. renter_lookup shows who it is
     // first; the change needs confirm = their mailbox number, typed. Then they're closed on our list too (nothing erased here).
+    // Check at Anytime Mailbox (Peter, Nov 23 2026: "mailbox number 104 isnt a active renter"): exactly what their API says
+    // about this box: every renter who has it, their status, the box's status and assigned date, and what Sync decides.
+    if (b.action === 'renter_check') {
+      const cur = await getVirtual(env, Number(b.id));
+      if (!cur) return json({ error: 'No such virtual mailbox' }, 404);
+      const prov = providerOf(cur.provider);
+      if (!prov) return json({ error: 'Unknown service' }, 400);
+      const key = await serviceKey(env, prov.id);
+      if (!key) return json({ ok: false, result: 'no_key' });
+      if (!canSync(prov)) return json({ ok: false, result: 'no_address' });
+      const r = await listRenters(prov.api_base!, prov.renters_path!, key, fetch, 'active,inactive,deleted');
+      if (!r.ok) return json(r);
+      const boxes = prov.mailboxes_path ? await listBoxStatus(prov.api_base!, prov.mailboxes_path, key) : null;
+      const k = cur.vno.toLowerCase();
+      const holders = r.renters.filter((x) => x.mailboxes.some((m) => m.toLowerCase() === k))
+        .map((x) => ({ id: x.id, name: x.name, status: x.status, assigned: x.boxes.find((m) => m.name.toLowerCase() === k)?.assigned ?? null }));
+      const box_status = boxes?.ok ? boxes.status.get(k) ?? null : null;
+      return json({ ok: true, vno: cur.vno, holders, box_status, box_check: boxes?.ok ? 'status' : `could not read box statuses (${boxes ? `${boxes.result}${boxes.status ? ` ${boxes.status}` : ''}` : 'no path'})`,
+        sync_says: verdict(holders, box_status) });
+    }
     if (b.action === 'renter_lookup' || b.action === 'renter_deactivate' || b.action === 'renter_delete') {
       const cur = await getVirtual(env, Number(b.id));
       if (!cur) return json({ error: 'No such virtual mailbox' }, 404);

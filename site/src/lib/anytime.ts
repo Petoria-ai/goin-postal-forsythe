@@ -5,7 +5,7 @@
 // mailboxes: [{ id, name, assigned }] }] } }. Only renterAction() changes anything there (Deactivate / Delete Renter,
 // owner or manager in api/virtual.ts, typed confirmation).
 
-export type Renter = { id: number; name: string; company: string; email: string | null; phone: string | null; status: string; mailboxes: string[]; assigned: Record<string, boolean> };
+export type Renter = { id: number; name: string; company: string; email: string | null; phone: string | null; status: string; mailboxes: string[]; assigned: Record<string, boolean>; boxes: { name: string; assigned: string | null }[] };
 export type ApiFail = { ok: false; result: 'rejected' | 'not_found' | 'error'; status?: number; message?: string };
 
 const MAX_PAGES = 50; // 5,000 renters; far more than one store has
@@ -20,6 +20,7 @@ function toRenter(r: any): Renter {
     status: String(r?.status ?? ''),
     mailboxes: Array.isArray(r?.mailboxes) ? r.mailboxes.map((m: any) => String(m?.name ?? '').trim()).filter(Boolean) : [],
     // Whether each box has an "assigned" date: the fallback check when box statuses can't be read.
+    boxes: (Array.isArray(r?.mailboxes) ? r.mailboxes : []).map((m: any) => ({ name: String(m?.name ?? '').trim(), assigned: m?.assigned ? String(m.assigned) : null })),
     assigned: Object.fromEntries((Array.isArray(r?.mailboxes) ? r.mailboxes : []).map((m: any) => [String(m?.name ?? '').trim().toLowerCase(), !!m?.assigned])),
   };
 }
@@ -43,11 +44,11 @@ export async function testKey(base: string, path: string, key: string, f: typeof
 }
 
 /** Every active and inactive renter, page by page. */
-export async function listRenters(base: string, path: string, key: string, f: typeof fetch = fetch): Promise<{ ok: true; renters: Renter[] } | ApiFail> {
+export async function listRenters(base: string, path: string, key: string, f: typeof fetch = fetch, status = 'active,inactive'): Promise<{ ok: true; renters: Renter[] } | ApiFail> {
   const all: Renter[] = [];
   let after: number | null = null;
   for (let i = 0; i < MAX_PAGES; i++) {
-    const q: Record<string, string> = { status: 'active,inactive', limit: '100' };
+    const q: Record<string, string> = { status, limit: '100' };
     if (after !== null) q.starting_after = String(after);
     const r = await page(base, path, key, q, f);
     if (!r.ok) return r;
@@ -154,4 +155,15 @@ export async function renterAction(base: string, spec: CallSpec, key: string, re
   const j: any = await res.json().catch(() => null);
   if (!res.ok || j?.success === false) return { ok: false, result: 'error', status: res.status, message: String(j?.error?.message ?? j?.message ?? '').slice(0, 200) || undefined };
   return { ok: true };
+}
+
+/** In plain words, what Sync makes of one box (for the Check at Anytime Mailbox button). */
+export function verdict(holders: { status: string; assigned: string | null }[], boxStatus: string | null): string {
+  if (!holders.length) return 'No renter at Anytime Mailbox has this box: Sync lists it as "Not found at Anytime Mailbox".';
+  const first = holders.find((h) => h.status !== 'deleted') ?? holders[0];
+  if (first.status === 'deleted') return 'Its renter is deleted at Anytime Mailbox: Sync lists it as "Not found at Anytime Mailbox".';
+  if (first.status !== 'active') return 'Its renter is inactive at Anytime Mailbox: Sync lists it as "Inactive at Anytime Mailbox".';
+  const ok = boxStatus !== null ? boxStatus === 'assigned' : !!first.assigned;
+  return ok ? 'Renter active and box set up (assigned): Sync counts this as a real customer.'
+    : 'Renter signed up but the box is not set up yet: Sync lists it as "Not verified".';
 }

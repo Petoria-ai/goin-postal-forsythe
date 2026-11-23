@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 13:56 CST · "Check at Anytime Mailbox" button in Edit (to find out why box 104 wasn't flagged)
+
+- **Asked for:** "dont tink it works the way im intending too.. because mailbox number 104 isnt a active renter".
+- **What changed:** Edit now has a **Check #104 at Anytime Mailbox** button (any staff PIN, read only). It shows exactly what Anytime Mailbox's API says about that box: every renter who has it (their number, status and the date the box was assigned, deleted renters included), the box's own status, and in plain words what Sync decides from that. Nothing changes anywhere.
+- **Why:** Sync goes by what the API says. If box 104 isn't active in Anytime Mailbox's dashboard but the API still calls it active and assigned, Sync needs a different rule. This button shows which field tells them apart.
+- **Files:** [site/src/lib/anytime.ts](../site/src/lib/anytime.ts), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts) (`renter_check`), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/anytime.test.ts](../site/tests/anytime.test.ts)
+- **How to check it:** `git pull`, refresh Virtual mail, **Edit** on #104, **Check #104 at Anytime Mailbox**.
+
 ## 2026-11-23 13:51 CST · Sync brings in only verified renters; Close all for the ones already imported
 
 - **Asked for:** "why did you import renters that arent even active?..", then "well im going one by one per renter.. its already happened to like 2-3 renters.. i could only imagine how many others arent active.. fix this for me.. its annoying".

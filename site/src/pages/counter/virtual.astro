@@ -59,6 +59,10 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         <p class="btnrow vm-wide"><button type="submit" class="btn" id="vmSave" data-i18n="st.vm.save">Add</button> <button type="button" class="btn kraft" id="vmCancel" hidden data-i18n="st.vm.cancel">Cancel editing</button></p>
       </form>
       <!-- Danger zone (Peter, Nov 23 2026): only while editing someone, only for a manager or owner PIN. -->
+      <div id="vmCheckBox" class="vm-check" hidden>
+        <button type="button" class="btn small kraft" id="vmCheck"></button>
+        <pre id="vmCheckOut" class="vm-check-out" hidden></pre>
+      </div>
       <div id="vmDanger" class="vm-danger" hidden>
         <h4 data-i18n="st.vm.danger.h">Danger zone</h4>
         <p class="muted small" id="vmDangerLead"></p>
@@ -326,6 +330,21 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         say(tf('st.vm.danger.done', { provider: prov().name })); resetForm(); await load();
       } catch (e: any) { dlg.close(); say(e.message, true); }
     });
+    // Check at Anytime Mailbox: their raw answer about this box, in plain lines Peter can read or send to Claude.
+    $('vmCheck').addEventListener('click', async () => {
+      const v = editing; if (!v) return;
+      const out = $('vmCheckOut'); out.hidden = false; out.textContent = tf('st.vm.danger.looking', { provider: prov().name });
+      try {
+        const j = await api('/api/virtual', { action: 'renter_check', id: v.id });
+        if (!j.ok) { out.textContent = apiFail(j); return; }
+        out.textContent = [
+          `Box #${j.vno} at ${prov().name}`,
+          ...(j.holders.length ? j.holders.map((h: any) => `Renter ${h.id}: status "${h.status}", box assigned ${h.assigned ?? '(no date)'}`) : ['No renter has this box']),
+          `Box status: ${j.box_status ?? '(not given)'}${j.box_check === 'status' ? '' : ` (${j.box_check})`}`,
+          `Sync says: ${j.sync_says}`,
+        ].join('\n');
+      } catch (e: any) { out.textContent = e.message; }
+    });
     $('vmNoIdBtn').addEventListener('click', () => { onlyNoId = !onlyNoId; paint(); });
     $('vmSyncHide').addEventListener('click', () => { $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = ''; $('vmSyncHide').hidden = true; });
     function syncRow(r: any) {
@@ -385,6 +404,8 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('vmSave').textContent = t('st.vm.update'); $('vmCancel').hidden = false;
       ($('vmAddBox') as HTMLDetailsElement).open = true;
       editing = v;
+      $('vmCheckBox').hidden = !prov().connected; $('vmCheckOut').hidden = true;
+      $('vmCheck').textContent = tf('st.vm.check', { provider: prov().name, vno: v.vno });
       const p = prov(); const mgr = role === 'manager' || role === 'owner';
       $('vmDanger').hidden = !mgr || v.status !== 'active';
       $('vmDangerLead').textContent = tf('st.vm.danger.lead', { provider: p.name });

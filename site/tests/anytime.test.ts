@@ -75,7 +75,7 @@ describe('Anytime Mailbox: Test and Sync now (read only)', () => {
   });
 
   it('compare() keeps closed boxes closed and flags ones to reopen', () => {
-    const ren: Renter[] = [{ id: 1, name: 'A B', company: '', email: null, phone: null, status: 'active', mailboxes: ['Q1'], assigned: { q1: true } }];
+    const ren: Renter[] = [{ id: 1, name: 'A B', company: '', email: null, phone: null, status: 'active', mailboxes: ['Q1'], assigned: { q1: true }, boxes: [{ name: 'Q1', assigned: '2026-01-01' }] }];
     expect(compare(ren, [{ id: 9, vno: 'q1', name: 'A B', email: null, phone: null, names: [], status: 'closed' }]).rows[0].kind).toBe('reopen');
   });
 
@@ -100,6 +100,19 @@ describe('only verified renters count (Peter, Nov 23 2026)', () => {
     expect(r.body.box_check).toBe('assigned_date');
     expect(r.body.rows.find((x: any) => x.vno === 'P3').kind).toBe('pending');
     boxesDown = false;
+  });
+});
+
+describe('Check at Anytime Mailbox (one box, read only)', () => {
+  it('shows every renter with the box, its status and dates, and what Sync decides', async () => {
+    const list = (await v({ pin: '1234', action: 'list' })).body.virtual;
+    const p2 = list.find((x: any) => x.vno === 'P2');
+    const r = await v({ pin: '1234', action: 'renter_check', id: p2.id });
+    expect(r.body).toMatchObject({ ok: true, vno: 'P2', box_status: 'pending-assignment', box_check: 'status' });
+    expect(r.body.holders[0]).toMatchObject({ id: 31001, status: 'active' });
+    expect(r.body.sync_says).toMatch(/Not verified/);
+    expect(calls.at(-1)).toMatch(/^GET /);
+    expect(calls.some((c) => c.includes('status=active%2Cinactive%2Cdeleted'))).toBe(true);
   });
 });
 });
