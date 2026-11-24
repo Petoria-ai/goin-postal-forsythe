@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-24 16:18 CST · Deactivate and Delete at Anytime Mailbox switched on
+
+- **Asked for:** Peter sent the docs for Deactivate Renter (`POST /renters/{renter_id}/deactivate`) and Delete Renter (`DELETE /renters/{renter_id}`), each answering `{ "success": true }`.
+- **What changed:** those two addresses are now in `site/src/data/virtual.json`, so **Edit → Danger zone → Deactivate at Anytime Mailbox** (manager or owner PIN) and **Delete at Anytime Mailbox** (owner PIN only) really change the account at Anytime Mailbox, after the look-up and the box number typed to confirm. Everything else about them is as before (audited, closed here with a note, nothing erased on the website).
+- **Files:** [site/src/data/virtual.json](../site/src/data/virtual.json), [site/tests/anytime-danger.test.ts](../site/tests/anytime-danger.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, refresh Virtual mail, owner PIN, **Edit** on a renter that really should be deactivated or deleted, red **Danger zone**. Try it first on one you're sure about.
+
 ## 2026-11-23 18:19 CST · Mail check finds virtual boxes by number ("104" finds "Mailbox 104")
 
 - **Asked for:** "can you make it where if im in the physical mailbox side. in the 'mail check' i want to be able to check for virtual mailbox owners as well".

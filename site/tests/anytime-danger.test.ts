@@ -11,6 +11,8 @@ const v = async (body: Record<string, unknown>) => {
 const KEY = 'pretend-anytime-key-danger';
 const writes: string[] = [];
 let renters: any[] = [];
+// The real paths from their docs (Peter's screenshots, Nov 24 2026); tests switch them off and on.
+const REAL = { deactivate: PROVIDERS[0].deactivate, delete: PROVIDERS[0].delete };
 
 describe('Danger zone: deactivate or delete at Anytime Mailbox', () => {
   let id = 0;
@@ -23,9 +25,10 @@ describe('Danger zone: deactivate or delete at Anytime Mailbox', () => {
       return new Response(JSON.stringify({ success: true, data: { has_more: false, renters } }), { status: 200 });
     });
     Object.assign(env as any, { COUNTER_PIN: '1234', OWNER_PIN: '9999', SITE_URL: 'http://localhost:4321', DOCS_KEY: '', ANYTIME_API_KEY: KEY });
+    PROVIDERS[0].deactivate = null; PROVIDERS[0].delete = null;
     id = (await v({ pin: '1234', action: 'add', vno: 'D501', name: 'Una Verified' })).body.virtual.id;
   });
-  afterAll(() => { vi.unstubAllGlobals(); (env as any).ANYTIME_API_KEY = ''; PROVIDERS[0].deactivate = null; PROVIDERS[0].delete = null; });
+  afterAll(() => { vi.unstubAllGlobals(); (env as any).ANYTIME_API_KEY = ''; PROVIDERS[0].deactivate = REAL.deactivate; PROVIDERS[0].delete = REAL.delete; });
 
   it('delete needs an owner; with no path from their docs yet, nothing is sent', async () => {
     // The shared counter PIN counts as a manager once an OWNER_PIN exists (lib/auth.ts), so it may look up and deactivate.
@@ -68,5 +71,9 @@ describe('Danger zone: deactivate or delete at Anytime Mailbox', () => {
     const n = writes.length;
     expect((await v({ pin: '9999', action: 'renter_deactivate', id: id3, confirm: 'D999', renter_id: 1 })).body.result).toBe('no_renter');
     expect(writes.length).toBe(n);
+  });
+
+  it('uses the paths from their docs', () => {
+    expect(REAL).toEqual({ deactivate: { method: 'POST', path: '/renters/{renter_id}/deactivate' }, delete: { method: 'DELETE', path: '/renters/{renter_id}' } });
   });
 });

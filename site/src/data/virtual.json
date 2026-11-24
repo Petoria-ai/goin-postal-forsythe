@@ -7,8 +7,14 @@
       "api": false,
       "api_base": "https://connect.anytimemailbox.com/v1",
       "renters_path": "/renters",
-      "deactivate": null,
-      "delete": null,
+      "deactivate": {
+        "method": "POST",
+        "path": "/renters/{renter_id}/deactivate"
+      },
+      "delete": {
+        "method": "DELETE",
+        "path": "/renters/{renter_id}"
+      },
       "mailboxes_path": "/mailboxes"
     }
   ]
