@@ -13,7 +13,7 @@ import {
   listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox, moveMailboxItem, exportTable,
   addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits, listVirtual, docOwner, virtualDocKey,
 } from '../../shipping/store';
-import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS } from '../../lib/mailbox';
+import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS, vnoMatches } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs, ID_WARN_DAYS, sendIdNoticeNow, idExpiryNotices } from '../../lib/mailboxJobs';
 import { fullness, packageState, daysHeld, PKG, checkReason, pendingClaim, idState } from '../../lib/mailbox';
 import { checkPhoto, savePiecePhoto, readPiecePhoto, deletePiecePhotos } from '../../lib/mailboxPhotos';
@@ -209,7 +209,7 @@ export const POST: APIRoute = async ({ request }) => {
       const photoIdsAll = await latestPhotoIdExpiry(env);
       const virtual = (await listVirtual(env)).filter((v) => {
         const names: string[] = JSON.parse(v.names);
-        return v.vno.toLowerCase() === lq || v.vno.toLowerCase().startsWith(lq) || v.name.toLowerCase().includes(lq) || names.some((n) => n.toLowerCase().includes(lq))
+        return vnoMatches(v.vno, lq) || v.name.toLowerCase().includes(lq) || names.some((n) => n.toLowerCase().includes(lq))
           || (!!v.email && v.email.toLowerCase().includes(lq)) || (digitsQ.length >= 4 && !!v.phone && v.phone.replace(/\D/g, '').includes(digitsQ));
       }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status, provider: v.provider, provider_name: VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider, doc_key: virtualDocKey(v), id_state: v.status === 'active' ? idState(photoIdsAll.get(virtualDocKey(v)), today) : null, no_id: v.status === 'active' && !photoIdsAll.has(virtualDocKey(v)) }));
       return json({ boxes: await Promise.all(hits.slice(0, 20).map(view)), virtual });

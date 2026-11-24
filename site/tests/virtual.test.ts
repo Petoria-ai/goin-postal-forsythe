@@ -3,6 +3,7 @@ import { env } from 'cloudflare:workers';
 import { listAudit, exportTable } from '../src/shipping/store';
 import { POST as vPost } from '../src/pages/api/virtual';
 import { POST as mbPost } from '../src/pages/api/mailbox';
+import { vnoMatches } from '../src/lib/mailbox';
 
 // Virtual mail on Anytime Mailbox (Peter, Nov 19 2026): its own list, never a wall box number, found by Mail check.
 const post = (fn: any, path: string) => async (body: Record<string, unknown>) => {
@@ -58,5 +59,29 @@ describe('one tab per virtual mailbox service', () => {
     expect((await v({ pin: '1234', action: 'add', provider: 'nope', vno: '7777', name: 'X' })).status).toBe(400);
     const r = await mb({ pin: '1234', action: 'search', q: 'vera' });
     expect(r.body.virtual[0]).toMatchObject({ provider: 'anytime', provider_name: 'Anytime Mailbox' });
+  });
+
+describe('Mail check finds Anytime Mailbox names like "Mailbox 104" (Peter, Nov 24 2026)', () => {
+  it('by 104, #104, mailbox 104, a start of the number, the name or the phone', async () => {
+    await v({ pin: '1234', action: 'add', vno: 'Mailbox 3104', name: 'Joy Lookup', phone: '318-555-0441' });
+    for (const q of ['3104', '#3104', 'Mailbox 3104', 'mailbox 3104', '310', 'joy look', '5550441']) {
+      const r = await mb({ pin: '1234', action: 'search', q });
+      expect([q, r.body.virtual.map((x: any) => x.vno)]).toEqual([q, expect.arrayContaining(['Mailbox 3104'])]);
+    }
+    expect((await mb({ pin: '1234', action: 'search', q: '3105' })).body.virtual.map((x: any) => x.vno)).not.toContain('Mailbox 3104');
+  });
+});
+
+});
+
+describe('vnoMatches', () => {
+  it('matches the number inside a box name', () => {
+    expect(vnoMatches('Mailbox 104', '104')).toBe(true);
+    expect(vnoMatches('Mailbox 104', '#104')).toBe(true);
+    expect(vnoMatches('Mailbox 104', '10')).toBe(true);
+    expect(vnoMatches('Mailbox 104', '105')).toBe(false);
+    expect(vnoMatches('A103', 'a1')).toBe(true);
+    expect(vnoMatches('PMB 77', '77')).toBe(true);
+    expect(vnoMatches('Mailbox 104', '')).toBe(false);
   });
 });

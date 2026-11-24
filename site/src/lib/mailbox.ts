@@ -213,3 +213,16 @@ export function idState(latestPhotoIdExpiry: string | null | undefined, today: s
   const suspendOn = day(new Date(Date.parse(latestPhotoIdExpiry + 'T00:00:00Z') + ID_GRACE_DAYS * 86_400_000));
   return today < suspendOn ? { state: 'hold', expired_on: latestPhotoIdExpiry, suspend_on: suspendOn } : { state: 'suspended', expired_on: latestPhotoIdExpiry, since: suspendOn };
 }
+
+/**
+ * A virtual box's short number for searching (Peter, Nov 24 2026): Anytime Mailbox names boxes like "Mailbox 104", so
+ * typing "104" or "#104" must find it. Drops a leading word like Mailbox / Box / PMB / Suite / Unit and a "#".
+ */
+export const vnoShort = (vno: string) => vno.trim().toLowerCase().replace(/^(mailbox|mail box|box|pmb|suite|ste\.?|unit)\s*/, '').replace(/^#\s*/, '');
+/** True when what staff typed matches a virtual box by number: the full name or its short number, exactly or as a start. */
+export const vnoMatches = (vno: string, typed: string) => {
+  const q = typed.trim().toLowerCase().replace(/^#\s*/, '');
+  if (!q) return false;
+  const full = vno.trim().toLowerCase(); const short = vnoShort(vno); const qs = vnoShort(q);
+  return full.startsWith(q) || short.startsWith(qs);
+};

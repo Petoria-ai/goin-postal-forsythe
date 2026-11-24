@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-23 18:19 CST · Mail check finds virtual boxes by number ("104" finds "Mailbox 104")
+
+- **Asked for:** "can you make it where if im in the physical mailbox side. in the 'mail check' i want to be able to check for virtual mailbox owners as well".
+- **Why it didn't work:** Mail check already searched virtual customers, but only matched when the box name *started with* what you typed. Anytime Mailbox names boxes "Mailbox 104", so typing `104` found nothing.
+- **What changed:** Mail check on Counter → Mailboxes, and the search on Counter → Virtual mail, now match the number inside a virtual box's name: `104`, `#104`, `Mailbox 104` or the start of the number all find it (a leading Mailbox / Box / PMB / Suite / Unit is ignored). Names, business names, email and phone still work. Virtual results still show their service, their ID hold if any, and a link to the Virtual mail tab.
+- **Files:** [site/src/lib/mailbox.ts](../site/src/lib/mailbox.ts) (`vnoShort`, `vnoMatches`), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/tests/virtual.test.ts](../site/tests/virtual.test.ts)
+- **How to check it:** `git pull`, refresh Counter → Mailboxes, type `104` in Mail check.
+
 ## 2026-11-23 17:09 CST · "IDs to update" scrolls inside its own box (virtual and physical)
 
 - **Asked for:** "also in the 'Ids to update' section, we need a scroll feature in that section".

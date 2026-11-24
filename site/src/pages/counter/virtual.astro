@@ -111,6 +111,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
 
   <script>
     import { t, tf } from '../../i18n';
+    import { vnoMatches } from '../../lib/mailbox';
     const $ = (id: string) => document.getElementById(id)!;
     const pin = () => ($('pin') as HTMLInputElement).value;
     const msg = $('msg');
@@ -222,7 +223,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('vmNoId').hidden = !missing;
       $('vmNoId').querySelector('span')!.textContent = tf('st.vm.noid.banner2', { n: missing, provider: prov().name });
       $('vmNoIdBtn').textContent = onlyNoId ? t('st.vm.noid.all') : t('st.vm.noid.show');
-      const list = mine.filter((v) => !onlyNoId || v.no_id).filter((v) => !q || v.vno.toLowerCase().startsWith(q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
+      const list = mine.filter((v) => !onlyNoId || v.no_id).filter((v) => !q || vnoMatches(v.vno, q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
       for (const v of list) {
         const li = document.createElement('li'); if (v.status === 'closed') li.classList.add('vm-closed'); li.dataset.id = String(v.id);
         const who = document.createElement('div');
