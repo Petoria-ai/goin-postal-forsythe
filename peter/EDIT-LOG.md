@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 13:26 CST · Printing plan: Gelato's branded packaging
+
+- **Asked for:** "gelato looks pretty admn neat how it even does branded packaging included".
+- **What changed (plan only):** the Gelato row in [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md#other-options-outside-the-franchise-list) now covers its branded packaging: one 4×6 insert card and one 4×3 sticker per order, from about $0.49 each on paid Gelato+ plans, charged only when an order ships, on some products and locations only. Idea: the insert as a coupon that brings customers back to the counter.
+- **Files:** [monetization/print-suppliers/README.md](../monetization/print-suppliers/README.md)
+
 ## 2026-11-25 12:32 CST · Printing plan: options outside the franchise's list
 
 - **Asked for:** "i dont have to use their vendors.. just options i can use. im open to seeing what other options are there. and if they fit better for the website. id do it".
