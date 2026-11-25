@@ -69,6 +69,28 @@ export async function createCardCheckout(env: Env, order: CardOrder): Promise<st
 }
 
 
+/** A print order made by Gelato (Peter, Nov 25 2026): the lines, shipping, tax and fee on Stripe's page. */
+export async function createPrintCheckout(env: Env, order: import('./printOrders').PrintOrder): Promise<string> {
+  const stripe = stripeClient(env);
+  const site = env.SITE_URL;
+  if (!stripe) return `${site}/api/mock-paid?order=${order.id}`;
+  const line = (name: string, amount: number) => ({ quantity: 1, price_data: { currency: 'usd', unit_amount: Math.round(amount * 100), product_data: { name } } });
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    customer_email: order.customer.email,
+    client_reference_id: order.id,
+    line_items: [
+      ...order.lines.map((l) => line(`${l.qty} × ${l.name}`, l.amount)),
+      line(order.ship_to === 'store' ? `Shipping to ${store.name} for pickup` : 'Shipping', order.shipping),
+      ...(order.tax ? [line(`Sales tax ${order.tax.percent}%`, order.tax.amount)] : []),
+      ...(order.fee ? [line('Online convenience fee', order.fee.amount)] : []),
+    ],
+    success_url: `${site}/print/done?order=${order.id}`,
+    cancel_url: `${site}/print?cancelled=${order.id}`,
+  });
+  return session.url!;
+}
+
 /** A mailbox holder renewing online (Peter, Nov 17 2026). The box is extended when the payment comes back (lib/mailboxJobs.ts). */
 export async function createMailboxCheckout(env: Env, r: { code: string; email: string | null; amount: number; box_no: number; term: number; new_paid_through: string }): Promise<string> {
   const stripe = stripeClient(env);

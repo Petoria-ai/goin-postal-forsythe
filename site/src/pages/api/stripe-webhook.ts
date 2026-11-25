@@ -5,6 +5,7 @@ import { verifyWebhook } from '../../lib/stripe';
 import { getOrder, saveOrder } from '../../lib/orders';
 import { fulfil } from '../../lib/fulfil';
 import { getCardOrder, saveCardOrder } from '../../lib/cardOrders';
+import { getPrintOrder, updatePrintOrder } from '../../lib/printOrders';
 import { payRenewal, saveCard } from '../../lib/mailboxJobs';
 import { cardFromSetup } from '../../lib/stripe';
 
@@ -27,6 +28,11 @@ export const POST: APIRoute = async ({ request }) => {
     }
     if (ref.startsWith('MRN-')) { // a mailbox renewal: extends the box once (Peter, Nov 17 2026)
       await payRenewal(env, ref, session.id);
+      return new Response('ok');
+    }
+    if (ref.startsWith('PO-')) { // a print order made by Gelato (Peter, Nov 25 2026): paid, now waiting for staff to approve
+      const o = await getPrintOrder(env, ref);
+      if (o && o.status === 'awaiting_payment') await updatePrintOrder(env, o.id, { status: 'paid', stripe_session_id: session.id, paid_at: new Date().toISOString() }, 'paid online', 'Stripe');
       return new Response('ok');
     }
     if (ref.startsWith('CD-')) {

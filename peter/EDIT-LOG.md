@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 16:30 CST · Gelato print orders, stage 1: the behind-the-scenes part (test mode)
+
+- **Asked for:** "at this current time. its more about executing the job" (start Gelato with t-shirts, posters and flyers).
+- **What changed (no new pages yet; those are stage 2):**
+  - **Presets in one file the owners edit**, `site/src/data/printProducts.json`: a **T-shirt** (4 colors, S to 3XL, front center or left chest, and/or back; $24.99, +$6 for a second spot, +$3 for 2XL and up; over 12 shirts asks for a quote), **Posters** (12 × 18, 18 × 24, 24 × 36 in 1, 2 or 5) and **Flyers** (8.5 × 11 or 5.5 × 8.5 in 25 to 250), plus shipping $6.99 an order. An **embroidered item** is ready but turned off until its Gelato product code is filled in. All prices are starting guesses to change.
+  - **Orders:** the customer must be signed in, the artwork is checked (PNG or JPEG; posters and flyers must be sharp enough for the paper and cropped to it), they choose **pickup at the store** (shipped to the store) or **ship to my home**, and pay on Stripe's page (sales tax and the online fee as on cards).
+  - **Nothing goes to Gelato until staff approve it.** Three modes: **pretend** (no Gelato key: nothing leaves the website), **draft** (key saved: Gelato gets a draft it doesn't print or charge), **live** (an owner switches real orders on).
+  - **Gelato gets the artwork through a private signed link**, and when Gelato reports a change the website asks Gelato itself for the status and tracking before saving them.
+  - Only a manager or owner cancels, and only before it's sent; only an owner saves the Gelato key or switches real orders on. Everything is in the audit log.
+- **Not touched:** `/api/print` is William's label print queue and stays as it was; the new ones are `/api/print-orders`, `/api/print-staff`, `/api/print-file` and `/api/gelato-webhook`.
+- **Files:** new [site/src/data/printProducts.json](../site/src/data/printProducts.json), [site/src/lib/printProducts.ts](../site/src/lib/printProducts.ts), [site/src/lib/printOrders.ts](../site/src/lib/printOrders.ts), [site/src/lib/gelato.ts](../site/src/lib/gelato.ts), [site/src/pages/api/print-orders.ts](../site/src/pages/api/print-orders.ts), [site/src/pages/api/print-staff.ts](../site/src/pages/api/print-staff.ts), [site/src/pages/api/print-file.ts](../site/src/pages/api/print-file.ts), [site/src/pages/api/gelato-webhook.ts](../site/src/pages/api/gelato-webhook.ts), [site/tests/print.test.ts](../site/tests/print.test.ts); [site/src/lib/stripe.ts](../site/src/lib/stripe.ts), [site/src/pages/api/stripe-webhook.ts](../site/src/pages/api/stripe-webhook.ts), [site/src/pages/api/mock-paid.ts](../site/src/pages/api/mock-paid.ts)
+- **How to check it:** nothing to click yet; stage 2 adds the customer page and Counter → Print orders.
+
 ## 2026-11-25 16:24 CST · To-do P22: Printify or Printful for cheaper shirts, later
 
 - **Asked for:** "lets put printify/printful on the possible to do list in the future. at this current time. its more about executing the job and then we can start cost reducing once things are being ran".

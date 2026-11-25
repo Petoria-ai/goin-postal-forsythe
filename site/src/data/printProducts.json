@@ -1,0 +1,76 @@
+{
+  "_note": "Printed products made to order by Gelato (Peter, Nov 25 2026; plan in monetization/print-suppliers/). Owners edit prices here. Customers only choose from these presets. 'gelato_uid' is Gelato's product code: copy it from Gelato's catalog (Dashboard > Catalog, or the product API) for each product before going live; {size} and {color} are filled in from the choices. 'cost' is the owners' estimate of Gelato's price, for the margin column on the staff page only. A product with active false is hidden. 'min_dpi' blocks artwork too blurry to print; 'good_dpi' is the level for no warning.",
+  "shipping": { "price": 6.99, "note": "Charged once per order. Gelato's real shipping varies; adjust after the first orders." },
+  "min_dpi": 100,
+  "good_dpi": 150,
+  "max_quantity_online": 12,
+  "products": [
+    {
+      "id": "tshirt",
+      "name": "T-shirt",
+      "kind": "apparel",
+      "active": true,
+      "provider": "gelato",
+      "gelato_uid": "apparel_product_gca_t-shirt_gsc_crewneck_gcu_unisex_gqa_classic_gsi_{size}_gco_{color}_gpr_4-0",
+      "price": 24.99,
+      "big_size_extra": 3.0,
+      "extra_spot": 6.0,
+      "cost": 11.0,
+      "colors": [
+        { "id": "white", "name": "White", "hex": "#ffffff" },
+        { "id": "black", "name": "Black", "hex": "#1b1b1b" },
+        { "id": "navy", "name": "Navy", "hex": "#1f2a4d" },
+        { "id": "sport-grey", "name": "Heather grey", "hex": "#b9b9b9" }
+      ],
+      "sizes": [
+        { "id": "s", "name": "S" }, { "id": "m", "name": "M" }, { "id": "l", "name": "L" }, { "id": "xl", "name": "XL" },
+        { "id": "2xl", "name": "2XL", "big": true }, { "id": "3xl", "name": "3XL", "big": true }
+      ],
+      "spots": [
+        { "id": "front", "name": "Front, center", "file": "front", "w_in": 11, "h_in": 14, "box": [0.5, 0.0, 1.0, 1.0] },
+        { "id": "chest", "name": "Front, left chest", "file": "front", "w_in": 11, "h_in": 14, "box": [0.62, 0.04, 0.3, 0.26] },
+        { "id": "back", "name": "Back", "file": "back", "w_in": 11, "h_in": 14, "box": [0.5, 0.0, 1.0, 1.0] }
+      ]
+    },
+    {
+      "id": "embroidered",
+      "name": "Embroidered item (pick it from Gelato's catalog first)",
+      "kind": "apparel",
+      "active": false,
+      "provider": "gelato",
+      "gelato_uid": "",
+      "price": 34.99,
+      "big_size_extra": 3.0,
+      "extra_spot": 0,
+      "cost": 18.0,
+      "colors": [{ "id": "black", "name": "Black", "hex": "#1b1b1b" }],
+      "sizes": [{ "id": "m", "name": "M" }, { "id": "l", "name": "L" }],
+      "spots": [{ "id": "chest", "name": "Left chest (embroidered)", "file": "front", "w_in": 4, "h_in": 4, "box": [0.5, 0.0, 1.0, 1.0] }]
+    },
+    {
+      "id": "poster",
+      "name": "Poster",
+      "kind": "flat",
+      "active": true,
+      "provider": "gelato",
+      "gelato_uid": "flat_product_pf_{size}_pt_200-gsm-80lb-uncoated_cl_4-0_ver",
+      "sizes": [
+        { "id": "300x450-mm-12x18-inch", "name": "12 × 18 in", "w_in": 12, "h_in": 18, "prices": { "1": 19.99, "2": 36.99, "5": 84.99 }, "cost": 8.0 },
+        { "id": "450x600-mm-18x24-inch", "name": "18 × 24 in", "w_in": 18, "h_in": 24, "prices": { "1": 29.99, "2": 54.99, "5": 124.99 }, "cost": 12.0 },
+        { "id": "600x900-mm-24x36-inch", "name": "24 × 36 in", "w_in": 24, "h_in": 36, "prices": { "1": 39.99, "2": 74.99, "5": 169.99 }, "cost": 17.0 }
+      ]
+    },
+    {
+      "id": "flyer",
+      "name": "Flyers",
+      "kind": "flat",
+      "active": true,
+      "provider": "gelato",
+      "gelato_uid": "flat_product_pf_{size}_pt_170-gsm-65lb-coated-silk_cl_4-0_ver",
+      "sizes": [
+        { "id": "us-letter", "name": "8.5 × 11 in", "w_in": 8.5, "h_in": 11, "prices": { "25": 24.99, "50": 34.99, "100": 49.99, "250": 89.99 }, "cost": 0.3 },
+        { "id": "us-half-letter", "name": "5.5 × 8.5 in", "w_in": 5.5, "h_in": 8.5, "prices": { "25": 19.99, "50": 27.99, "100": 39.99, "250": 69.99 }, "cost": 0.2 }
+      ]
+    }
+  ]
+}

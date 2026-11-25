@@ -4,6 +4,7 @@ import { env } from '../../lib/env';
 import { getOrder } from '../../lib/orders';
 import { fulfil } from '../../lib/fulfil';
 import { getCardOrder, saveCardOrder } from '../../lib/cardOrders';
+import { getPrintOrder, updatePrintOrder } from '../../lib/printOrders';
 import { payRenewal, saveCard } from '../../lib/mailboxJobs';
 
 // Only active when Stripe is not configured. Stands in for a successful Checkout.
@@ -17,6 +18,12 @@ export const GET: APIRoute = async ({ url, redirect }) => {
   if (ref.startsWith('MRN-')) { // a mailbox renewal (Peter, Nov 17 2026)
     await payRenewal(env, ref, null);
     return redirect(`/account?renewed=${encodeURIComponent(ref)}#mailbox`);
+  }
+  if (ref.startsWith('PO-')) { // a print order (Peter, Nov 25 2026): the demo payment
+    const o = await getPrintOrder(env, ref);
+    if (!o) return new Response('No such order', { status: 404 });
+    if (o.status === 'awaiting_payment') await updatePrintOrder(env, o.id, { status: 'paid', paid_at: new Date().toISOString() }, 'paid (demo)', 'demo');
+    return redirect(`/print/done?order=${o.id}`);
   }
   if (ref.startsWith('CD-')) {
     const c = await getCardOrder(env, ref);
