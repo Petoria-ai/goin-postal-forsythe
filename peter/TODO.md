@@ -390,7 +390,8 @@ The store's virtual mailboxes run on **Anytime Mailbox** (see P13 and [physical-
 
 **Extras to add (each a small build):**
 - [ ] **Keys:** the key number each holder has, a lost-key fee, and key return when a box closes.
-- [ ] **Who may pick up packages** for a box (with ID), and who signed for a signature-required package.
+- [x] **Who may pick up packages** ✅ 2026-11-25 11:28 CST: in Edit for wall and virtual boxes, searchable by name, their ID in Documents as "Pickup person's ID".
+- [ ] Who signed for a signature-required package.
 - [ ] **Certified / signature mail** button in Check in: texts the holder right away, "important mail".
 - [ ] **Waitlist** when a size is full, texting the next person when a box opens.
 - [ ] **Extra-name fee:** a small charge per additional person or business on a box.

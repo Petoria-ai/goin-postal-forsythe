@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 11:28 CST · Who may pick up packages (physical and virtual boxes)
+
+- **Asked for:** "adding a box in the and upload id section in the certain mailbox would be nice for who may pick up the packages.. would be nice to have it in the edit button to add. and then i can just search that persons name in the search to pop up that certain box for both virtual and physical mailbox side".
+- **What changed:**
+  - **Edit** on a wall box (Counter → Mailboxes) and **Edit** on a virtual customer (Counter → Virtual mail) have a new section, **Who may pick up packages**: their full name as on their ID, an optional relation (spouse, assistant…), **Add person**, and **Remove** on each.
+  - It's a separate list from "Names allowed at this box" (the 1583 names mail may be addressed to).
+  - **Search by their name** finds the box: Mail check on the Mailboxes page finds wall boxes and virtual customers, and the search on the Virtual mail tab finds virtual customers. The result shows "May pick up packages: Paula Pickup (sister)".
+  - **Their ID:** Documents has a new kind, **Pickup person's ID**, to keep a copy under the holder (put their name in the note).
+  - Every add and remove is in the audit log.
+- **Files:** [site/db/schema.sql](../site/db/schema.sql) (new table `mailbox_pickups`), [site/src/shipping/store.ts](../site/src/shipping/store.ts), [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/api/virtual.ts](../site/src/pages/api/virtual.ts), [site/src/lib/mailboxDocs.ts](../site/src/lib/mailboxDocs.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/pages/counter/virtual.astro](../site/src/pages/counter/virtual.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), new [site/tests/pickups-people.test.ts](../site/tests/pickups-people.test.ts)
+- **How to check it:** `git pull`, **`npm run db:local`** (one new table), `npm run dev`, then **Edit** on a box → **Who may pick up packages**.
+
 ## 2026-11-25 11:24 CST · The staff menu tidied: four dropdowns (to-do P19)
 
 - **Asked for:** "lets go ahead and tidy up the menu" (P19: "this area looks alittle clunky").

@@ -769,3 +769,18 @@ CREATE TABLE IF NOT EXISTS mailbox_forwards (
   done_at TEXT,
   done_by TEXT
 );
+
+-- Who may pick up packages for a box (Peter, Nov 25 2026): people the holder allows to collect packages (a spouse, an
+-- assistant), for wall boxes (box_kind 'wall', box_id = mailboxes.id) and virtual mailboxes ('virtual', box_id =
+-- virtual_mailboxes.id). Separate from mailbox_names, which are the names mail may be addressed to (the 1583).
+-- Staff check their photo ID at pickup; a copy can go in the holder's Documents as "Pickup person's ID".
+CREATE TABLE IF NOT EXISTS mailbox_pickups (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  box_kind TEXT NOT NULL,          -- wall, virtual
+  box_id INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  relation TEXT,                   -- e.g. spouse, assistant (optional)
+  added_by TEXT NOT NULL,
+  at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS mailbox_pickups_box ON mailbox_pickups(box_kind, box_id);

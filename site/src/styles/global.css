@@ -1188,6 +1188,9 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-addbox > summary { cursor: pointer; list-style: revert; }
 .vm-addbox > summary h3 { display: inline; }
 .vm-check { margin-top: 1rem; }
+.vm-pickups { margin-top: 1rem; border-top: 1px dashed #d8cfbf; padding-top: .5rem; }
+.vm-pickups h4 { margin: .25rem 0; }
+.mb-pickups { font-weight: 600; }
 .vm-check-out { white-space: pre-wrap; background: #f6f1e7; border-radius: 8px; padding: .6rem .8rem; font-size: .95rem; margin-top: .5rem; }
 .vm-danger { margin-top: 1.25rem; border: 2px solid #b3261e; border-radius: 10px; padding: .5rem .9rem; background: #fff5f4; }
 .vm-danger h4 { color: #b3261e; margin: .25rem 0; }

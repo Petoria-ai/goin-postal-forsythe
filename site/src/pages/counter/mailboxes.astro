@@ -179,6 +179,12 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <p class="btnrow"><input id="mbEditNameIn" maxlength="80" data-i18n-ph="st.nm.ph" placeholder="Name as on the 1583" /> <select id="mbEditNameKind"><option value="person" data-i18n="st.nm.person">Person</option><option value="business" data-i18n="st.nm.business">Business</option></select> <button type="button" class="btn small kraft" id="mbEditNameAdd" data-i18n="st.nm.add">Add name</button></p>
     </div>
     <div class="mb-edit-sec">
+      <h3 data-i18n="st.pk.h">Who may pick up packages</h3>
+      <p class="muted mb-small" data-i18n="st.pk.p">People the holder allows to collect packages. Check their photo ID at pickup; a copy can go in Documents as "Pickup person's ID". Mail check finds the box by their name.</p>
+      <ul id="mbEditPickups" class="mb-pkgs"></ul>
+      <p class="btnrow"><input id="mbEditPkName" maxlength="80" data-i18n-ph="st.pk.ph" placeholder="Full name, as on their ID" /> <input id="mbEditPkRel" maxlength="40" data-i18n-ph="st.pk.rel" placeholder="Relation (spouse, assistant…)" /> <button type="button" class="btn small kraft" id="mbEditPkAdd" data-i18n="st.pk.add">Add person</button></p>
+    </div>
+    <div class="mb-edit-sec">
       <h3 data-i18n="st.card.h">Card and automatic renewal</h3>
       <p id="mbEditCard"></p>
       <p class="btnrow"><span id="mbEditAuto"></span> <button type="button" class="btn small kraft" id="mbEditAutoBtn"></button></p>
@@ -411,6 +417,13 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         li.append(sp, btn(t('st.it.remove'), 'kraft', () => { if (confirm(tf('st.nm.removeq', { name: n.name }))) editDo({ action: 'name_remove', name_id: n.id }, () => t('mbd.saved')); }));
         nl.appendChild(li);
       }
+      const pl = $('mbEditPickups'); pl.innerHTML = '';
+      if (!(x.pickups ?? []).length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.pk.none'); pl.appendChild(li); }
+      for (const pk of x.pickups ?? []) {
+        const li = document.createElement('li'); const sp = document.createElement('span'); sp.textContent = `${pk.name}${pk.relation ? ` · ${pk.relation}` : ''}`;
+        li.append(sp, btn(t('st.it.remove'), 'kraft', () => { if (confirm(tf('st.pk.removeq', { name: pk.name }))) editDo({ action: 'pickup_remove', pickup_id: pk.id }, () => t('mbd.saved')); }));
+        pl.appendChild(li);
+      }
       const mm = $('mbEditMail'); mm.innerHTML = ''; if (x.mail && x.mail.do !== 'box') mm.appendChild(mailBadge(x.mail));
       const idb = idBadge(x.id_state); if (idb) mm.append(' ', idb);
       loadDetail(x);
@@ -470,6 +483,11 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       } catch (e: any) { editErr.textContent = e.message; editErr.hidden = false; }
     }
     $('mbEditPhoto').querySelector('button')!.addEventListener('click', () => { $('mbEditPhoto').hidden = true; });
+    $('mbEditPkAdd').addEventListener('click', async () => {
+      const n = $('mbEditPkName') as HTMLInputElement; const r = $('mbEditPkRel') as HTMLInputElement;
+      await editDo({ action: 'pickup_add', name: n.value, relation: r.value }, () => t('mbd.saved'));
+      n.value = ''; r.value = '';
+    });
     $('mbEditNameAdd').addEventListener('click', async () => {
       const inp = $('mbEditNameIn') as HTMLInputElement;
       await editDo({ action: 'name_add', name: inp.value, kind: ($('mbEditNameKind') as HTMLSelectElement).value }, () => t('mbd.saved'));
@@ -675,6 +693,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           const who = document.createElement('div'); who.innerHTML = '<strong></strong> <span class="muted"></span>';
           who.querySelector('strong')!.textContent = `${v.provider_name} #${v.vno} · ${v.name}`;
           who.querySelector('.muted')!.textContent = v.status === 'closed' ? t('mb.state.closed') : (v.names.length ? `${t('st.nm.also')} ${v.names.join(', ')}` : '');
+          if (v.pickups?.length) { const pk = document.createElement('div'); pk.className = 'mb-names mb-pickups'; pk.textContent = `${t('st.pk.may')} ${v.pickups.map((p: any) => `${p.name}${p.relation ? ` (${p.relation})` : ''}`).join(', ')}`; who.appendChild(pk); }
           const tag = document.createElement('span'); tag.className = 'mb-mail mb-mail-virtual'; tag.textContent = v.status === 'closed' ? t('st.vm.do.closed') : tf('st.vm.do', { provider: v.provider_name.toUpperCase() });
           const open = document.createElement('a'); open.className = 'btn small kraft'; open.href = `/counter/virtual#${v.provider}`; open.textContent = t('st.nav.virtual');
           const vb = idBadge(v.id_state);
@@ -702,6 +721,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           who.querySelector('strong')!.textContent = `#${x.box_no} · ${x.customer.name}`;
           who.querySelector('.muted')!.textContent = `${t(`mb.state.${x.state}`)} · ${t('st.mb.paidthru')} ${x.paid_through}`;
           if (x.names?.length) { const nm = document.createElement('div'); nm.className = 'mb-names'; nm.textContent = `${t('st.nm.also')} ${x.names.map((n: any) => n.name).join(', ')}`; who.appendChild(nm); }
+          if (x.pickups?.length) { const pk = document.createElement('div'); pk.className = 'mb-names mb-pickups'; pk.textContent = `${t('st.pk.may')} ${x.pickups.map((p: any) => `${p.name}${p.relation ? ` (${p.relation})` : ''}`).join(', ')}`; who.appendChild(pk); }
           const idb = idBadge(x.id_state);
           li.append(who, idb && x.id_state.state !== 'expiring' ? idb : mailBadge(x.mail));
           if (x.status === 'active') li.append(btn(t('st.ci.in'), '', () => { ciChoose(x); ciDlg.showModal(); }), btn(t('st.mb.edit'), 'kraft', () => openEdit(x)));

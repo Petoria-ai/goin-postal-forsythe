@@ -159,6 +159,7 @@ const mem = {
   mbPhotos: [] as MailboxPhoto[],
   mbDocDates: new Map<string, MailboxDocDate>(),
   mbNames: [] as MailboxName[],
+  mbPickups: [] as MailboxPickup[],
   mbKeys: new Map<number, MailboxKey>(),
   virtual: [] as VirtualMailbox[],
   virtualProviders: new Map<number, string>(),
@@ -167,7 +168,7 @@ const mem = {
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos', 'mailbox_doc_dates', 'mailbox_names', 'mailbox_keys', 'virtual_mailboxes', 'virtual_mailbox_providers'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'customer_tracked', 'marketing_consents', 'customer_logins', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'site_settings', 'saved_designs', 'mailbox_reservations', 'mailboxes', 'mailbox_renewals', 'mailbox_documents', 'mailbox_items', 'mailbox_settings', 'mailbox_charges', 'mailbox_forwards', 'mailbox_photos', 'mailbox_doc_dates', 'mailbox_names', 'mailbox_keys', 'virtual_mailboxes', 'virtual_mailbox_providers', 'mailbox_pickups'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -221,6 +222,7 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'mailbox_photos': return mem.mbPhotos;
     case 'mailbox_doc_dates': return [...mem.mbDocDates.values()];
     case 'mailbox_names': return mem.mbNames;
+    case 'mailbox_pickups': return mem.mbPickups;
     case 'mailbox_keys': return [...mem.mbKeys.values()];
     case 'virtual_mailboxes': return mem.virtual;
     case 'virtual_mailbox_providers': return [...mem.virtualProviders].map(([virtual_id, provider]) => ({ virtual_id, provider }));
@@ -979,6 +981,34 @@ export async function latestPhotoIdExpiry(env: Env): Promise<Map<string, string>
     if (e && (!out.has(d.customer_id) || e > out.get(d.customer_id)!)) out.set(d.customer_id, e);
   }
   return out;
+}
+
+/** Who may pick up packages for a wall box or a virtual mailbox (Peter, Nov 25 2026). */
+export interface MailboxPickup { id: number; box_kind: 'wall' | 'virtual'; box_id: number; name: string; relation: string | null; added_by: string; at: string }
+export async function addBoxPickup(env: Env, r: Pick<MailboxPickup, 'box_kind' | 'box_id' | 'name' | 'relation' | 'added_by'>): Promise<MailboxPickup> {
+  const row = { ...r, at: now() };
+  if (env.DB) { const x = await env.DB.prepare('INSERT INTO mailbox_pickups (box_kind, box_id, name, relation, added_by, at) VALUES (?1, ?2, ?3, ?4, ?5, ?6) RETURNING id').bind(r.box_kind, r.box_id, r.name, r.relation, r.added_by, row.at).first<{ id: number }>(); return { id: x!.id, ...row }; }
+  const full = { id: mem.seq++, ...row }; mem.mbPickups.push(full); return full;
+}
+export async function listBoxPickups(env: Env, kind?: 'wall' | 'virtual', boxId?: number): Promise<MailboxPickup[]> {
+  if (env.DB) {
+    const q = kind && boxId != null ? env.DB.prepare('SELECT * FROM mailbox_pickups WHERE box_kind = ?1 AND box_id = ?2 ORDER BY id').bind(kind, boxId)
+      : kind ? env.DB.prepare('SELECT * FROM mailbox_pickups WHERE box_kind = ?1 ORDER BY id').bind(kind) : env.DB.prepare('SELECT * FROM mailbox_pickups ORDER BY id');
+    return (await q.all<MailboxPickup>()).results;
+  }
+  return mem.mbPickups.filter((p) => (!kind || p.box_kind === kind) && (boxId == null || p.box_id === boxId));
+}
+export async function deleteBoxPickup(env: Env, id: number): Promise<MailboxPickup | null> {
+  const row = env.DB ? (await env.DB.prepare('SELECT * FROM mailbox_pickups WHERE id = ?1').bind(id).first<MailboxPickup>()) ?? null : mem.mbPickups.find((p) => p.id === id) ?? null;
+  if (!row) return null;
+  if (env.DB) await env.DB.prepare('DELETE FROM mailbox_pickups WHERE id = ?1').bind(id).run(); else mem.mbPickups = mem.mbPickups.filter((p) => p.id !== id);
+  return row;
+}
+/** Pickup people by box, for lists and search. */
+export async function pickupsByBox(env: Env, kind: 'wall' | 'virtual'): Promise<Map<number, { id: number; name: string; relation: string | null }[]>> {
+  const m = new Map<number, { id: number; name: string; relation: string | null }[]>();
+  for (const p of await listBoxPickups(env, kind)) (m.get(p.box_id) ?? m.set(p.box_id, []).get(p.box_id)!).push({ id: p.id, name: p.name, relation: p.relation });
+  return m;
 }
 
 export interface MailboxName { id: number; mailbox_id: number; name: string; kind: 'person' | 'business'; added_by: string; at: string }

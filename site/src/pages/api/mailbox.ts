@@ -11,7 +11,7 @@ import {
   assignMailbox, getMailbox, listAllMailboxes, updateMailbox, createRenewal, countMailboxDocs, type MailboxRow,
   countItemsIn, listMailboxItems, getMailboxItem, deleteMailboxItem, clearMailboxItems, getMailboxSettings, saveMailboxSettings,
   listMailboxCharges, settleMailboxCharges, addMailboxForward, listMailboxForwards, setMailboxForward, activeBox, photosForBox, moveMailboxItem, exportTable,
-  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits, listVirtual, docOwner, virtualDocKey,
+  addMailboxName, listMailboxNames, deleteMailboxName, listDocDates, listAllMailboxDocs, latestPhotoIdExpiry, setKeyDeposit, listKeyDeposits, listVirtual, docOwner, virtualDocKey, addBoxPickup, listBoxPickups, deleteBoxPickup, pickupsByBox,
 } from '../../shipping/store';
 import { SIZES, sizeById, sizeForBox, isTerm, priceFor, addMonths, day, isDay, boxStatus, dueReminder, mailAction, onExpiredList, HOLD_MONTHS, KEEP_MONTHS, vnoMatches } from '../../lib/mailbox';
 import { sendReminder, sendDueReminders, holdEndNotices, extendedDate, logMail, chargeOverages, billOverages, autoRenewals, balanceFor, packageJobs, ID_WARN_DAYS, sendIdNoticeNow, idExpiryNotices } from '../../lib/mailboxJobs';
@@ -128,6 +128,7 @@ export const POST: APIRoute = async ({ request }) => {
     let docCounts: Map<string, number> | null = null;
     let inBox: Awaited<ReturnType<typeof countItemsIn>> | null = null;
     let namesByBox: Map<number, { id: number; name: string; kind: string }[]> | null = null;
+    let pickupsWall: Map<number, { id: number; name: string; relation: string | null }[]> | null = null;
     let photoIds: Map<string, string> | null = null;
     let keyDeps: Awaited<ReturnType<typeof listKeyDeposits>> | null = null;
     const view = async (x: MailboxRow) => {
@@ -135,11 +136,12 @@ export const POST: APIRoute = async ({ request }) => {
       inBox ??= await countItemsIn(env);
       photoIds ??= await latestPhotoIdExpiry(env);
       keyDeps ??= await listKeyDeposits(env);
+      if (!pickupsWall) pickupsWall = await pickupsByBox(env, 'wall');
       if (!namesByBox) { namesByBox = new Map(); for (const n of await listMailboxNames(env)) (namesByBox.get(n.mailbox_id) ?? namesByBox.set(n.mailbox_id, []).get(n.mailbox_id)!).push({ id: n.id, name: n.name, kind: n.kind }); }
       const n = inBox.get(x.id) ?? { letters: 0, packages: 0, last: null, first_pkg: null, first_letter: null };
       // Letters fill the box; packages are flagged when the oldest is past its free days or due back to the sender.
       const oldest = n.first_pkg ? daysHeld(n.first_pkg, today) : 0;
-      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0, names: namesByBox.get(x.id) ?? [], id_state: x.status === 'active' ? idState(photoIds.get(x.customer_id), today) : null, key_deposit: keyDeps.get(x.id) ?? { deposit: 'unpaid', changed_at: null, changed_by: null },
+      return { ...x, customer: await person(x.customer_id), state: boxStatus(x, today), mail: mailAction(x, today), docs: docCounts.get(x.customer_id) ?? 0, names: namesByBox.get(x.id) ?? [], pickups: pickupsWall!.get(x.id) ?? [], id_state: x.status === 'active' ? idState(photoIds.get(x.customer_id), today) : null, key_deposit: keyDeps.get(x.id) ?? { deposit: 'unpaid', changed_at: null, changed_by: null },
         inbox: { ...n, ...fullness(n.letters, x.size), pkg_late: n.packages > 0 && oldest > PKG.freeDays, pkg_rts: n.packages > 0 && oldest >= PKG.returnNoticeDay + PKG.returnAfter } };
     };
 
@@ -199,6 +201,8 @@ export const POST: APIRoute = async ({ request }) => {
         // Also the other names allowed at a box (family, a business), so "Smith Consulting" finds #1105.
         const lq = q.toLowerCase();
         const byName = new Set((await listMailboxNames(env)).filter((n) => n.name.toLowerCase().includes(lq)).map((n) => n.mailbox_id));
+        // And the people allowed to pick up packages for a box (Peter, Nov 25 2026).
+        for (const p of await listBoxPickups(env, 'wall')) if (p.name.toLowerCase().includes(lq)) byName.add(p.box_id);
         hits = all.filter((x) => ids.has(x.customer_id) || byName.has(x.id));
       }
       // The box's current holder first, then past holders, newest first.
@@ -207,11 +211,13 @@ export const POST: APIRoute = async ({ request }) => {
       const lq = q.toLowerCase().replace(/^#/, '');
       const digitsQ = lq.replace(/\D/g, '');
       const photoIdsAll = await latestPhotoIdExpiry(env);
+      const vPickups = await pickupsByBox(env, 'virtual');
       const virtual = (await listVirtual(env)).filter((v) => {
         const names: string[] = JSON.parse(v.names);
         return vnoMatches(v.vno, lq) || v.name.toLowerCase().includes(lq) || names.some((n) => n.toLowerCase().includes(lq))
+          || (vPickups.get(v.id) ?? []).some((p) => p.name.toLowerCase().includes(lq))
           || (!!v.email && v.email.toLowerCase().includes(lq)) || (digitsQ.length >= 4 && !!v.phone && v.phone.replace(/\D/g, '').includes(digitsQ));
-      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status, provider: v.provider, provider_name: VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider, doc_key: virtualDocKey(v), id_state: v.status === 'active' ? idState(photoIdsAll.get(virtualDocKey(v)), today) : null, no_id: v.status === 'active' && !photoIdsAll.has(virtualDocKey(v)) }));
+      }).slice(0, 10).map((v) => ({ id: v.id, vno: v.vno, name: v.name, names: JSON.parse(v.names), status: v.status, provider: v.provider, provider_name: VIRTUAL.find((p) => p.id === v.provider)?.name ?? v.provider, doc_key: virtualDocKey(v), id_state: v.status === 'active' ? idState(photoIdsAll.get(virtualDocKey(v)), today) : null, no_id: v.status === 'active' && !photoIdsAll.has(virtualDocKey(v)), pickups: vPickups.get(v.id) ?? [] }));
       return json({ boxes: await Promise.all(hits.slice(0, 20).map(view)), virtual });
     }
     if (b.action === 'find') {
@@ -426,6 +432,21 @@ export const POST: APIRoute = async ({ request }) => {
       const n = await addMailboxName(env, { mailbox_id: box.id, name, kind: b.kind === 'business' ? 'business' : 'person', added_by: who.name });
       await logAudit(env, who, 'mailbox.name_add', `#${box.box_no}`, `${n.kind}: ${name}`);
       return json({ ok: true, name: n });
+    }
+    if (b.action === 'pickup_add') { // who may pick up packages for this box (any staff)
+      const name = String(b.name ?? '').trim().replace(/\s+/g, ' ').slice(0, 80);
+      if (name.length < 2) return json({ error: 'Type their full name, as on their photo ID.' }, 400);
+      const relation = String(b.relation ?? '').trim().slice(0, 40) || null;
+      const pk = await addBoxPickup(env, { box_kind: 'wall', box_id: box.id, name, relation, added_by: who.name });
+      await logAudit(env, who, 'mailbox.pickup_add', `#${box.box_no}`, `${name}${relation ? ` (${relation})` : ''}`);
+      return json({ ok: true, pickup: pk });
+    }
+    if (b.action === 'pickup_remove') {
+      const pk = (await listBoxPickups(env, 'wall', box.id)).find((x) => x.id === Number(b.pickup_id));
+      if (!pk) return json({ error: 'No such person on this box' }, 404);
+      await deleteBoxPickup(env, pk.id);
+      await logAudit(env, who, 'mailbox.pickup_remove', `#${box.box_no}`, pk.name);
+      return json({ ok: true });
     }
     if (b.action === 'name_remove') {
       const n = (await listMailboxNames(env, box.id)).find((x) => x.id === Number(b.name_id));

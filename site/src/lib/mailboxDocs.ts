@@ -7,7 +7,7 @@
 import { addMailboxDoc, getMailboxDoc, deleteMailboxDoc, type MailboxDocRow } from '../shipping/store';
 
 export const MAX_BYTES = 6_000_000;
-export const KINDS = ['photo_id', 'second_id', 'form_1583', 'other'] as const;
+export const KINDS = ['photo_id', 'second_id', 'form_1583', 'pickup_id', 'other'] as const;
 export type DocKind = (typeof KINDS)[number];
 const TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'] as const;
 

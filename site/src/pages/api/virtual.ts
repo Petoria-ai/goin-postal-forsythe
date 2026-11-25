@@ -4,7 +4,7 @@ import { env } from '../../lib/env';
 import { json } from '../../lib/validate';
 import { authenticate, atLeast } from '../../lib/auth';
 import { serviceKeyInfo, saveServiceKey, removeServiceKey, serviceKey, cleanKey, keysReady } from '../../lib/serviceKeys';
-import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, virtualDocKey, reassignDocs, countMailboxDocs, latestPhotoIdExpiry, type VirtualInput } from '../../shipping/store';
+import { listVirtual, getVirtual, addVirtual, updateVirtual, getCustomer, logAudit, virtualDocKey, reassignDocs, countMailboxDocs, latestPhotoIdExpiry, addBoxPickup, listBoxPickups, deleteBoxPickup, pickupsByBox, type VirtualInput } from '../../shipping/store';
 import { idState, day } from '../../lib/mailbox';
 import { testKey, listRenters, listBoxStatus, compare, findRenter, renterAction, type CallSpec } from '../../lib/anytime';
 import { verdict } from '../../lib/anytime';
@@ -49,10 +49,11 @@ export const POST: APIRoute = async ({ request }) => {
       const docs = await countMailboxDocs(env);
       const ids = await latestPhotoIdExpiry(env);
       const today = day(new Date());
+      const pickups = await pickupsByBox(env, 'virtual');
       return json({
         virtual: await Promise.all(rows.map(async (v) => ({ ...v, names: JSON.parse(v.names), account: v.customer_id ? (await getCustomer(env, v.customer_id))?.name ?? null : null,
           doc_key: virtualDocKey(v), docs: docs.get(virtualDocKey(v)) ?? 0, id_state: v.status === 'active' ? idState(ids.get(virtualDocKey(v)), today) : null,
-          no_id: v.status === 'active' && !ids.has(virtualDocKey(v)) }))),
+          no_id: v.status === 'active' && !ids.has(virtualDocKey(v)), pickups: pickups.get(v.id) ?? [] }))),
         providers: await Promise.all(PROVIDERS.map(async (p) => { const key = await serviceKeyInfo(env, p.id); return { ...p, key, connected: !!key.source && canSync(p) }; })),
         can_manage_keys: atLeast(user, 'owner'), keys_ready: keysReady(env), role: user.role,
       });
@@ -121,6 +122,24 @@ export const POST: APIRoute = async ({ request }) => {
     // first; the change needs confirm = their mailbox number, typed. Then they're closed on our list too (nothing erased here).
     // Check at Anytime Mailbox (Peter, Nov 23 2026: "mailbox number 104 isnt a active renter"): exactly what their API says
     // about this box: every renter who has it, their status, the box's status and assigned date, and what Sync decides.
+    // Who may pick up packages for a virtual customer (Peter, Nov 25 2026). Any staff.
+    if (b.action === 'pickup_add' || b.action === 'pickup_remove') {
+      const cur = await getVirtual(env, Number(b.id));
+      if (!cur) return json({ error: 'No such virtual mailbox' }, 404);
+      if (b.action === 'pickup_remove') {
+        const pk = (await listBoxPickups(env, 'virtual', cur.id)).find((x) => x.id === Number(b.pickup_id));
+        if (!pk) return json({ error: 'No such person on this mailbox' }, 404);
+        await deleteBoxPickup(env, pk.id);
+        await logAudit(env, who, 'virtual.pickup_remove', `V#${cur.vno}`, pk.name);
+        return json({ ok: true });
+      }
+      const name = String(b.name ?? '').trim().replace(/\s+/g, ' ').slice(0, 80);
+      if (name.length < 2) return json({ error: 'Type their full name, as on their photo ID.' }, 400);
+      const relation = String(b.relation ?? '').trim().slice(0, 40) || null;
+      const pk = await addBoxPickup(env, { box_kind: 'virtual', box_id: cur.id, name, relation, added_by: who.name });
+      await logAudit(env, who, 'virtual.pickup_add', `V#${cur.vno}`, `${name}${relation ? ` (${relation})` : ''}`);
+      return json({ ok: true, pickup: pk });
+    }
     if (b.action === 'renter_check') {
       const cur = await getVirtual(env, Number(b.id));
       if (!cur) return json({ error: 'No such virtual mailbox' }, 404);

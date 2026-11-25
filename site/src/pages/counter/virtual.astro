@@ -68,6 +68,12 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         <p class="btnrow vm-wide"><button type="submit" class="btn" id="vmSave" data-i18n="st.vm.save">Add</button> <button type="button" class="btn kraft" id="vmCancel" hidden data-i18n="st.vm.cancel">Cancel editing</button></p>
       </form>
       <!-- Danger zone (Peter, Nov 23 2026): only while editing someone, only for a manager or owner PIN. -->
+      <div id="vmPickups" class="vm-pickups" hidden>
+        <h4 data-i18n="st.pk.h">Who may pick up packages</h4>
+        <p class="muted small" data-i18n="st.pk.p">People the holder allows to collect packages. Check their photo ID at pickup; a copy can go in Documents as "Pickup person's ID". Mail check finds the box by their name.</p>
+        <ul id="vmPkList" class="mb-pkgs"></ul>
+        <p class="btnrow"><input id="vmPkName" maxlength="80" data-i18n-ph="st.pk.ph" placeholder="Full name, as on their ID" /> <input id="vmPkRel" maxlength="40" data-i18n-ph="st.pk.rel" placeholder="Relation (spouse, assistant…)" /> <button type="button" class="btn small kraft" id="vmPkAdd" data-i18n="st.pk.add">Add person</button></p>
+      </div>
       <div id="vmCheckBox" class="vm-check" hidden>
         <button type="button" class="btn small kraft" id="vmCheck"></button>
         <pre id="vmCheckOut" class="vm-check-out" hidden></pre>
@@ -224,13 +230,14 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('vmNoId').hidden = !missing;
       $('vmNoId').querySelector('span')!.textContent = tf('st.vm.noid.banner2', { n: missing, provider: prov().name });
       $('vmNoIdBtn').textContent = onlyNoId ? t('st.vm.noid.all') : t('st.vm.noid.show');
-      const list = mine.filter((v) => !onlyNoId || v.no_id).filter((v) => !q || vnoMatches(v.vno, q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)));
+      const list = mine.filter((v) => !onlyNoId || v.no_id).filter((v) => !q || vnoMatches(v.vno, q) || v.name.toLowerCase().includes(q) || v.names.some((n: string) => n.toLowerCase().includes(q)) || (v.pickups ?? []).some((p: any) => p.name.toLowerCase().includes(q)));
       for (const v of list) {
         const li = document.createElement('li'); if (v.status === 'closed') li.classList.add('vm-closed'); li.dataset.id = String(v.id);
         const who = document.createElement('div');
         who.innerHTML = '<strong></strong><br /><span class="muted"></span>';
         who.querySelector('strong')!.textContent = `${prov().name} #${v.vno} · ${v.name}${v.status === 'closed' ? ` · ${t('mb.state.closed')}` : ''}`;
         who.querySelector('.muted')!.textContent = [v.phone, v.email, v.names.length ? `${t('st.nm.also')} ${v.names.join(', ')}` : '', v.account ? tf('st.vm.linked', { name: v.account }) : '', v.note].filter(Boolean).join(' · ');
+        if (v.pickups?.length) { const pk = document.createElement('div'); pk.className = 'mb-names mb-pickups'; pk.textContent = `${t('st.pk.may')} ${v.pickups.map((p: any) => `${p.name}${p.relation ? ` (${p.relation})` : ''}`).join(', ')}`; who.appendChild(pk); }
         // The ID on file (Peter, Nov 19 2026): expired means hold their mail; suspended after the grace days.
         const s = v.id_state;
         if (s && s.state !== 'expiring') {
@@ -418,6 +425,29 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         ].join('\n');
       } catch (e: any) { out.textContent = e.message; }
     });
+    // Who may pick up packages, while editing someone.
+    function paintPickups(v: any) {
+      const ul = $('vmPkList'); ul.innerHTML = '';
+      if (!(v.pickups ?? []).length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.pk.none'); ul.appendChild(li); }
+      for (const pk of v.pickups ?? []) {
+        const li = document.createElement('li'); const sp = document.createElement('span'); sp.textContent = `${pk.name}${pk.relation ? ` · ${pk.relation}` : ''}`;
+        li.append(sp, btn(t('st.it.remove'), 'kraft', async () => {
+          if (!confirm(tf('st.pk.removeq', { name: pk.name }))) return;
+          try { await api('/api/virtual', { action: 'pickup_remove', id: v.id, pickup_id: pk.id }); await refreshEditing(); } catch (e: any) { say(e.message, true); }
+        }));
+        ul.appendChild(li);
+      }
+    }
+    async function refreshEditing() {
+      const id = editing?.id; await load();
+      const v = rows.find((x) => x.id === id); if (v) { editing = v; paintPickups(v); }
+    }
+    $('vmPkAdd').addEventListener('click', async () => {
+      if (!editing) return;
+      const n = $('vmPkName') as HTMLInputElement; const r = $('vmPkRel') as HTMLInputElement;
+      try { await api('/api/virtual', { action: 'pickup_add', id: editing.id, name: n.value, relation: r.value }); n.value = ''; r.value = ''; await refreshEditing(); say(t('mbd.saved')); }
+      catch (e: any) { say(e.message, true); }
+    });
     $('vmNoIdBtn').addEventListener('click', () => { onlyNoId = !onlyNoId; paint(); });
     $('vmIdsShow').addEventListener('click', () => { onlyNoId = true; paint(); $('vmList').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
     $('vmSyncHide').addEventListener('click', () => { $('vmSync').innerHTML = ''; $('vmSyncSum').textContent = ''; $('vmSyncHide').hidden = true; });
@@ -468,7 +498,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
     }
     let editing: any = null;
     function resetForm() {
-      form.reset(); field('id').value = ''; setAccount(null, null); editing = null; $('vmDanger').hidden = true;
+      form.reset(); field('id').value = ''; setAccount(null, null); editing = null; $('vmDanger').hidden = true; $('vmPickups').hidden = true;
       $('vmSave').textContent = t('st.vm.save'); $('vmCancel').hidden = true;
     }
     function edit(v: any) {
@@ -478,6 +508,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       $('vmSave').textContent = t('st.vm.update'); $('vmCancel').hidden = false;
       ($('vmAddBox') as HTMLDetailsElement).open = true;
       editing = v;
+      $('vmPickups').hidden = false; paintPickups(v);
       $('vmCheckBox').hidden = !prov().connected; $('vmCheckOut').hidden = true;
       $('vmCheck').textContent = tf('st.vm.check', { provider: prov().name, vno: v.vno });
       const p = prov(); const mgr = role === 'manager' || role === 'owner';
