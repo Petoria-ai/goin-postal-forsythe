@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 11:51 CST · Exceptions taken off the staff menu
+
+- **Asked for:** "how would we incorporate the exceptions tab?", then (GP Rate Pro doesn't alert on problem packages, but exporting its list every day would be a chore, customers sign a liability waiver, and calling customers about delays is one more thing to handle) "so lets take it out".
+- **What changed:** **Exceptions** is no longer in the Shipping dropdown or on the counter home page. It only watches labels made through PeterShip, and the store makes labels in GP Rate Pro, so it was always empty. The page still opens at `/counter/exceptions` and fills by itself if PeterShip ever makes the store's labels; to show it again, un-comment one line in `site/src/data/staffNav.ts`.
+- **Files:** [site/src/data/staffNav.ts](../site/src/data/staffNav.ts)
+
 ## 2026-11-25 11:41 CST · Drop-offs taken off the staff menu (GP Rate Pro already does it)
 
 - **Asked for:** "whats the thought process of having the dropoff tab?", then "currently our gpratepro.. does a scan for us and gives them a receipt of time. we also keep track of everything.. so it might be not needed".

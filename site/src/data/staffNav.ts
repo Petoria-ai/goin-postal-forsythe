@@ -14,7 +14,9 @@ export const STAFF_NAV: NavGroup[] = [
     { href: '/counter/scan', key: 'st.nav.scan', label: 'Scan a QR' },
     { href: '/counter/batch', key: 'st.nav.batch', label: 'Batch' },
     { href: '/counter/fulfillment', key: 'st.nav.fulfillment', label: 'Fulfillment' },
-    { href: '/counter/exceptions', key: 'st.nav.exceptions', label: 'Exceptions' },
+    // Exceptions (/counter/exceptions) is off the menu too (Peter, Nov 25 2026): it only watches labels made through
+    // PeterShip, and the store makes labels in GP Rate Pro. It starts filling by itself if PeterShip makes the labels:
+    // { href: '/counter/exceptions', key: 'st.nav.exceptions', label: 'Exceptions' },
     { href: '/counter/claims', key: 'st.nav.claims', label: 'Claims' },
   ] },
   { key: 'st.nav.g.mail', label: 'Mailboxes', links: [
