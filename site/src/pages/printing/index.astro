@@ -1,6 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { store } from '../../data/store';
+import PrintCategories from '../../components/PrintCategories.astro';
 
 // The Printing section's front page (Peter, Nov 14 2026): every printing product, each with its own
 // page. Business cards are ordered online; the rest are ordered in the store for now (TODO P7).
@@ -16,6 +17,9 @@ const items = [
     <h1 data-i18n="print.h1">Printing</h1>
     <p class="lead" data-i18n="print.lead">Business cards, banners, yard signs, custom t-shirts and promo items, made for you and picked up at the store.</p>
   </section>
+  <!-- Shop by category, with pictures (Peter, Nov 25 2026: like Gelato's catalog). -->
+  <PrintCategories />
+  <h2 class="pcat-sub" data-i18n="cat.more">More from the print shop</h2>
   <div class="grid print-tiles">
     {items.map((x) => (
       <a class="card print-tile" href={x.href}>

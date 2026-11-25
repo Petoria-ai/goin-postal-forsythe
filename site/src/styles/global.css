@@ -1198,24 +1198,47 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-addbox > summary { cursor: pointer; list-style: revert; }
 .vm-addbox > summary h3 { display: inline; }
 .vm-check { margin-top: 1rem; }
-/* The print catalog bar under the main menu (Nov 25 2026, like Vistaprint and 4over). */
-.catbar { background: #fff; border-top: 1px solid var(--hair, #e3d9c8); border-bottom: 1px solid var(--hair, #e3d9c8); }
-header.top .catbar-row { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: space-between; align-items: stretch; gap: .25rem; padding-top: 0; padding-bottom: 0; min-height: 0; }
+/* The print catalog bar (Nov 25 2026): airy, like Gelato's: light words, a soft rounded highlight, room to breathe. */
+.catbar { background: #fff; border-bottom: 1px solid #efe9de; box-shadow: 0 6px 18px rgba(40, 30, 10, .04); }
+header.top .catbar-row { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: safe center; align-items: center; gap: 0; padding-top: .45rem; padding-bottom: .45rem; min-height: 0; max-width: 1440px; }
 .cat-drop { position: relative; display: flex; }
-.cat-link { display: flex; align-items: center; padding: .7rem .6rem; font-weight: 700; color: var(--navy, #1d2a5c); text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; }
-.cat-link:hover, .cat-link:focus-visible, .cat-drop:focus-within > .cat-link, .cat-link[aria-current='page'] { border-bottom-color: #d0312d; color: #d0312d; }
-.cat-menu { display: none; position: absolute; top: 100%; left: 0; z-index: 55; min-width: 15rem; padding: 8px; background: #fff; border: 1px solid var(--hair, #e3d9c8); border-radius: 0 0 14px 14px; box-shadow: 0 12px 28px rgba(40, 30, 10, .16); }
-.cat-drop:last-child .cat-menu, .cat-drop:nth-last-child(2) .cat-menu { left: auto; right: 0; }
+.cat-link { display: flex; align-items: center; padding: .45rem .7rem; border-radius: 999px; font-weight: 500; font-size: .88rem; color: #4b4f58; text-decoration: none; white-space: nowrap; transition: background .15s, color .15s; }
+.cat-link:hover, .cat-link:focus-visible, .cat-drop:focus-within > .cat-link { background: #f5f1e8; color: #1d1f24; }
+.cat-link[aria-current='page'] { background: #f5f1e8; color: #1d1f24; font-weight: 700; }
+.cat-all { color: var(--navy, #1d2a5c); font-weight: 700; }
+.cat-menu { display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 55; min-width: 15rem; padding: 8px; background: #fff; border: 1px solid #efe9de; border-radius: 16px; box-shadow: 0 16px 34px rgba(40, 30, 10, .12); }
+.cat-drop::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 8px; }
+.cat-drop:last-child .cat-menu, .cat-drop:nth-last-child(2) .cat-menu, .cat-drop:nth-last-child(3) .cat-menu { left: auto; right: 0; }
 .cat-drop:hover .cat-menu, .cat-drop:focus-within .cat-menu { display: grid; gap: 2px; }
-.cat-menu a { padding: 10px 12px; min-height: 44px; display: flex; align-items: center; border-radius: 10px; color: var(--navy, #1d2a5c); font-weight: 600; text-decoration: none; white-space: nowrap; }
-.cat-menu a:hover, .cat-menu a:focus-visible { background: var(--soft-blue, #e8eef9); }
+.cat-menu a { padding: 10px 12px; min-height: 44px; display: flex; align-items: center; border-radius: 10px; color: #2b2f36; font-weight: 500; text-decoration: none; white-space: nowrap; }
+.cat-menu a:hover, .cat-menu a:focus-visible { background: #f5f1e8; }
 html:root[data-contrast="high"] .catbar, html:root[data-contrast="high"] .cat-menu { background: #000; border-color: #fff; }
 html:root[data-contrast="high"] .cat-link, html:root[data-contrast="high"] .cat-menu a { color: #fff; }
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   header.top .catbar-row { overflow-x: auto; justify-content: flex-start; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
   .cat-menu { display: none !important; }
-  .cat-link { padding: .6rem .7rem; font-size: .95rem; }
 }
+/* The print shop's picture cards (Nov 25 2026). */
+.pcat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; margin: 1.5rem 0 2.5rem; }
+.pcat-grid.compact { gap: 1rem; }
+@media (max-width: 1000px) { .pcat-grid.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 800px) { .pcat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; } .pcat-body { padding: .7rem .8rem .9rem; } .pcat-name { font-size: 1rem; } }
+.pcat-card { display: flex; flex-direction: column; background: #fff; border-radius: 18px; overflow: hidden; text-decoration: none; color: inherit; box-shadow: 0 2px 12px rgba(40, 30, 10, .06); transition: transform .15s, box-shadow .15s; }
+.pcat-card:hover, .pcat-card:focus-visible { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(40, 30, 10, .12); }
+.pcat-pic { aspect-ratio: 4 / 3; display: grid; place-items: center; background: #f4f1ec; }
+.pcat-pic svg, .pcat-pic img { width: 82%; height: 82%; object-fit: contain; }
+.pcat-pic img { width: 100%; height: 100%; object-fit: cover; }
+.pcat-womens { background: #fbeee8; } .pcat-mens { background: #eef0f2; } .pcat-kids { background: #eaf5fb; } .pcat-hats { background: #edf0f8; }
+.pcat-drinkware { background: #e9f5f2; } .pcat-wallart { background: #fbf3e6; } .pcat-signs { background: #fbecea; } .pcat-stationery { background: #eef3fa; }
+.pcat-body { padding: .9rem 1.1rem 1.1rem; }
+.pcat-kicker { margin: 0; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: #8a8f98; font-weight: 600; }
+.pcat-name { margin: .2rem 0 .3rem; font-size: 1.08rem; font-weight: 700; color: #1d1f24; }
+.pcat-price { margin: 0; color: #5b616b; font-size: .92rem; }
+.pcat-price.ask { color: #8a6a00; }
+.pcat-sub { margin-top: 1rem; font-weight: 600; }
+.pcat-home { margin: 2rem 0; }
+.pcat-home h2 { margin-bottom: .25rem; }
+
 /* Print orders made by Gelato (Nov 25 2026). */
 .po-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1rem; }
 .po-grid { align-items: start; }

@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 17:17 CST · An airier print catalog: shop by who it's for, with picture cards (for Peter to approve)
+
+- **Asked for:** "whats a good way to make things look alittle more airy? gelato has pictures of the types of things they sell / and i think maybe having the categories would enable shoppers/customers separated in genders", then "lets see what you come up with and i'll adjust or approve it if it looks good".
+- **What changed:**
+  - **The catalog bar** is lighter, like Gelato's: thin gray words, a soft rounded highlight on hover and on the page you're on, more room. It's sorted by who it's for: **Women's · Men's · Kids & Baby · Hats & Accessories · Drinkware · Wall Art & Posters · Signs & Banners · Business Cards & Stationery · All Printing**. Each still opens a short menu.
+  - **Picture cards:** a grid of 8 category cards (4 across on a computer, 2 on a phone), each with a light drawing of the product on a soft colored background, a small "CATEGORY" label, the name, and **"From $24.99"** or **"Ask for a price"** (for what's quoted in the store today: kids, hats, drinkware, signs). They're at the top of the **Printing** page (the old four tiles are below as "More from the print shop") and on the **home page** under **"Shop the print shop"**.
+  - **Real photos later:** the drawings are stand-ins. A photo from Gelato's Mockup Studio or of a sample goes in `site/public/print/<category>.jpg` and replaces its drawing (one line in `PrintCategories.astro`).
+  - Starting prices come from the product files, so they change when prices change.
+  - **Note:** Women's and Men's lead to the one unisex t-shirt for now, and Kids, Hats and Drinkware to the ask-us pages, until Peter picks those products in Gelato and sends their product codes.
+- **Files:** [site/src/data/printCatalog.ts](../site/src/data/printCatalog.ts), new [site/src/components/PrintCategories.astro](../site/src/components/PrintCategories.astro), [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/pages/printing/index.astro](../site/src/pages/printing/index.astro), [site/src/pages/index.astro](../site/src/pages/index.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts)
+- **How to check it:** `git pull`, refresh; look at Printing and the home page.
+
 ## 2026-11-25 17:06 CST · Top menu cleaned up; Account is the "Hi, Peter" dropdown
 
 - **Asked for:** "i think we need to clean up the first row. like hours/contact / maybe account could be a where it saids 'Hi, Peter' possibly a dropdown menu".

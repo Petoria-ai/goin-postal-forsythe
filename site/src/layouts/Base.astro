@@ -15,7 +15,7 @@ const brandRest = store.headerLabel || store.name.replace(/^Goin' Postal\s*/i, '
 const here = Astro.url.pathname.replace(/\/$/, '') || '/';
 const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')) ? 'page' : undefined);
 import CarrierBadges from '../components/CarrierBadges.astro';
-import { PRINT_CATALOG } from '../data/printCatalog';
+import { PRINT_CATALOG, ALL_PRINTING } from '../data/printCatalog';
 ---
 <!doctype html>
 <html lang="en">
@@ -101,6 +101,7 @@ import { PRINT_CATALOG } from '../data/printCatalog';
               {g.items.length > 0 && <div class="cat-menu">{g.items.map((i) => <a href={i.href} data-i18n={i.key}>{i.label}</a>)}</div>}
             </div>
           ))}
+          <div class="cat-drop"><a href={ALL_PRINTING.href} class="cat-link cat-all" aria-current={cur('/printing') ?? undefined} data-i18n={ALL_PRINTING.key}>{ALL_PRINTING.label}</a></div>
         </div>
       </div>
     </header>
