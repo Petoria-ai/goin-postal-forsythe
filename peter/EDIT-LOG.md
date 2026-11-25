@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 16:16 CST · Printing plan: local shops for rush clothing orders
+
+- **Asked for:** "im thinking if i have to go local. then it'd be more for rush shipping if i need it tomorrow or something i feel".
+- **What changed (plan only):** the clothing section in [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md#clothing-dropship-only-peter-november-25) adds **Rush**: a checkout choice (ready in 1 to 2 business days, at a rush price) that goes to a local shop (Atomic Ink in West Monroe) by hand with pickup at the store, plus what to settle with the shop first (cutoff, which styles, their price, minimums).
+- **Files:** [monetization/print-suppliers/README.md](../monetization/print-suppliers/README.md)
+
 ## 2026-11-25 16:14 CST · Printing plan: clothing by dropship only (Printify first); business cards on hold
 
 - **Asked for:** "i may have to hold off on business cards. cloudprinter seems more expensive / lets go into clothing for garments and stuff", then "i dont want to buy a printer at all.. dropshipping only ... i could use print shops nearby locally but i'd have to price them higher".
