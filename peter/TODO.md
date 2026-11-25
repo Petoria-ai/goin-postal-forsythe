@@ -2,7 +2,7 @@
 
 Ideas and projects Peter wants to do later. Each one has what it is, why it's waiting, and the steps when it's time. Finished items move to [EDIT-LOG.md](EDIT-LOG.md).
 
-> **Start here next time:** [P18, Anytime Mailbox on the website](#p18-anytime-mailbox-on-the-website) (Peter asked to be reminded, Nov 19 2026).
+> **Start here next time:** [P9, find printing suppliers](#p9-find-a-business-card-supplier-and-price-to-compete): Peter wants suppliers first, because the printing pages can only offer what the supplier can make (Nov 25 2026).
 
 | # | Item | Status | Waiting on |
 |---|---|---|---|
@@ -12,9 +12,10 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P4 | [Find a texting (SMS) platform for messages and marketing](#p4-find-a-texting-sms-platform-for-messages-and-marketing) | ⏳ Next to research | Pick the platform, then register the store's texting |
 | P5 | ["Sign in with Google"](#p5-sign-in-with-google) | ⏸ Later | The site's real web address, a privacy policy page, and Peter's Google setup |
 | P6 | [A fresher website theme](#p6-a-fresher-website-theme) | ✅ Done Nov 14: Theme B | A larger logo file from franchise support would be sharper |
-| P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
+| P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏸ On hold Nov 25 (steps 1, 2, 2b ✅) | The supplier (P9): the pages can only offer what the supplier makes |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
-| P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ **Next** (Peter, Nov 25): suppliers for all the printing | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P20 | [Website security check-up (and the headless Shopify idea)](#p20-website-security-check-up-and-the-headless-shopify-idea) | ⏳ Advice written Nov 25 | Peter to pick which steps; William for the Cloudflare ones |
 | P19 | [Tidy up the staff menu](#p19-tidy-up-the-staff-menu) | ✅ Done Nov 25: four dropdowns | Peter can still say which pages to drop |
 | P18 | [Anytime Mailbox on the website: their API and logo](#p18-anytime-mailbox-on-the-website) | ⏳ Tab, ID holds, key box, Test and read-only Sync built Nov 19; Peter to try his key | Anytime Mailbox: API access and logo permission |
 | P17 | [Mailbox service: rules to check and extras to add](#p17-mailbox-service-rules-to-check-and-extras-to-add) | ⏳ Some built Nov 18 | Postmaster, insurance agent, accountant, attorney |
@@ -222,6 +223,8 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 
 ## P7. Print & Promo online: the e-commerce side, first
 
+> **On hold** (2026-11-25 11:32 CST, Peter): "lets hold off on the business cards until i find the right supplier to do what I need". The supplier decides what the pages can offer, so P9 comes first.
+
 **Added:** 2026-11-14 18:59 CST. **Status:** next. **Peter's decision:** start with the e-commerce side (business cards, t-shirts, banners, business pens, mailboxes), make money with it, and only later take the smaller, safer step of online shipping labels (P8).
 
 **Why this first:** higher margins than a label; nobody price-shops a custom banner against Pirate Ship; it doesn't compete with the counter; every order is picked up in the store, which is a chance to sell more.
@@ -324,6 +327,28 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P20. Website security check-up (and the headless Shopify idea)
+
+**Added:** 2026-11-25 11:32 CST. **Status:** advice written; Peter to pick steps. **Peter:** "a buddy of mine said to possibly integrate with headless shopify to have their backend security features so we dont get hacked and such.. would like your input on whether thats needed or just extra stuff. if its simple to do definitely add to the to do list".
+
+### Is headless Shopify needed? Short answer: no, and it isn't simple.
+
+- **What it is:** Shopify runs the shop's back end (products, cart, checkout, customer logins) and our own pages sit in front. Its security covers what Shopify itself holds: its checkout, payments, and the products and customers stored in Shopify.
+- **Why it wouldn't protect us much:** the parts of this website worth attacking are ours, not a shop: the staff counter pages and their PINs, mailbox holders' IDs and 1583s, the Anytime Mailbox key, carrier and Stripe keys, labels and orders. Shopify wouldn't sit in front of any of those. Card payments already go through **Stripe's own page**, so card numbers never touch our website (the same protection Shopify's checkout would give).
+- **What it would cost:** a monthly Shopify plan (around $39 a month or more; check current prices), moving the print shop's products and checkout into Shopify, and two systems to keep in step. Weeks of work for little security gain.
+- **When Shopify could make sense later:** if the print and promo shop grows into a big catalog with stock and shipping rules, Shopify (headless or not) could run that **store**. That's a business choice for P7, not a security fix.
+
+### What would actually make the site safer (most are free or cheap)
+
+- [ ] **A sign-in wall in front of the staff pages** (Cloudflare Access, William): staff log in with their email (a code is emailed to them) before they even see a counter page, so a stranger can't try PINs at all. Cloudflare's free Zero Trust plan covers small teams (check current limits). **Biggest single win.**
+- [ ] **Personal PINs for everyone** on the Staff page, an **owner PIN** set on the live site, and the shared counter PIN retired. Each action is then logged under a real name.
+- [ ] **Slow down PIN guessing:** lock a PIN for a few minutes after several wrong tries (a small build; the staff sign-in doesn't limit tries today).
+- [ ] **Secrets stay secrets:** keys only through Cloudflare's secret settings or the owner-only key box (never in chat, email or the code); `DOCS_KEY` saved in a password manager.
+- [ ] **Two-step sign-in (2FA)** on every account that controls the business: Cloudflare, GitHub, Stripe, Anytime Mailbox, the domain, email.
+- [ ] **Cloudflare's firewall and rate limits** on the website's `/api/` addresses (William).
+- [ ] **Backups:** download Counter → Store → Export regularly and keep a copy off the website.
+- [ ] **A security review of the code** before going live (Claude can run one), and keep the site's packages updated.
 
 ## P19. Tidy up the staff menu
 
@@ -434,6 +459,8 @@ Why it helps: renewals and fees (overage, extra packages, storage) can always be
 - [ ] Check with the attorney that charging fees to a card kept "on file" is covered by what the customer signs.
 
 ## P14. Raise mailbox prices $2 to $5 each
+
+> **Update** (2026-11-25 11:32 CST, Peter): "possibly hold out on the mailbox prices. but im thinking im going to raise either the virtual mailboxes or physical mailbox prices." Physical box prices are one file on the website (`site/src/data/mailboxes.json`) plus the Prices tab in the register. **Virtual** prices are set in Anytime Mailbox's operator dashboard (their plans for this location), not on our website.
 
 **Added:** 2026-11-15 15:42 CST. **Status:** Peter hasn't picked the numbers yet. **Peter:** "raise my prices like 2-5 bucks each".
 

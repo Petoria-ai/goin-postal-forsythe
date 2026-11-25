@@ -4,6 +4,15 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 11:32 CST · To-do: security check-up (P20, the headless Shopify question), printing on hold for suppliers, prices note
+
+- **Asked for:** "add to the checklist. a buddy of mine said to possibly integrate with headless shopify to have their backend security features so we dont get hacked and such.. would like your input on whether thats needed or just extra stuff", "lets hold off on the business cards until i find the right supplier", "possibly hold out on the mailbox prices. but im thinking im going to raise either the virtual mailboxes or physical mailbox prices", and "i want to get into finding suppliers".
+- **What changed (to-do list only, nothing on the website):**
+  - **New P20, Website security check-up.** Headless Shopify isn't needed: it would only protect what Shopify itself holds, while the parts worth protecting here are the staff pages, IDs and keys, and cards already go through Stripe. The list of steps that do help: a Cloudflare sign-in wall in front of the staff pages, personal PINs, limiting PIN guesses, 2FA everywhere, firewall rules, backups, a code security review.
+  - **P7 (business cards) on hold** until a supplier is chosen; **P9 (suppliers) is next**, and "Start here next time" points to it.
+  - **P14:** Peter may raise virtual or physical prices; virtual prices are set in Anytime Mailbox's dashboard, physical in one website file.
+- **Files:** [TODO.md](TODO.md)
+
 ## 2026-11-25 11:31 CST · A card on file is required before any wall box starts (to-do P15)
 
 - **Asked for:** "I think card on file needs to 100% always be there before a mailbox starts. especially for physical. anytime mailbox already collects their info".
