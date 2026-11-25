@@ -1,0 +1,140 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import StaffNav from '../../components/StaffNav.astro';
+// Staff page: print orders made by Gelato (Peter, Nov 25 2026). Paid orders wait here until staff look at the
+// artwork and approve; approving sends the order to Gelato. Status and tracking come back by themselves (Gelato's
+// notices) or with Check status. The owner pastes Gelato's API key and switches real orders on here.
+---
+<Base title="Counter · Print orders">
+  <section class="hero">
+    <h1 data-i18n="st.po.h1">Print orders</h1>
+    <StaffNav />
+    <p class="lead" data-i18n="st.po.lead">Shirts, posters and flyers ordered online, made and shipped by Gelato. Look at each paid order's artwork, then approve it to send it to Gelato.</p>
+  </section>
+
+  <div class="card">
+    <p class="btnrow">
+      <label><span data-i18n="st.pin">Staff PIN</span> <input id="pin" type="password" inputmode="numeric" autocomplete="off" /></label>
+      <button class="btn" id="load" data-i18n="st.show">Show</button>
+    </p>
+    <p id="msg" role="alert"></p>
+  </div>
+
+  <div id="poMain" class="hidden">
+    <div class="card">
+      <p class="po-mode" id="poMode"></p>
+      <nav class="vm-tabs" id="poFilter">
+        <button type="button" class="vm-tab on" data-f="todo" data-i18n="st.po.f.todo">Waiting for approval</button>
+        <button type="button" class="vm-tab" data-f="open" data-i18n="st.po.f.open">At Gelato</button>
+        <button type="button" class="vm-tab" data-f="done" data-i18n="st.po.f.done">Done</button>
+        <button type="button" class="vm-tab" data-f="all" data-i18n="st.po.f.all">All</button>
+      </nav>
+      <ul id="poList" class="mb-check-out vm-list"></ul>
+    </div>
+
+    <div class="card vm-connect" id="poConnect">
+      <h3><span class="vm-badge">Gelato</span> <span data-i18n="st.vm.conn.h">Connection</span></h3>
+      <p id="poKeyInfo" class="vm-keyinfo"></p>
+      <form id="poKeyForm" class="vm-keyform" autocomplete="off" hidden>
+        <label><span data-i18n="st.po.key">Gelato API key</span> <input type="password" name="key" autocomplete="new-password" spellcheck="false" maxlength="500" /></label>
+        <button type="submit" class="btn small" data-i18n="st.vm.key.save">Save key</button>
+        <button type="button" class="btn small" id="poKeyRemove" data-i18n="st.vm.key.remove">Remove key</button>
+        <p class="muted small" data-i18n="st.vm.key.owner">Owner PIN only. The key is locked before it's saved and is never shown again, only its last four characters. Never paste it in chat or email.</p>
+      </form>
+      <p class="btnrow" id="poLiveRow" hidden><label class="check"><input type="checkbox" id="poLive" /> <strong data-i18n="st.po.live">Send real orders (Gelato prints, ships and bills)</strong></label></p>
+      <p class="muted small" id="poHook"></p>
+    </div>
+  </div>
+
+  <dialog id="poArtDlg" class="po-art-dlg">
+    <h3 data-i18n="st.po.art">Artwork</h3>
+    <div id="poArtImgs"></div>
+    <form method="dialog"><p class="btnrow"><button class="btn kraft" data-i18n="st.vm.danger.cancel">Close</button></p></form>
+  </dialog>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const pin = () => ($('pin') as HTMLInputElement).value;
+    const msg = $('msg');
+    const say = (text: string, err = false) => { msg.className = err ? 'err' : 'ok-msg'; msg.textContent = text; };
+    const usd = (n: number) => `$${Number(n).toFixed(2)}`;
+    async function api(extra: Record<string, unknown>) {
+      const res = await fetch('/api/print-staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin: pin(), ...extra }) });
+      const j = await res.json().catch(() => ({})); if (!res.ok) throw new Error(j.error ?? 'Try again'); return j;
+    }
+    const btn = (label: string, cls: string, fn: () => void) => { const b = document.createElement('button'); b.type = 'button'; b.className = `btn small ${cls}`; b.textContent = label; b.addEventListener('click', fn); return b; };
+    let data: any = null; let filter = 'todo';
+    const inFilter = (o: any) => filter === 'all' || (filter === 'todo' ? o.status === 'paid' : filter === 'open' ? ['sent', 'in_production', 'shipped'].includes(o.status) : ['delivered', 'cancelled'].includes(o.status));
+
+    function paint() {
+      const mode = data.mode;
+      const m = $('poMode'); m.className = `po-mode ${mode}`; m.textContent = t(`st.po.mode.${mode}`);
+      const ul = $('poList'); ul.innerHTML = '';
+      const list = data.orders.filter((o: any) => o.status !== 'awaiting_payment' && inFilter(o));
+      if (!list.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.chk.none'); ul.appendChild(li); }
+      for (const o of list) {
+        const li = document.createElement('li'); if (o.status === 'paid') li.classList.add('po-waiting');
+        const who = document.createElement('div');
+        who.innerHTML = '<strong></strong> <span class="mb-mail"></span><br /><span></span><br /><span class="muted small"></span>';
+        who.querySelector('strong')!.textContent = `${o.id} · ${o.customer.name}`;
+        who.querySelector('.mb-mail')!.textContent = t(`pod.s.${o.status}`);
+        who.querySelectorAll('span')[1].textContent = o.lines.map((l: any) => `${l.qty} × ${l.name}`).join(' · ');
+        const keep = o.subtotal - o.cost_estimate;
+        who.querySelectorAll('span')[2].textContent = [
+          tf('st.po.money', { total: usd(o.total), cost: usd(o.cost_estimate), keep: usd(keep) }),
+          o.ship_to === 'store' ? t('st.po.tostore') : `${t('st.po.tohome')} ${o.address.city}, ${o.address.state}`,
+          o.paid_at ? tf('st.po.paid', { date: o.paid_at.slice(0, 10) }) : '',
+          o.gelato ? `Gelato ${o.gelato.order_id} (${o.gelato.mode})` : '',
+          o.tracking?.code ? `${t('st.po.tracking')} ${o.tracking.code}` : '',
+          o.notes ? `“${o.notes}”` : '',
+        ].filter(Boolean).join(' · ');
+        li.appendChild(who);
+        li.append(btn(t('st.po.art'), 'kraft', () => showArt(o.id)));
+        if (o.status === 'paid') li.append(btn(t('st.po.approve'), '', async () => {
+          if (!confirm(tf(data.mode === 'live' ? 'st.po.approveq.live' : 'st.po.approveq', { id: o.id }))) return;
+          try { await api({ action: 'approve', id: o.id }); say(tf('st.po.sent', { id: o.id })); await load(); } catch (e: any) { say(e.message, true); }
+        }));
+        if (o.gelato && !['delivered', 'cancelled'].includes(o.status)) li.append(btn(t('st.po.refresh'), 'kraft', async () => {
+          try { await api({ action: 'refresh', id: o.id }); await load(); } catch (e: any) { say(e.message, true); }
+        }));
+        if (o.status === 'paid' && data.can_manager) li.append(btn(t('st.po.cancel'), 'kraft', async () => {
+          const reason = prompt(t('st.po.cancelq')); if (reason === null) return;
+          try { const r = await api({ action: 'cancel', id: o.id, reason }); say(r.refund ? t('st.po.refund') : t('st.po.cancelled')); await load(); } catch (e: any) { say(e.message, true); }
+        }));
+        if (o.tracking?.url) { const a = document.createElement('a'); a.className = 'btn small kraft'; a.href = o.tracking.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = t('pod.track'); li.append(a); }
+        ul.appendChild(li);
+      }
+      // The connection: who saved the key, the owner's key box, the real-orders switch.
+      const k = data.key;
+      $('poKeyInfo').textContent = k.source === 'server' ? tf('st.vm.key.server', { last4: k.last4 }) : k.source === 'site' ? tf('st.vm.key.on', { last4: k.last4, by: k.by ?? '', date: String(k.at ?? '').slice(0, 10) }) : t('st.po.nokey');
+      ($('poKeyForm') as HTMLFormElement).hidden = !data.can_owner; $('poKeyRemove').hidden = k.source !== 'site';
+      $('poLiveRow').hidden = !data.can_owner || mode === 'pretend'; ($('poLive') as HTMLInputElement).checked = mode === 'live';
+      $('poHook').textContent = tf('st.po.hook', { url: `${location.origin}/api/gelato-webhook` });
+    }
+    async function showArt(id: string) {
+      try {
+        const j = await api({ action: 'art', id }); const box = $('poArtImgs'); box.innerHTML = '';
+        for (const a of j.art) { const f = document.createElement('figure'); const img = document.createElement('img'); img.src = a.url; img.alt = a.file; img.className = 'po-art-img'; const c = document.createElement('figcaption'); c.textContent = `${a.file} · ${a.w} × ${a.h} px`; f.append(img, c); box.appendChild(f); }
+        ($('poArtDlg') as HTMLDialogElement).showModal();
+      } catch (e: any) { say(e.message, true); }
+    }
+    async function load() {
+      try { data = await api({ action: 'list' }); $('poMain').classList.remove('hidden'); paint(); } catch (e: any) { say(e.message, true); }
+    }
+    $('load').addEventListener('click', load);
+    $('pin').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') load(); });
+    $('poFilter').addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest('button'); if (!b) return; filter = b.dataset.f!; $('poFilter').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); paint(); });
+    ($('poKeyForm') as HTMLFormElement).addEventListener('submit', async (ev) => {
+      ev.preventDefault(); const input = ($('poKeyForm') as HTMLFormElement).elements.namedItem('key') as HTMLInputElement;
+      try { await api({ action: 'key_save', key: input.value }); input.value = ''; say(t('st.vm.key.saved')); await load(); } catch (e: any) { say(e.message, true); }
+    });
+    $('poKeyRemove').addEventListener('click', async () => { if (!confirm(tf('st.vm.key.removeq', { provider: 'Gelato' }))) return; try { await api({ action: 'key_remove' }); say(t('st.vm.key.removed')); await load(); } catch (e: any) { say(e.message, true); } });
+    $('poLive').addEventListener('change', async () => {
+      const on = ($('poLive') as HTMLInputElement).checked;
+      if (on && !confirm(t('st.po.liveq'))) { ($('poLive') as HTMLInputElement).checked = false; return; }
+      try { await api({ action: 'set_live', on }); await load(); } catch (e: any) { say(e.message, true); }
+    });
+  </script>
+</Base>

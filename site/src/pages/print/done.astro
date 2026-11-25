@@ -1,0 +1,37 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
+// After paying for a print order (Peter, Nov 25 2026): the order number, what happens next, and its status.
+---
+<Base title={`Thank you · ${store.name}`} description="Your print order is paid. We check it, then it's printed and shipped.">
+  <section class="hero">
+    <h1 data-i18n="pod.h1">Thank you, your order is in</h1>
+    <p class="lead" data-i18n="pod.lead">We check every order before it goes to the printer, usually the same business day. You'll get an email when it ships.</p>
+  </section>
+  <div class="card" id="podCard">
+    <p><strong data-i18n="pod.number">Order number</strong> <span id="podId"></span></p>
+    <p><strong data-i18n="pod.status">Status</strong> <span id="podStatus"></span></p>
+    <div id="podLines"></div>
+    <p id="podTrack" hidden><a id="podTrackLink" target="_blank" rel="noopener" data-i18n="pod.track">Track the package</a></p>
+    <p class="btnrow"><a class="btn kraft" href="/print" data-i18n="pod.more">Order something else</a> <a class="btn kraft" href="/account" data-i18n="nav.account">Account</a></p>
+    <p id="podMsg" role="alert"></p>
+  </div>
+  <script>
+    import { t } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const id = new URLSearchParams(location.search).get('order') ?? '';
+    $('podId').textContent = id;
+    (async () => {
+      const r = await fetch('/api/print-orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'get', order: id }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { $('podMsg').textContent = j.error ?? ''; return; }
+      const o = j.order;
+      $('podStatus').textContent = t(`pod.s.${o.status}`);
+      const lines = $('podLines');
+      for (const l of o.lines) { const p = document.createElement('p'); p.textContent = `${l.qty} × ${l.name}`; lines.appendChild(p); }
+      const tot = document.createElement('p'); tot.innerHTML = '<strong></strong> '; tot.querySelector('strong')!.textContent = t('po.total'); tot.append(`$${o.total.toFixed(2)}`); lines.appendChild(tot);
+      if (o.tracking?.url) { $('podTrack').hidden = false; ($('podTrackLink') as HTMLAnchorElement).href = o.tracking.url; }
+    })();
+  </script>
+</Base>

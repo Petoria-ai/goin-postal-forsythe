@@ -1188,6 +1188,30 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-addbox > summary { cursor: pointer; list-style: revert; }
 .vm-addbox > summary h3 { display: inline; }
 .vm-check { margin-top: 1rem; }
+/* Print orders made by Gelato (Nov 25 2026). */
+.po-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1rem; }
+.po-grid { align-items: start; }
+.po-swatches { display: flex; flex-wrap: wrap; gap: .6rem; }
+.po-swatch { display: flex; align-items: center; gap: .35rem; cursor: pointer; }
+.po-swatch input { position: absolute; opacity: 0; }
+.po-swatch span { width: 1.8rem; height: 1.8rem; border-radius: 50%; border: 2px solid #c9c1b2; display: inline-block; }
+.po-swatch input:checked + span { outline: 3px solid #1d2a5c; outline-offset: 2px; }
+.po-swatch input:focus-visible + span { outline: 3px solid #d0312d; }
+.po-choices { display: grid; gap: .2rem; }
+.po-sizes { display: flex; flex-wrap: wrap; gap: .5rem 1rem; }
+.po-sizes label { display: flex; align-items: center; gap: .3rem; }
+.po-sizes input { width: 4.2rem; }
+.po-addr { display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: .25rem .75rem; }
+.po-canvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; background: #f4efe4; border-radius: 12px; }
+.po-sharp { font-weight: 700; margin: .25rem 0; }
+.po-sharp.good { color: #1f6b46; } .po-sharp.ok { color: #9a6a00; } .po-sharp.low { color: #b3261e; }
+.po-total td:last-child, .po-total th:last-child { text-align: right; }
+.po-total tfoot th { font-size: 1.15rem; }
+.po-mode { font-weight: 700; padding: .5rem .75rem; border-radius: 10px; }
+.po-mode.pretend { background: #eef2fb; color: #1d2a5c; } .po-mode.draft { background: #fff6d6; color: #6b4e00; } .po-mode.live { background: #e7f5ec; color: #1f6b46; }
+.po-waiting { border-left: 4px solid #d0312d; }
+.po-art-dlg { max-width: min(90vw, 760px); }
+.po-art-img { max-width: 100%; max-height: 60vh; background: repeating-conic-gradient(#eee 0 25%, #fff 0 50%) 0 0 / 16px 16px; border: 1px solid #ddd; }
 /* Staying signed in (Nov 25 2026): the countdown window and the signed-in chip. */
 .ss-dlg { max-width: 26rem; border: 3px solid #1d2a5c; border-radius: 14px; text-align: center; }
 .ss-clock { font-size: 3rem; font-weight: 800; margin: .25rem 0; font-variant-numeric: tabular-nums; color: #1d2a5c; }

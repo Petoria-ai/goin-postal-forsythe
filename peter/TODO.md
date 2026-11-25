@@ -15,6 +15,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏸ On hold Nov 25 (steps 1, 2, 2b ✅) | The supplier (P9): the pages can only offer what the supplier makes |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ **Next** (Peter, Nov 25): suppliers for all the printing | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P23 | [Gelato print orders: go live](#p23-gelato-print-orders-go-live) | ⏳ Built in test mode Nov 25 | Peter's Gelato key, Gelato's product codes, real prices, Stripe live |
 | P22 | [Printify or Printful for cheaper shirts (later)](#p22-printify-or-printful-for-cheaper-shirts-later) | ⏸ Later | Gelato running first; then compare costs |
 | P21 | [Fulfillment for local sellers (built, turned off)](#p21-fulfillment-for-local-sellers-built-turned-off) | ⏸ Later | Shelf space for other people's stock; PeterShip making labels |
 | P20 | [Website security check-up (and the headless Shopify idea)](#p20-website-security-check-up-and-the-headless-shopify-idea) | ⏳ Advice written Nov 25 | Peter to pick which steps; William for the Cloudflare ones |
@@ -331,6 +332,22 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P23. Gelato print orders: go live
+
+**Added:** 2026-11-25 16:39 CST. **Status:** built in test mode (Peter: "its more about executing the job").
+
+**Built** ✅: `/print` for customers (t-shirts, posters, flyers; presets, preview, sharpness check, Stripe), Counter → Customers → **Print orders** for staff (approve, artwork, status, cancel), Gelato in pretend / draft / live modes. Prices and products are in `site/src/data/printProducts.json`.
+
+**To go live:**
+- [ ] **Peter:** a Gelato account; create an **API key** (Developer → API keys) and paste it on Counter → Print orders with the owner PIN (never in chat). The banner turns to DRAFTS.
+- [ ] **Gelato's product codes:** for each product (the t-shirt by size and color, each poster and flyer size), copy Gelato's product code into `gelato_uid` in `printProducts.json`, or send them to Claude. The ones there now are best guesses of Gelato's format.
+- [ ] **Prices:** the t-shirt ($24.99), posters ($19.99 to $39.99), flyers ($19.99 to $89.99) and $6.99 shipping are starting guesses; set them from Gelato's real costs (the staff page shows about what's kept on each order).
+- [ ] **A test in DRAFTS:** place an order on the website, approve it, and check that it shows in Gelato's dashboard as a draft with the right product and artwork.
+- [ ] **The webhook:** paste the address the staff page shows into Gelato (Developer → Webhooks).
+- [ ] **Stripe live** (the website's payments) and then the **Send real orders** switch.
+- [ ] **The embroidered item:** pick it in Gelato's catalog, fill in its code and turn it on (`active: true`).
+- [ ] Order one sample of each product for the counter, to show customers.
 
 ## P22. Printify or Printful for cheaper shirts (later)
 

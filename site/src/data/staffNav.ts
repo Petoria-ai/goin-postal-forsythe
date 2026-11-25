@@ -28,6 +28,7 @@ export const STAFF_NAV: NavGroup[] = [
     { href: '/counter/customers', key: 'st.nav.customers', label: 'Customers' },
     { href: '/counter/accounts', key: 'st.nav.accounts', label: 'Accounts' },
     { href: '/counter/invoices', key: 'st.nav.invoices', label: 'Invoices' },
+    { href: '/counter/print', key: 'st.nav.printorders', label: 'Print orders' },
   ] },
   { key: 'st.nav.g.store', label: 'Store', links: [
     { href: '/counter/close', key: 'st.nav.close', label: 'End of day' },

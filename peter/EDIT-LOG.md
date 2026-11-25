@@ -4,6 +4,25 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 16:39 CST · Gelato print orders, stage 2: the order page and Counter → Print orders (test mode)
+
+- **Asked for:** carrying on with "its more about executing the job" (Gelato for shirts, posters and flyers).
+- **What changed:**
+  - **New customer page `/print`** ("Order shirts, posters & flyers online" in the **Printing** menu), with a tab per product:
+    - **T-shirt:** a color swatch, where the design goes (front center, left chest, or nothing on the front; plus the back), how many of each size (up to 12 online; more says to ask for a bulk quote).
+    - **Poster / Flyers:** a size and a quantity, each showing its price.
+    - **Your design:** a PNG or JPEG. A **live preview** (the shirt in its color with the logo in place, or the poster cropped to the paper) and a **sharpness check**: green "Sharp", yellow "A little soft", or red "Too blurry to print", which blocks ordering.
+    - **Delivery:** shipped to the store for pickup, or to their address.
+    - **The price** with shipping, tax and the online fee, then **Check out** on Stripe's page (sign-in needed). The thank-you page shows the order number and status.
+    - The page makes the print files itself: each shirt side's whole print area at 150 dots per inch, or the poster or flyer cropped to the paper.
+  - **New staff page Counter → Customers → Print orders:**
+    - A banner says the mode: **TEST MODE** (no Gelato key yet), **DRAFTS** (key saved; Gelato gets drafts it doesn't print or charge), or **LIVE**.
+    - Tabs: **Waiting for approval**, **At Gelato**, **Done**, **All**. Each order shows what was ordered, what was paid, Gelato's estimated cost and about what the store keeps, delivery, and buttons: **Artwork** (see the files), **Approve and send to Gelato**, **Check status**, **Cancel** (manager or owner, before it's sent; refund it in Stripe).
+    - **Connection** (owner PIN): paste the Gelato API key, and the **Send real orders** switch. It also shows the webhook address to paste into Gelato's dashboard so status and tracking come back by themselves.
+  - Wording in all 14 languages.
+- **Files:** new [site/src/pages/print/index.astro](../site/src/pages/print/index.astro), [site/src/pages/print/done.astro](../site/src/pages/print/done.astro), [site/src/pages/counter/print.astro](../site/src/pages/counter/print.astro); [site/src/layouts/Base.astro](../site/src/layouts/Base.astro) (Printing menu), [site/src/data/staffNav.ts](../site/src/data/staffNav.ts), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/src/styles/global.css](../site/src/styles/global.css)
+- **How to check it:** `git pull`, `npm run dev` (no new tables). Signed in on the website, Printing → **Order shirts, posters & flyers online**; then Counter → Customers → **Print orders** with your PIN.
+
 ## 2026-11-25 16:30 CST · Gelato print orders, stage 1: the behind-the-scenes part (test mode)
 
 - **Asked for:** "at this current time. its more about executing the job" (start Gelato with t-shirts, posters and flyers).

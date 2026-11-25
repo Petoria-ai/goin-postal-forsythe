@@ -142,6 +142,10 @@ flowchart TD
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
+## Built so far
+
+- ✅ 2026-11-25 16:39 CST: **Gelato print orders in test mode** (to-do P23): `/print` for customers (t-shirts, posters, flyers with presets, a live preview, a sharpness check and Stripe checkout) and Counter → Customers → **Print orders** for staff (artwork, approve and send, status, cancel; the owner's Gelato key and the real-orders switch). Gelato runs in pretend mode until a key is saved, then drafts until real orders are switched on.
+
 ## What to build, in order
 
 1. **Now, no code:** trade accounts and sample kits from all five; a price sheet for the same 6 to 8 items from each (below).

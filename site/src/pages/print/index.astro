@@ -1,0 +1,277 @@
+---
+export const prerender = false;
+import Base from '../../layouts/Base.astro';
+import { store } from '../../data/store';
+import { env } from '../../lib/env';
+import { readSession } from '../../lib/session';
+import { getCustomer } from '../../shipping/store';
+// Order printed products online, made by Gelato (Peter, Nov 25 2026; plan in monetization/print-suppliers/).
+// Customers only pick presets from src/data/printProducts.json: a product, its color, size and quantity, where the
+// design goes, and their picture. The page shows a preview, checks the picture is sharp enough, and makes the
+// print file (a shirt's print area, or a poster or flyer cropped to the paper). Paying opens Stripe's page; staff
+// approve every order before it goes to Gelato.
+const meId = await readSession(env, Astro.request.headers.get('cookie')).catch(() => null);
+const me = meId ? await getCustomer(env, meId) : null;
+const want = Astro.url.searchParams.get('product') ?? '';
+---
+<Base title={`Order shirts, posters and flyers · ${store.name}`} description="Design a custom t-shirt, poster or flyer online: pick from simple choices, add your picture, see a preview, and pay. Printed and shipped to you or to the store.">
+  <section class="hero">
+    <p class="ps-kicker"><a href="/printing" data-i18n="nav.printing">Printing</a></p>
+    <h1 data-i18n="po.h1">Order shirts, posters and flyers</h1>
+    <p class="lead" data-i18n="po.lead">Pick what you want, add your logo or picture, and see it before you pay. We check every order before it's printed, then it's shipped to you or to the store for pickup.</p>
+  </section>
+
+  <div class="po-tabs" id="poTabs" role="tablist" data-want={want}></div>
+
+  <div class="grid po-grid">
+    <div class="card">
+      <form id="poForm" autocomplete="off">
+        <!-- Shirts -->
+        <div id="poApparel" hidden>
+          <h3 data-i18n="po.color">Color</h3>
+          <div id="poColors" class="po-swatches"></div>
+          <h3 data-i18n="po.where">Where the design goes</h3>
+          <div class="po-choices">
+            <label class="check"><input type="radio" name="frontspot" value="front" checked /> <span data-i18n="po.front">Front, center (big)</span></label>
+            <label class="check"><input type="radio" name="frontspot" value="chest" /> <span data-i18n="po.chest">Front, left chest (small)</span></label>
+            <label class="check"><input type="radio" name="frontspot" value="none" /> <span data-i18n="po.nofront">Nothing on the front</span></label>
+            <label class="check"><input type="checkbox" id="poBack" /> <span data-i18n="po.back">Back (big)</span> <span class="muted small" id="poBackExtra"></span></label>
+          </div>
+          <h3 data-i18n="po.sizes">Sizes and how many</h3>
+          <div id="poSizes" class="po-sizes"></div>
+          <p class="muted small" id="poMax"></p>
+        </div>
+        <!-- Posters and flyers -->
+        <div id="poFlat" hidden>
+          <label><span data-i18n="po.size">Size</span> <select id="poSize"></select></label>
+          <label><span data-i18n="po.qty">How many</span> <select id="poQty"></select></label>
+        </div>
+
+        <h3 data-i18n="po.art">Your design</h3>
+        <p class="muted small" data-i18n="po.arthelp">A PNG or JPEG picture. For shirts, a logo with a clear (transparent) background looks best. Bigger pictures print sharper.</p>
+        <div id="poArtFront" class="po-art">
+          <label><span id="poArtFrontLabel" data-i18n="po.artfile">Picture</span> <input type="file" accept="image/png,image/jpeg" id="poFileFront" /></label>
+          <p class="po-sharp" id="poSharpFront" aria-live="polite"></p>
+        </div>
+        <div id="poArtBack" class="po-art" hidden>
+          <label><span data-i18n="po.artback">Picture for the back</span> <input type="file" accept="image/png,image/jpeg" id="poFileBack" /></label>
+          <p class="po-sharp" id="poSharpBack" aria-live="polite"></p>
+        </div>
+
+        <h3 data-i18n="po.delivery">Delivery</h3>
+        <label class="check"><input type="radio" name="shipto" value="store" checked /> <span data-i18n="po.pickup">Ship it to the store; I'll pick it up</span></label>
+        <label class="check"><input type="radio" name="shipto" value="home" /> <span data-i18n="po.home">Ship it to my address</span></label>
+        <div id="poAddr" class="po-addr" hidden>
+          <label><span data-i18n="po.a.name">Name</span> <input name="a_name" maxlength="60" autocomplete="name" /></label>
+          <label><span data-i18n="po.a.line1">Street address</span> <input name="a_line1" maxlength="80" autocomplete="address-line1" /></label>
+          <label><span data-i18n="po.a.line2">Apartment, suite (optional)</span> <input name="a_line2" maxlength="80" autocomplete="address-line2" /></label>
+          <label><span data-i18n="po.a.city">City</span> <input name="a_city" maxlength="40" autocomplete="address-level2" /></label>
+          <label><span data-i18n="po.a.state">State</span> <input name="a_state" maxlength="2" autocomplete="address-level1" placeholder="LA" /></label>
+          <label><span data-i18n="po.a.zip">ZIP</span> <input name="a_zip" maxlength="10" inputmode="numeric" autocomplete="postal-code" /></label>
+        </div>
+        <label><span data-i18n="po.notes">Anything we should know? (optional)</span> <input name="notes" maxlength="300" /></label>
+      </form>
+    </div>
+
+    <div class="card po-side">
+      <h3 data-i18n="po.preview">Preview</h3>
+      <canvas id="poCanvas" class="po-canvas" width="480" height="560" aria-label="Preview of your design"></canvas>
+      <p class="muted small" data-i18n="po.previewnote">Colors on paper and fabric look a little darker than on a screen.</p>
+      <div id="poQuote" class="po-quote"></div>
+      {me
+        ? <p class="btnrow"><button type="button" class="btn" id="poOrder" data-i18n="po.order">Check out</button></p>
+        : <div class="gate"><p data-i18n="po.signin">Sign in to order (your account gives the receipt email and pickup name).</p>
+            <p class="btnrow"><a class="btn" href="/account?next=%2Fprint" data-i18n="acct.signin">Sign in</a> <a class="btn kraft" href="/account?next=%2Fprint" data-i18n="acct.create">Create an account</a></p></div>}
+      <p id="poMsg" role="alert"></p>
+      <p class="muted small" data-i18n="po.howlong">Most orders arrive in about a week. Need it sooner, or more than 12 shirts? Call or stop by for a rush or bulk quote.</p>
+    </div>
+  </div>
+
+  <script>
+    import { t, tf } from '../../i18n';
+    const $ = (id: string) => document.getElementById(id)!;
+    const usd = (n: number) => `$${n.toFixed(2)}`;
+    let cat: any = null; let product: any = null;
+    const imgs: Record<string, HTMLImageElement | null> = { front: null, back: null };
+    const msg = $('poMsg');
+    const say = (text: string, err = false) => { msg.className = err ? 'err' : 'ok-msg'; msg.textContent = text; };
+    const post = async (body: any) => { const r = await fetch('/api/print-orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const j = await r.json().catch(() => ({})); return { ok: r.ok, status: r.status, j }; };
+
+    // ---- the choices ---------------------------------------------------------------------------------------
+    function picks(): any {
+      if (product.kind === 'flat') return { size: ($('poSize') as HTMLSelectElement).value, quantity: Number(($('poQty') as HTMLSelectElement).value) };
+      const fs = (document.querySelector('input[name=frontspot]:checked') as HTMLInputElement).value;
+      const spots = [...(fs === 'none' ? [] : [fs]), ...(($('poBack') as HTMLInputElement).checked ? ['back'] : [])];
+      const sizes: Record<string, number> = {};
+      document.querySelectorAll<HTMLInputElement>('#poSizes input').forEach((i) => { const n = Number(i.value); if (n > 0) sizes[i.dataset.size!] = n; });
+      return { color: (document.querySelector('input[name=color]:checked') as HTMLInputElement)?.value, spots, sizes };
+    }
+    function paintProduct() {
+      $('poApparel').hidden = product.kind !== 'apparel'; $('poFlat').hidden = product.kind !== 'flat';
+      if (product.kind === 'apparel') {
+        const sw = $('poColors'); sw.innerHTML = '';
+        product.colors.forEach((c: any, i: number) => {
+          const l = document.createElement('label'); l.className = 'po-swatch'; l.title = c.name;
+          l.innerHTML = `<input type="radio" name="color" value="${c.id}" ${i === 0 ? 'checked' : ''} /><span style="background:${c.hex}"></span>`;
+          l.append(c.name); sw.appendChild(l);
+        });
+        const sz = $('poSizes'); sz.innerHTML = '';
+        for (const s of product.sizes) {
+          const l = document.createElement('label'); l.innerHTML = `<span></span> <input type="number" min="0" max="${cat.max_quantity_online}" value="0" inputmode="numeric" data-size="${s.id}" />`;
+          l.querySelector('span')!.textContent = s.big ? `${s.name} (+${usd(product.big_size_extra)})` : s.name; sz.appendChild(l);
+        }
+        $('poBackExtra').textContent = product.extra_spot ? tf('po.extra', { amount: usd(product.extra_spot) }) : '';
+        $('poMax').textContent = tf('po.max', { n: cat.max_quantity_online });
+      } else {
+        const s = $('poSize') as HTMLSelectElement; s.innerHTML = '';
+        for (const z of product.sizes) { const o = document.createElement('option'); o.value = z.id; o.textContent = z.name; s.appendChild(o); }
+        paintQty();
+      }
+      $('poArtFrontLabel').textContent = product.kind === 'apparel' ? t('po.artfront') : t('po.artfile');
+      onChange();
+    }
+    function paintQty() {
+      const z = product.sizes.find((x: any) => x.id === ($('poSize') as HTMLSelectElement).value);
+      const q = $('poQty') as HTMLSelectElement; q.innerHTML = '';
+      for (const [n, price] of Object.entries(z.prices)) { const o = document.createElement('option'); o.value = n; o.textContent = `${n} · ${usd(price as number)}`; q.appendChild(o); }
+    }
+
+    // ---- sharpness and the print file ----------------------------------------------------------------------
+    const spotOf = (id: string) => product.spots.find((s: any) => s.id === id);
+    /** Where a picture lands in a spot's print area, in inches, fitted inside the spot's box and kept in proportion. */
+    function placed(img: HTMLImageElement, spot: any) {
+      const [cx, top, bw, bh] = spot.box; const W = spot.w_in * bw, H = spot.h_in * bh;
+      const s = Math.min(W / img.naturalWidth, H / img.naturalHeight);
+      const w = img.naturalWidth * s, h = img.naturalHeight * s;
+      return { x: spot.w_in * cx - w / 2, y: spot.h_in * top, w, h };
+    }
+    function sharp(px: number, inches: number) { const dpi = Math.floor(px / inches); return { dpi, level: dpi >= cat.good_dpi ? 'good' : dpi >= cat.min_dpi ? 'ok' : 'low' }; }
+    function sharpLine(el: HTMLElement, s: { dpi: number; level: string } | null) {
+      el.className = `po-sharp ${s?.level ?? ''}`;
+      el.textContent = !s ? '' : s.level === 'good' ? t('po.sharp.good') : s.level === 'ok' ? tf('po.sharp.ok', { dpi: s.dpi }) : tf('po.sharp.low', { dpi: s.dpi, min: cat.min_dpi });
+    }
+    function checks(): string | null { // null when the artwork is fine to order
+      if (product.kind === 'flat') {
+        const img = imgs.front; const z = product.sizes.find((x: any) => x.id === ($('poSize') as HTMLSelectElement).value);
+        if (!img) { sharpLine($('poSharpFront'), null); return t('po.need.art'); }
+        const crop = cropFor(img, z); const s = sharp(crop.sw, z.w_in); sharpLine($('poSharpFront'), s);
+        return s.level === 'low' ? t('po.need.sharper') : null;
+      }
+      const p = picks(); let problem: string | null = null;
+      const fs = p.spots.find((x: string) => x !== 'back');
+      for (const [side, spotId, el] of [['front', fs, $('poSharpFront')], ['back', p.spots.includes('back') ? 'back' : null, $('poSharpBack')]] as const) {
+        if (!spotId) { sharpLine(el as HTMLElement, null); continue; }
+        const img = imgs[side]; if (!img) { sharpLine(el as HTMLElement, null); problem ??= side === 'back' ? t('po.need.back') : t('po.need.art'); continue; }
+        const pl = placed(img, spotOf(spotId)); const s = sharp(img.naturalWidth, pl.w); sharpLine(el as HTMLElement, s);
+        if (s.level === 'low') problem ??= t('po.need.sharper');
+      }
+      return problem;
+    }
+    /** Poster and flyer: the middle of the picture cropped to the paper's shape. */
+    function cropFor(img: HTMLImageElement, z: any) {
+      const r = z.w_in / z.h_in; let sw = img.naturalWidth, sh = img.naturalHeight;
+      if (sw / sh > r) sw = Math.round(sh * r); else sh = Math.round(sw / r);
+      return { sx: Math.round((img.naturalWidth - sw) / 2), sy: Math.round((img.naturalHeight - sh) / 2), sw, sh };
+    }
+    /** The files the printer gets: each shirt side's whole print area at 150 dots per inch, or the cropped page. */
+    async function printFiles(): Promise<{ file: string; data: string }[]> {
+      const DPI = 150; const out: { file: string; data: string }[] = [];
+      if (product.kind === 'flat') {
+        const img = imgs.front!; const z = product.sizes.find((x: any) => x.id === ($('poSize') as HTMLSelectElement).value);
+        const c = cropFor(img, z); const dpi = Math.min(DPI, c.sw / z.w_in);
+        const cv = document.createElement('canvas'); cv.width = Math.round(z.w_in * dpi); cv.height = Math.round(cv.width * z.h_in / z.w_in);
+        cv.getContext('2d')!.drawImage(img, c.sx, c.sy, c.sw, c.sh, 0, 0, cv.width, cv.height);
+        out.push({ file: 'default', data: cv.toDataURL('image/jpeg', 0.92) }); return out;
+      }
+      const p = picks();
+      for (const spotId of p.spots) {
+        const spot = spotOf(spotId); const img = imgs[spot.file]!;
+        const cv = document.createElement('canvas'); cv.width = spot.w_in * DPI; cv.height = spot.h_in * DPI;
+        const pl = placed(img, spot); cv.getContext('2d')!.drawImage(img, pl.x * DPI, pl.y * DPI, pl.w * DPI, pl.h * DPI);
+        out.push({ file: spot.file, data: cv.toDataURL('image/png') });
+      }
+      return out;
+    }
+
+    // ---- the preview --------------------------------------------------------------------------------------
+    function preview() {
+      const cv = $('poCanvas') as HTMLCanvasElement; const g = cv.getContext('2d')!; g.clearRect(0, 0, cv.width, cv.height);
+      if (product.kind === 'flat') {
+        const z = product.sizes.find((x: any) => x.id === ($('poSize') as HTMLSelectElement).value);
+        const H = 480, W = H * z.w_in / z.h_in; const x0 = (cv.width - W) / 2, y0 = 40;
+        g.fillStyle = '#fff'; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 14; g.fillRect(x0, y0, W, H); g.shadowBlur = 0;
+        if (imgs.front) { const c = cropFor(imgs.front, z); g.drawImage(imgs.front, c.sx, c.sy, c.sw, c.sh, x0, y0, W, H); }
+        else { g.fillStyle = '#9a9a9a'; g.font = '16px sans-serif'; g.textAlign = 'center'; g.fillText(t('po.yourpic'), cv.width / 2, y0 + H / 2); }
+        return;
+      }
+      const color = product.colors.find((c: any) => c.id === picks().color)?.hex ?? '#fff';
+      // A plain shirt: body, sleeves and collar, with the front print area (11 × 14 in) drawn on its chest.
+      g.fillStyle = color; g.strokeStyle = '#7a7a7a'; g.lineWidth = 2; g.beginPath();
+      g.moveTo(150, 40); g.lineTo(70, 80); g.lineTo(20, 190); g.lineTo(90, 220); g.lineTo(110, 170); g.lineTo(110, 540); g.lineTo(370, 540);
+      g.lineTo(370, 170); g.lineTo(390, 220); g.lineTo(460, 190); g.lineTo(410, 80); g.lineTo(330, 40); g.quadraticCurveTo(240, 110, 150, 40); g.closePath(); g.fill(); g.stroke();
+      const area = { x: 145, y: 120, w: 190, h: 242 }; // 11 × 14 in on screen
+      const p = picks(); const fs = p.spots.find((x: string) => x !== 'back');
+      if (fs && imgs.front) { const pl = placed(imgs.front, spotOf(fs)); const k = area.w / 11; g.drawImage(imgs.front, area.x + pl.x * k, area.y + pl.y * k, pl.w * k, pl.h * k); }
+      else if (fs) { g.setLineDash([6, 5]); g.strokeStyle = '#999'; const sp = spotOf(fs); const [cx, top, bw, bh] = sp.box; const k = area.w / 11; g.strokeRect(area.x + (11 * cx - 11 * bw / 2) * k, area.y + 14 * top * k, 11 * bw * k, 14 * bh * k); g.setLineDash([]); }
+      if (p.spots.includes('back')) { g.fillStyle = '#555'; g.font = '14px sans-serif'; g.textAlign = 'center'; g.fillText(t('po.plusback'), 240, 520); }
+    }
+
+    // ---- price ----------------------------------------------------------------------------------------------
+    let quoteTimer = 0;
+    function onChange() {
+      $('poArtBack').hidden = !(product.kind === 'apparel' && ($('poBack') as HTMLInputElement).checked);
+      $('poArtFront').hidden = product.kind === 'apparel' && (document.querySelector('input[name=frontspot]:checked') as HTMLInputElement).value === 'none';
+      $('poAddr').hidden = (document.querySelector('input[name=shipto]:checked') as HTMLInputElement).value !== 'home';
+      if (msg.classList.contains('err')) { msg.textContent = ''; msg.className = ''; } // an old warning goes once anything changes
+      preview(); checks();
+      clearTimeout(quoteTimer); quoteTimer = window.setTimeout(quote, 250);
+    }
+    async function quote() {
+      const box = $('poQuote'); const r = await post({ action: 'quote', product: product.id, picks: picks() });
+      if (!r.ok) { box.innerHTML = ''; const p = document.createElement('p'); p.className = 'muted'; p.textContent = r.j.error ?? ''; box.appendChild(p); return; }
+      const rows = [...r.j.lines.map((l: any) => [`${l.qty} × ${l.name}`, l.amount]), [t('po.shipping'), r.j.shipping], ...(r.j.tax ? [[tf('po.tax', { pct: r.j.tax.percent }), r.j.tax.amount]] : []), ...(r.j.fee ? [[t('po.fee'), r.j.fee.amount]] : [])];
+      box.innerHTML = '<table class="list po-total"><tbody></tbody><tfoot><tr><th></th><th></th></tr></tfoot></table>';
+      const tb = box.querySelector('tbody')!;
+      for (const [k, v] of rows) { const tr = document.createElement('tr'); const a = document.createElement('td'); a.textContent = String(k); const b = document.createElement('td'); b.textContent = usd(Number(v)); tr.append(a, b); tb.appendChild(tr); }
+      const th = box.querySelectorAll('tfoot th'); th[0].textContent = t('po.total'); th[1].textContent = usd(r.j.total);
+    }
+    function loadFile(input: HTMLInputElement, side: 'front' | 'back') {
+      input.addEventListener('change', () => {
+        const f = input.files?.[0]; if (!f) return;
+        if (!/^image\/(png|jpeg)$/.test(f.type)) { say(t('po.need.type'), true); input.value = ''; return; }
+        const img = new Image(); img.onload = () => { imgs[side] = img; onChange(); }; img.src = URL.createObjectURL(f);
+      });
+    }
+
+    // ---- check out ------------------------------------------------------------------------------------------
+    async function order() {
+      const problem = checks(); if (problem) { say(problem, true); return; }
+      const btn = $('poOrder') as HTMLButtonElement; btn.disabled = true; say(t('po.sending'));
+      try {
+        const f = $('poForm') as HTMLFormElement; const v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value;
+        const shipTo = (document.querySelector('input[name=shipto]:checked') as HTMLInputElement).value;
+        const r = await post({ action: 'order', product: product.id, picks: picks(), art: await printFiles(), ship_to: shipTo, notes: v('notes'),
+          address: shipTo === 'home' ? { name: v('a_name'), line1: v('a_line1'), line2: v('a_line2'), city: v('a_city'), state: v('a_state'), zip: v('a_zip') } : undefined });
+        if (!r.ok) { say(r.j.error ?? t('po.tryagain'), true); btn.disabled = false; return; }
+        location.href = r.j.url;
+      } catch (e: any) { say(e.message, true); btn.disabled = false; }
+    }
+
+    (async () => {
+      const r = await post({ action: 'catalog' }); cat = r.j;
+      const tabs = $('poTabs'); const want = tabs.dataset.want;
+      product = cat.products.find((p: any) => p.id === want) ?? cat.products[0];
+      for (const p of cat.products) {
+        const b = document.createElement('button'); b.type = 'button'; b.className = `vm-tab${p.id === product.id ? ' on' : ''}`; b.textContent = p.name; b.setAttribute('role', 'tab');
+        b.addEventListener('click', () => { product = p; imgs.front = imgs.back = null; ($('poFileFront') as HTMLInputElement).value = ''; ($('poFileBack') as HTMLInputElement).value = ''; tabs.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); history.replaceState(null, '', `?product=${p.id}`); paintProduct(); });
+        tabs.appendChild(b);
+      }
+      paintProduct();
+      $('poForm').addEventListener('input', onChange); $('poForm').addEventListener('change', onChange);
+      $('poSize').addEventListener('change', () => { paintQty(); onChange(); });
+      loadFile($('poFileFront') as HTMLInputElement, 'front'); loadFile($('poFileBack') as HTMLInputElement, 'back');
+      document.getElementById('poOrder')?.addEventListener('click', order);
+      if (new URLSearchParams(location.search).has('cancelled')) say(t('po.cancelled'));
+    })();
+  </script>
+</Base>
