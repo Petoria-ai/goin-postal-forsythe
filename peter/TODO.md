@@ -15,6 +15,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏸ On hold Nov 25 (steps 1, 2, 2b ✅) | The supplier (P9): the pages can only offer what the supplier makes |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ **Next** (Peter, Nov 25): suppliers for all the printing | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P22 | [Printify or Printful for cheaper shirts (later)](#p22-printify-or-printful-for-cheaper-shirts-later) | ⏸ Later | Gelato running first; then compare costs |
 | P21 | [Fulfillment for local sellers (built, turned off)](#p21-fulfillment-for-local-sellers-built-turned-off) | ⏸ Later | Shelf space for other people's stock; PeterShip making labels |
 | P20 | [Website security check-up (and the headless Shopify idea)](#p20-website-security-check-up-and-the-headless-shopify-idea) | ⏳ Advice written Nov 25 | Peter to pick which steps; William for the Cloudflare ones |
 | P19 | [Tidy up the staff menu](#p19-tidy-up-the-staff-menu) | ✅ Done Nov 25: four dropdowns | Peter can still say which pages to drop |
@@ -330,6 +331,19 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P22. Printify or Printful for cheaper shirts (later)
+
+**Added:** 2026-11-25 16:24 CST. **Status:** later. **Peter:** "lets put printify/printful on the possible to do list in the future. at this current time. its more about executing the job and then we can start cost reducing once things are being ran".
+
+**The idea:** Gelato runs everything first (posters, flyers, shirts, embroidery on select items; see [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md)). Once orders come in regularly, move shirts (or only the best sellers) to a cheaper or better service:
+- **Printify:** the lowest shirt prices (about $7 to $11 for a basic tee by reviewers' counts), many print shops to pick from (choose one near Louisiana), embroidery as an add-on, an API.
+- **Printful:** higher prices, the most consistent quality and the best branding (inserts, labels, packing slips), embroidery, an API.
+
+**When it's time:**
+- [ ] Look at a few months of Gelato shirt orders: which styles sell, what each cost, what was kept.
+- [ ] Price the same shirts on Printify and Printful with shipping to Louisiana; order one sample from each.
+- [ ] If one saves enough per shirt, connect it (the website records which service makes each product, so it's one more connection, not a rebuild).
 
 ## P21. Fulfillment for local sellers (built, turned off)
 

@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 16:24 CST · To-do P22: Printify or Printful for cheaper shirts, later
+
+- **Asked for:** "lets put printify/printful on the possible to do list in the future. at this current time. its more about executing the job and then we can start cost reducing once things are being ran".
+- **What changed:** new to-do **P22**: Gelato runs everything first; once orders are regular, compare Printify and Printful for shirts and connect one if it saves enough. Nothing on the website changed.
+- **Files:** [TODO.md](TODO.md)
+
 ## 2026-11-25 16:23 CST · Printing plan: Gelato does embroidery; leaning Gelato for everything
 
 - **Asked for:** "im looking at gelato and then theres printful or printify.. i feel i realyl cant go wrong with them", then "gelato has embroidery on select items".
