@@ -38,6 +38,20 @@ Peter (November 25): "i dont have to use their vendors.. just options i can use.
 
 **What this changes:** 4over still fits best for paper products at trade prices with an API. **Gelato** is the easiest connection to build first and the best for posters and one-off prints, at a higher cost per piece; it could run the first automated products while 4over's API approval comes through. **Printful** covers merch with no minimums. SinaLite, Smartpress and 4OVER4 go on the price sheet.
 
+### Business cards: not on Gelato (Peter, November 25)
+
+Gelato's premium silk business cards were $1.81 for 10 (about 18¢ a card; $1.27 on sale, $1.45 with Gelato+). Against the website's card prices (`site/src/lib/cards.ts`: 100 for $24.99, 250 for $39.99, 500 for $59.99, 1,000 for $89.99) that loses money from 250 cards up, so **business cards stay off Gelato**. The website's own designer already does the customizing; cards need a printer that takes a finished PDF by API at trade prices:
+
+| Option | Price signal | API | Notes |
+|---|---|---|---|
+| **4over** | about 4¢ a card at volume (the October business-card plan) | Yes (products, options, quotes, orders, tracking; test mode) | Trade only; approval and a resale certificate |
+| **Cloudprinter** | from €1.53 for 50 cards (about 3¢ a card), about 2 days of production | Yes, on every plan including the free one, with live prices and shipping | The most Gelato-like for cards (200+ print shops, no minimums); check US production and shipping to Louisiana |
+| **Printograph** | trade prices | For higher-volume brokers | Later |
+| **Printful** | check | Yes | Sells business card sets |
+| **MOO** | retail | No public API | Ruled out |
+
+Next: free accounts at Cloudprinter and 4over, and prices for 250 and 500 cards (16 pt, two sides) shipped to Monroe; the shop's laser keeps the quick 100 and 250 runs.
+
 ### Which one prints what (a starting plan)
 
 ```mermaid
@@ -160,5 +174,6 @@ Found November 25, 2026; vendors' terms change, so confirm with each one.
 - Signs365: [Signs101: what is Signs365?](https://www.signs101.com/threads/what-is-signs365.167657), [Signs101: dropshipping](https://signs101.com/threads/dropshipping.147473), [Signs101: Signs 365 my new go-to for banners](https://www.signs101.com/threads/signs-365-my-new-go-to-for-banners.135551), [PrintPlanet: banners quote surprise](https://printplanet.com/threads/banners-quote-surprise.294581)
 - Signs2Trade: [Signs101 thread with a Signs2Trade representative](https://signs101.com/threads/signs2trade.135210/post-1306796), [Signs101: Signs2Trade photo examples](https://signs101.com/threads/signs2trade-photo-examples.130925)
 - Gelato branded packaging: [branded packaging](https://www.gelato.com/branded-packaging), [custom packaging](https://www.gelato.com/custom-packaging), [do you offer custom or branded packaging](https://support.gelato.com/en/articles/8996268-do-you-offer-custom-or-branded-packaging), [insert and label sizes](https://support.gelato.com/en/articles/8996258-what-are-the-size-and-shape-of-packaging-inserts-and-branded-labels), [one insert and one label per order](https://support.gelato.com/en/articles/8996257-can-i-include-multiple-packaging-inserts-or-multiple-branded-labels-in-the-same-order)
+- Business cards by API: [Cloudprinter business cards](https://www.cloudprinter.com/products/business-cards), [Cloudprinter print API](https://www.cloudprinter.com/print-api), [Cloudprinter plans](https://www.cloudprinter.com/service-and-print-api-levels), [Cloudprinter home](https://www.cloudprinter.com/), [Printful business cards](https://www.printful.com/ca/business-cards), [API Evangelist on MOO (no public API)](https://providers.apievangelist.com/providers/moo/), [APIs.io on MOO](https://apis.io/providers/moo/)
 - Outside the franchise list: [SinaLite about (trade-only, blind shipping, no branding)](https://sinalite.com/en_us/about), [SinaLite vs 4over offer page](https://offers.sinalite.com/better-than-4over/), [Gelato printing service and print API](https://gelato.com/printing-service), [Gelato API terms](https://gelato.com/en-US/legal/api-terms/), [Gelato pricing](https://www.gelato.com/resources/pricing), [Printful API](https://www.printful.com/de/api), [Smartpress print reseller program](https://smartpress.com/pages/print-reseller-program), [4OVER4 blind shipping](https://v2.4over4.com/benefit/blind-shipping)
 - Blind shipping in general: [PrintKEG: white label, blind and drop shipping](https://www.printkeg.com/blogs/tips/blind-shipping-drop-shipping-prints), [Wikipedia: trade printing](https://en.wikipedia.org/wiki/Trade_printing)

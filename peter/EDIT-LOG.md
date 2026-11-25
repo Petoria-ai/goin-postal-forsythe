@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 15:09 CST · Printing plan: business cards off Gelato; API printers for cards
+
+- **Asked for:** Gelato's business card price ($1.81 for 10), "lets skip business cards in gelato.. do you possibly have any ideas of what websites that have api, customizations similar to gelato but for business cards?"
+- **What changed (plan only):** a section in [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md#business-cards-not-on-gelato-peter-november-25): Gelato's cards lose money from 250 up at the website's prices, so cards stay off Gelato. Options with an API: **4over** (about 4¢ a card), **Cloudprinter** (from €1.53 for 50, free plan with API, most Gelato-like), Printograph (volume brokers), Printful (card sets); MOO has no public API. Next: price 250 and 500 cards from Cloudprinter and 4over.
+- **Files:** [monetization/print-suppliers/README.md](../monetization/print-suppliers/README.md)
+
 ## 2026-11-25 13:26 CST · Printing plan: Gelato's branded packaging
 
 - **Asked for:** "gelato looks pretty admn neat how it even does branded packaging included".
