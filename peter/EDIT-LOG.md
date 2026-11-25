@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 16:59 CST · A print catalog bar across the top of every page (like Vistaprint and 4over)
+
+- **Asked for:** "whats the best way arrange my website to advertise i do printing as well? instead of just having a 'Printing' tab", then (to the idea of a single shirt button) "that looks ghetto.. because some people may see it as just a building a shirt.. i like how vistaprint or 4over has their catalog all over the top".
+- **What changed:** a second row under the main menu on every page, a white bar with the whole print catalog: **Business Cards · T-Shirts & Apparel · Signs, Banners & Posters · Flyers & Marketing · Promo Products · All Printing**. Each opens a short menu on hover or keyboard focus (for example T-Shirts & Apparel: Design a custom t-shirt; Team, church & business orders (12+); Embroidered shirts & hats). The category you're in is underlined in red. On a phone it's one row that swipes sideways. Only what the store sells today is listed (designed online, or quoted in the store); a new product is one line in `site/src/data/printCatalog.ts`. In all 14 languages.
+- **Files:** new [site/src/data/printCatalog.ts](../site/src/data/printCatalog.ts), [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts)
+- **How to check it:** `git pull`, refresh any page.
+
 ## 2026-11-25 16:39 CST · Gelato print orders, stage 2: the order page and Counter → Print orders (test mode)
 
 - **Asked for:** carrying on with "its more about executing the job" (Gelato for shirts, posters and flyers).

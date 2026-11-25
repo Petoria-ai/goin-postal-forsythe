@@ -1188,6 +1188,24 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-addbox > summary { cursor: pointer; list-style: revert; }
 .vm-addbox > summary h3 { display: inline; }
 .vm-check { margin-top: 1rem; }
+/* The print catalog bar under the main menu (Nov 25 2026, like Vistaprint and 4over). */
+.catbar { background: #fff; border-top: 1px solid var(--hair, #e3d9c8); border-bottom: 1px solid var(--hair, #e3d9c8); }
+header.top .catbar-row { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: space-between; align-items: stretch; gap: .25rem; padding-top: 0; padding-bottom: 0; min-height: 0; }
+.cat-drop { position: relative; display: flex; }
+.cat-link { display: flex; align-items: center; padding: .7rem .6rem; font-weight: 700; color: var(--navy, #1d2a5c); text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; }
+.cat-link:hover, .cat-link:focus-visible, .cat-drop:focus-within > .cat-link, .cat-link[aria-current='page'] { border-bottom-color: #d0312d; color: #d0312d; }
+.cat-menu { display: none; position: absolute; top: 100%; left: 0; z-index: 55; min-width: 15rem; padding: 8px; background: #fff; border: 1px solid var(--hair, #e3d9c8); border-radius: 0 0 14px 14px; box-shadow: 0 12px 28px rgba(40, 30, 10, .16); }
+.cat-drop:last-child .cat-menu, .cat-drop:nth-last-child(2) .cat-menu { left: auto; right: 0; }
+.cat-drop:hover .cat-menu, .cat-drop:focus-within .cat-menu { display: grid; gap: 2px; }
+.cat-menu a { padding: 10px 12px; min-height: 44px; display: flex; align-items: center; border-radius: 10px; color: var(--navy, #1d2a5c); font-weight: 600; text-decoration: none; white-space: nowrap; }
+.cat-menu a:hover, .cat-menu a:focus-visible { background: var(--soft-blue, #e8eef9); }
+html:root[data-contrast="high"] .catbar, html:root[data-contrast="high"] .cat-menu { background: #000; border-color: #fff; }
+html:root[data-contrast="high"] .cat-link, html:root[data-contrast="high"] .cat-menu a { color: #fff; }
+@media (max-width: 900px) {
+  header.top .catbar-row { overflow-x: auto; justify-content: flex-start; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+  .cat-menu { display: none !important; }
+  .cat-link { padding: .6rem .7rem; font-size: .95rem; }
+}
 /* Print orders made by Gelato (Nov 25 2026). */
 .po-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 1rem; }
 .po-grid { align-items: start; }

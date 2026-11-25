@@ -15,6 +15,7 @@ const brandRest = store.headerLabel || store.name.replace(/^Goin' Postal\s*/i, '
 const here = Astro.url.pathname.replace(/\/$/, '') || '/';
 const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')) ? 'page' : undefined);
 import CarrierBadges from '../components/CarrierBadges.astro';
+import { PRINT_CATALOG } from '../data/printCatalog';
 ---
 <!doctype html>
 <html lang="en">
@@ -92,6 +93,19 @@ import CarrierBadges from '../components/CarrierBadges.astro';
           <a href="/account" aria-current={cur('/account')} data-i18n="nav.account">Account</a>
           <a href="/petership" aria-current={cur('/petership')} data-i18n="nav.about">About PeterShip</a>
         </nav>
+      </div>
+      <!-- The print catalog bar (Peter, Nov 25 2026: "i like how vistaprint or 4over has their catalog all over the top"):
+           every printing category on every page, each with a short menu (src/data/printCatalog.ts). On a phone it is one
+           row that swipes sideways; the menus open on hover or keyboard focus on wider screens. -->
+      <div class="catbar">
+        <div class="wrap catbar-row" role="navigation" aria-label="Print shop">
+          {PRINT_CATALOG.map((g) => (
+            <div class="cat-drop">
+              <a href={g.href} class="cat-link" aria-current={cur(g.href.split('?')[0]) ?? undefined} data-i18n={g.key}>{g.label}</a>
+              {g.items.length > 0 && <div class="cat-menu">{g.items.map((i) => <a href={i.href} data-i18n={i.key}>{i.label}</a>)}</div>}
+            </div>
+          ))}
+        </div>
       </div>
     </header>
     <main class="wrap" id="main">
