@@ -4,6 +4,22 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 11:24 CST · The staff menu tidied: four dropdowns (to-do P19)
+
+- **Asked for:** "lets go ahead and tidy up the menu" (P19: "this area looks alittle clunky").
+- **What changed:**
+  - The long "Staff: Queue · Batch · Fulfillment · …" line (19 links) is now **Counter** plus four dropdowns:
+    - **Shipping**: Queue, Drop-offs, Pickups, Scan a QR, Batch, Fulfillment, Exceptions, Claims.
+    - **Mailboxes**: Mailboxes, Virtual mail.
+    - **Customers**: Customers, Accounts, Invoices.
+    - **Store**: End of day, Reports, Prices, Staff, Settings, Export.
+  - The group of the page you're on is dark blue, and the page itself is bold in its list. One dropdown opens at a time; clicking elsewhere or Escape closes it. On a phone the list opens full width under the buttons.
+  - **Counter staff** (a personal counter PIN) don't see Prices, Staff, Settings or Export once they type their PIN; managers and owners see everything. Only the role is remembered for that browser tab, never the PIN. The pages still check the PIN themselves, as before. (The shared counter PIN counts as a manager when an owner PIN exists, so it still sees them.)
+  - The counter home page lists the pages in the same four groups.
+  - **One shared menu** now: adding a page is one line in `site/src/data/staffNav.ts` instead of editing 23 pages.
+- **Files:** new [site/src/components/StaffNav.astro](../site/src/components/StaffNav.astro), new [site/src/data/staffNav.ts](../site/src/data/staffNav.ts), all 23 pages in `site/src/pages/counter/`, [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [CLAUDE.md](../CLAUDE.md)
+- **How to check it:** `git pull`, refresh any counter page.
+
 ## 2026-11-24 16:18 CST · Deactivate and Delete at Anytime Mailbox switched on
 
 - **Asked for:** Peter sent the docs for Deactivate Renter (`POST /renters/{renter_id}/deactivate`) and Delete Renter (`DELETE /renters/{renter_id}`), each answering `{ "success": true }`.

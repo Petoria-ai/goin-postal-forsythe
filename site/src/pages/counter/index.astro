@@ -5,13 +5,8 @@ import Base from '../../layouts/Base.astro';
 // The counter's front door (v1.78.0): /counter from the footer's Staff link or typed in. The PIN is
 // checked once with the staff API's `me` and the page then lists every staff page with who you are
 // and your role. Each counter page still asks for the PIN in its own box; this page is the map.
-const PAGES: [string, string, string][] = [
-  ['/counter/queue', 'st.nav.queue', 'Queue'], ['/counter/batch', 'st.nav.batch', 'Batch'], ['/counter/fulfillment', 'st.nav.fulfillment', 'Fulfillment'],
-  ['/counter/pickups', 'st.nav.pickups', 'Pickups'], ['/counter/customers', 'st.nav.customers', 'Customers'], ['/counter/accounts', 'st.nav.accounts', 'Accounts'],
-  ['/counter/dropoff', 'st.nav.dropoffs', 'Drop-offs'], ['/counter/scan', 'st.nav.scan', 'Scan a QR'], ['/counter/exceptions', 'st.nav.exceptions', 'Exceptions'],
-  ['/counter/claims', 'st.nav.claims', 'Claims'], ['/counter/reports', 'st.nav.reports', 'Reports'], ['/counter/close', 'st.nav.close', 'End of day'],
-  ['/counter/invoices', 'st.nav.invoices', 'Invoices'], ['/counter/rules', 'st.nav.prices', 'Prices'], ['/counter/staff', 'st.nav.staff', 'Staff'], ['/counter/settings', 'st.nav.settings', 'Settings'], ['/counter/mailboxes', 'st.nav.mailboxes', 'Mailboxes'], ['/counter/virtual', 'st.nav.virtual', 'Virtual mail'], ['/counter/export', 'st.nav.export', 'Export'],
-];
+// The same groups as the staff menu (src/data/staffNav.ts).
+import { STAFF_NAV } from '../../data/staffNav';
 ---
 <Base title="Counter">
   <section class="hero">
@@ -25,7 +20,10 @@ const PAGES: [string, string, string][] = [
     </form>
     <div class="card hidden" id="pages">
       <p><strong data-i18n="st.in.hello">Signed in as</strong> <span id="who"></span></p>
-      <ul class="ps-links">{PAGES.map(([href, key, label]) => <li><a href={href} data-i18n={key}>{label}</a></li>)}</ul>
+      <div class="snav-home-groups">{STAFF_NAV.map((g) => (
+        <div><h3 data-i18n={g.key}>{g.label}</h3>
+          <ul class="ps-links">{g.links.map((l) => <li data-min={l.min}><a href={l.href} data-i18n={l.key}>{l.label}</a></li>)}</ul></div>
+      ))}</div>
     </div>
   </div>
   <script>
@@ -38,6 +36,10 @@ const PAGES: [string, string, string][] = [
       if (!res.ok) { msg.className = 'err'; msg.textContent = j.error || 'Wrong PIN'; return; }
       msg.textContent = '';
       $('who').textContent = `${j.user.name} (${j.user.role})`;
+      // Remember only the role for this tab, so the staff menu on each page hides manager-only pages from counter staff.
+      try { sessionStorage.setItem('staff_role', j.user.role); } catch {}
+      const rank: Record<string, number> = { counter: 1, manager: 2, owner: 3 };
+      for (const li of document.querySelectorAll<HTMLElement>('#pages li[data-min]')) li.hidden = (rank[j.user.role] ?? 0) < (rank[li.dataset.min!] ?? 9);
       $('pages').classList.remove('hidden');
       $('signin').classList.add('hidden');
     });

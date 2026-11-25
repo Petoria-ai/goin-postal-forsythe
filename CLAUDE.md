@@ -47,7 +47,7 @@ python scripts/check_designs.py                          # the design check CI r
 
 **Staff APIs** (`src/pages/api/*.ts`) take a JSON body with `action` and `pin`; call `authenticate(env, pin)` from `lib/auth.ts` (personal hashed PINs in the `staff` table, roles counter/manager/owner, shared `COUNTER_PIN`/`OWNER_PIN` as fallbacks) and write `logAudit(env, user, 'thing.verb', id, detail)` for anything that changes state. `api/account.ts` is the customer-side counterpart, authenticated by the session cookie from `lib/session.ts` (magic-link login). The public API for business accounts is `api/v1/[...path].ts` with Bearer `psk_` keys (`lib/apikeys.ts`); `public/openapi.json` documents it and `tests/openapi.test.ts` fails if the spec and the route's `path === '...'` branches disagree.
 
-**Counter pages** (`src/pages/counter/*.astro`) share a staff nav that is a literal line in every page, so adding a page means patching the nav in all of them. Page scripts fetch the staff APIs with the PIN stored in the browser.
+**Counter pages** (`src/pages/counter/*.astro`) share one staff menu, `components/StaffNav.astro` (four dropdowns built from `src/data/staffNav.ts`, also used by the counter home page), so adding a page means one line in `staffNav.ts`. Page scripts fetch the staff APIs with the PIN stored in the browser.
 
 **i18n.** Every customer-facing string is a key in `src/i18n/strings.ts` (14 languages, English first), staff strings in `staff.ts`/`staff2.ts`/`staff3.ts`. Markup uses `data-i18n="key"`; scripts use `t('key')`/`tf()`. Keys must be unique across all four files. New strings need all 14 languages.
 

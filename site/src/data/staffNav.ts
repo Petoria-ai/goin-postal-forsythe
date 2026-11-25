@@ -1,0 +1,35 @@
+// The staff menu (Peter, Nov 25 2026, to-do P19: "this area looks alittle clunky"): four groups instead of one line of
+// 20 links. Used by components/StaffNav.astro on every counter page and by the counter home page. To add a page, add
+// one line here. `min` hides a link from lower roles (the page itself still checks the PIN on every action).
+export type NavLink = { href: string; key: string; label: string; min?: 'manager' | 'owner' };
+export type NavGroup = { key: string; label: string; links: NavLink[] };
+
+export const STAFF_NAV: NavGroup[] = [
+  { key: 'st.nav.g.shipping', label: 'Shipping', links: [
+    { href: '/counter/queue', key: 'st.nav.queue', label: 'Queue' },
+    { href: '/counter/dropoff', key: 'st.nav.dropoffs', label: 'Drop-offs' },
+    { href: '/counter/pickups', key: 'st.nav.pickups', label: 'Pickups' },
+    { href: '/counter/scan', key: 'st.nav.scan', label: 'Scan a QR' },
+    { href: '/counter/batch', key: 'st.nav.batch', label: 'Batch' },
+    { href: '/counter/fulfillment', key: 'st.nav.fulfillment', label: 'Fulfillment' },
+    { href: '/counter/exceptions', key: 'st.nav.exceptions', label: 'Exceptions' },
+    { href: '/counter/claims', key: 'st.nav.claims', label: 'Claims' },
+  ] },
+  { key: 'st.nav.g.mail', label: 'Mailboxes', links: [
+    { href: '/counter/mailboxes', key: 'st.nav.mailboxes', label: 'Mailboxes' },
+    { href: '/counter/virtual', key: 'st.nav.virtual', label: 'Virtual mail' },
+  ] },
+  { key: 'st.nav.g.customers', label: 'Customers', links: [
+    { href: '/counter/customers', key: 'st.nav.customers', label: 'Customers' },
+    { href: '/counter/accounts', key: 'st.nav.accounts', label: 'Accounts' },
+    { href: '/counter/invoices', key: 'st.nav.invoices', label: 'Invoices' },
+  ] },
+  { key: 'st.nav.g.store', label: 'Store', links: [
+    { href: '/counter/close', key: 'st.nav.close', label: 'End of day' },
+    { href: '/counter/reports', key: 'st.nav.reports', label: 'Reports' },
+    { href: '/counter/rules', key: 'st.nav.prices', label: 'Prices', min: 'manager' },
+    { href: '/counter/staff', key: 'st.nav.staff', label: 'Staff', min: 'manager' },
+    { href: '/counter/settings', key: 'st.nav.settings', label: 'Settings', min: 'manager' },
+    { href: '/counter/export', key: 'st.nav.export', label: 'Export', min: 'manager' },
+  ] },
+];

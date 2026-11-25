@@ -15,7 +15,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏳ In progress (steps 1, 2, 2b ✅) | 2c full-screen card editor; 2d free sample pack; then step 3, request a quote |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ Next to research | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
-| P19 | [Tidy up the staff menu](#p19-tidy-up-the-staff-menu) | ⏸ Peter to say which pages staff really use | Peter's list |
+| P19 | [Tidy up the staff menu](#p19-tidy-up-the-staff-menu) | ✅ Done Nov 25: four dropdowns | Peter can still say which pages to drop |
 | P18 | [Anytime Mailbox on the website: their API and logo](#p18-anytime-mailbox-on-the-website) | ⏳ Tab, ID holds, key box, Test and read-only Sync built Nov 19; Peter to try his key | Anytime Mailbox: API access and logo permission |
 | P17 | [Mailbox service: rules to check and extras to add](#p17-mailbox-service-rules-to-check-and-extras-to-add) | ⏳ Some built Nov 18 | Postmaster, insurance agent, accountant, attorney |
 | P16 | [Store domain, email, and checking in mail by email](#p16-store-domain-email-and-checking-in-mail-by-email) | ⏳ Ask Goin' Postal corporate first | Corporate's answer; then the domain on Cloudflare (William) |
@@ -334,6 +334,8 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Hide by role:** counter staff don't need Prices, Staff, Settings or Export; managers and owners see everything.
 - [ ] **One shared menu** (a component) so adding a page means one change instead of editing all 23 counter pages (William's layout today: the menu is a line copied into every page).
 - [ ] Pages nobody uses could leave the menu but still work by address, so nothing breaks.
+
+**Built** ✅ 2026-11-25 11:24 CST: grouped (Shipping, Mailboxes, Customers, Store), counter staff don't see Prices / Staff / Settings / Export, one shared menu (`site/src/data/staffNav.ts`). Still open: Peter to say if any page should leave the menu.
 
 ## P18. Anytime Mailbox on the website
 

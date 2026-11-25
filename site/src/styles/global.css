@@ -188,6 +188,22 @@ html:root[data-contrast="high"] .rate:has(input:checked) { background: #fff8d6; 
 .bar-fill { display: block; height: 100%; background: var(--blue); }
 .bar-n { text-align: right; color: var(--muted); }
 .staff-nav { font-size: .95rem; margin-top: -8px; }
+/* The staff menu (P19, Nov 25 2026): four dropdowns instead of one long line. */
+.snav { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; margin: -4px 0 .75rem; position: relative; z-index: 20; }
+.snav-home { font-weight: 700; padding: .35rem .7rem; border-radius: 999px; text-decoration: none; border: 1px solid #d8cfbf; background: #fff; }
+.snav-group { position: relative; }
+.snav-group > summary { list-style: none; cursor: pointer; font-weight: 700; padding: .35rem .8rem; border-radius: 999px; border: 1px solid #d8cfbf; background: #fff; user-select: none; }
+.snav-group > summary::-webkit-details-marker { display: none; }
+.snav-group > summary::after { content: ' ▾'; font-size: .8em; }
+.snav-group.on > summary { background: #1d2a5c; color: #fff; border-color: #1d2a5c; }
+.snav-group[open] > summary { box-shadow: 0 0 0 3px rgba(29, 42, 92, .2); }
+.snav-group ul { position: absolute; z-index: 30; left: 0; top: calc(100% + 6px); min-width: 12rem; margin: 0; padding: .35rem; list-style: none; background: #fff; border: 1px solid #d8cfbf; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, .12); }
+.snav-group li a { display: block; padding: .45rem .7rem; border-radius: 8px; text-decoration: none; }
+.snav-group li a:hover, .snav-group li a:focus { background: #f4efe4; }
+.snav-group li a[aria-current='page'] { font-weight: 700; background: #f4efe4; }
+.snav-home-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .5rem 1rem; }
+.snav-home-groups h3 { margin: .5rem 0 .25rem; font-size: 1rem; }
+@media (max-width: 520px) { .snav-group { position: static; } .snav-group ul { left: 0; right: 0; top: calc(100% + 6px); min-width: 0; z-index: 30; } }
 
 /* ---- The Fireworks treatment (v1.70.0) ----
    Peter asked for a site that looks like it came out of Adobe Fireworks: glossy two-tone buttons,

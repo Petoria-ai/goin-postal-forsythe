@@ -1,0 +1,48 @@
+---
+// The staff menu on every counter page (Peter, Nov 25 2026, to-do P19): four dropdowns from src/data/staffNav.ts.
+// The group holding this page is marked. Once a PIN is typed on the page, the menu asks /api/staff who it is and hides
+// manager-only links from counter staff (only the role is remembered for this tab, never the PIN).
+import { STAFF_NAV } from '../data/staffNav';
+const here = Astro.url.pathname.replace(/\/$/, '');
+const isHere = (href: string) => here === href || here.startsWith(href + '/');
+---
+<nav class="snav" aria-label="Staff pages">
+  <a class="snav-home" href="/counter" data-i18n="st.nav.home">Counter</a>
+  {STAFF_NAV.map((g) => {
+    const on = g.links.some((l) => isHere(l.href));
+    return (
+      <details class={`snav-group${on ? ' on' : ''}`}>
+        <summary data-i18n={g.key}>{g.label}</summary>
+        <ul>
+          {g.links.map((l) => <li data-min={l.min}><a href={l.href} data-i18n={l.key} aria-current={isHere(l.href) ? 'page' : undefined}>{l.label}</a></li>)}
+        </ul>
+      </details>
+    );
+  })}
+</nav>
+<script>
+  const KEY = 'staff_role';
+  const rank: Record<string, number> = { counter: 1, manager: 2, owner: 3 };
+  function applyRole(role: string | null) {
+    if (!role) return;
+    for (const li of document.querySelectorAll<HTMLElement>('.snav li[data-min]')) li.hidden = (rank[role] ?? 0) < (rank[li.dataset.min!] ?? 9);
+  }
+  try { applyRole(sessionStorage.getItem(KEY)); } catch {}
+  async function check(pin: string) {
+    if (!pin) return;
+    const res = await fetch('/api/staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'me', pin }) }).catch(() => null);
+    if (!res?.ok) return;
+    const j = await res.json().catch(() => null);
+    const role = j?.user?.role; if (!role) return;
+    try { sessionStorage.setItem(KEY, role); } catch {}
+    applyRole(role);
+  }
+  const pinBox = document.getElementById('pin') as HTMLInputElement | null;
+  pinBox?.addEventListener('change', () => check(pinBox.value));
+  pinBox?.addEventListener('keydown', (e) => { if (e.key === 'Enter') check(pinBox.value); });
+  // One dropdown open at a time; a click elsewhere or Escape closes it.
+  const groups = [...document.querySelectorAll<HTMLDetailsElement>('.snav-group')];
+  for (const d of groups) d.addEventListener('toggle', () => { if (d.open) for (const o of groups) if (o !== d) o.open = false; });
+  document.addEventListener('click', (e) => { if (!(e.target as HTMLElement).closest('.snav-group')) for (const d of groups) d.open = false; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') for (const d of groups) d.open = false; });
+</script>
