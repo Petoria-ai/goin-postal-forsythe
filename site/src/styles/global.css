@@ -1188,6 +1188,11 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-addbox > summary { cursor: pointer; list-style: revert; }
 .vm-addbox > summary h3 { display: inline; }
 .vm-check { margin-top: 1rem; }
+/* Staying signed in (Nov 25 2026): the countdown window and the signed-in chip. */
+.ss-dlg { max-width: 26rem; border: 3px solid #1d2a5c; border-radius: 14px; text-align: center; }
+.ss-clock { font-size: 3rem; font-weight: 800; margin: .25rem 0; font-variant-numeric: tabular-nums; color: #1d2a5c; }
+.ss-dlg .btnrow { justify-content: center; }
+.ss-chip { margin: -.25rem 0 .5rem; font-size: .95rem; color: #3b4a6b; }
 .mb-card-ok { color: #1f6b46; font-weight: 700; }
 .mb-card-need { color: #b3261e; font-weight: 700; }
 .mb-assign-card { flex-basis: 100%; }

@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 12:07 CST · Staff stay signed in for 10 minutes, with a 2-minute countdown
+
+- **Asked for:** "lets just keep everything on those tabs the same" (Customers and Store stay as they are), and "for staff sign in, allow the sign in person 10 minutes to stay signed in so we dont have to keep typing in the passcode. and then a popup window pops up that is a countdown timer of the last 2-3 minutes to keep active".
+- **What changed:**
+  - **Type the PIN once** (on the counter home page or any counter page). For the next **10 minutes** every counter page fills it in by itself and opens (presses Show) on its own. Under the menu it says "Signed in: Peter · Sign out".
+  - **Using the screen keeps you signed in:** any click, key press or scroll restarts the 10 minutes.
+  - After 8 quiet minutes a **"Still there?"** window counts down the **last 2:00**, with **Stay signed in** (another 10 minutes) and **Sign out**.
+  - At 0:00 the PIN is forgotten and the page reloads empty, so customer details don't stay on the screen; a note says why. **Sign out** does the same at any time.
+  - The PIN is kept only in that browser, only for those 10 minutes; the website still checks it on every action, as before.
+- **Files:** new [site/src/components/StaffSession.astro](../site/src/components/StaffSession.astro), [site/src/components/StaffNav.astro](../site/src/components/StaffNav.astro), [site/src/pages/counter/index.astro](../site/src/pages/counter/index.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts)
+- **How to check it:** `git pull`, refresh, type the PIN once, then move between counter pages.
+
 ## 2026-11-25 12:00 CST · Fulfillment, Batch and Claims off the menu; Fulfillment noted for later (P21)
 
 - **Asked for:** "lets just keep fulfillment in the background but turned off. keep it in the notes because currently the storefront doesnt have the space to hold other people's items currently".

@@ -3,6 +3,7 @@
 // The group holding this page is marked. Once a PIN is typed on the page, the menu asks /api/staff who it is and hides
 // manager-only links from counter staff (only the role is remembered for this tab, never the PIN).
 import { visibleNav } from '../data/staffNav';
+import StaffSession from './StaffSession.astro';
 const here = Astro.url.pathname.replace(/\/$/, '');
 const isHere = (href: string) => here === href || here.startsWith(href + '/');
 ---
@@ -20,6 +21,7 @@ const isHere = (href: string) => here === href || here.startsWith(href + '/');
     );
   })}
 </nav>
+<StaffSession />
 <script>
   const KEY = 'staff_role';
   const rank: Record<string, number> = { counter: 1, manager: 2, owner: 3 };

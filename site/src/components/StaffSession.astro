@@ -1,0 +1,96 @@
+---
+// Staying signed in at the counter (Peter, Nov 25 2026): "allow the sign in person 10 minutes to stay signed in so we
+// dont have to keep typing in the passcode. and then a popup window pops up that is a countdown timer of the last 2-3
+// minutes to keep active".
+// After a PIN works on any counter page, this browser keeps it for 10 minutes; every click or key press restarts the
+// 10 minutes. Each counter page fills the PIN in by itself (and presses its Show button). With 2 minutes left a window
+// counts down, with Stay signed in and Sign out. At zero the PIN is forgotten and the page reloads, so nothing a
+// customer shouldn't see stays on the screen. The PIN is kept in this browser only (localStorage, with its end time),
+// never sent anywhere new; the server still checks it on every action. Included by StaffNav and the counter home page.
+---
+<dialog id="ssDlg" class="ss-dlg" aria-labelledby="ssTitle">
+  <h3 id="ssTitle" data-i18n="st.sess.title">Still there?</h3>
+  <p id="ssText"></p>
+  <p class="ss-clock" id="ssClock" aria-live="polite">2:00</p>
+  <p class="btnrow"><button type="button" class="btn" id="ssStay" data-i18n="st.sess.stay">Stay signed in</button>
+    <button type="button" class="btn kraft" id="ssOut" data-i18n="st.sess.out">Sign out</button></p>
+</dialog>
+<p id="ssChip" class="ss-chip" hidden><span id="ssWho"></span> · <button type="button" class="linkish" id="ssChipOut" data-i18n="st.sess.out">Sign out</button></p>
+<script>
+  import { t, tf } from '../i18n';
+  const KEY = 'staff_session';
+  const LIFE = 10 * 60_000;      // 10 minutes without activity
+  const WARN = 2 * 60_000;       // the countdown window for the last 2 minutes
+  type Sess = { pin: string; name: string; role: string; until: number };
+  const read = (): Sess | null => { try { const s = JSON.parse(localStorage.getItem(KEY) || 'null'); return s && s.until > Date.now() ? s : null; } catch { return null; } };
+  const write = (s: Sess | null) => { try { s ? localStorage.setItem(KEY, JSON.stringify(s)) : localStorage.removeItem(KEY); } catch {} };
+  const $ = (id: string) => document.getElementById(id);
+  const dlg = $('ssDlg') as HTMLDialogElement;
+
+  function signOut(reason?: string) {
+    write(null);
+    try { sessionStorage.removeItem('staff_role'); if (reason) sessionStorage.setItem('staff_signed_out', reason); } catch {}
+    location.reload();
+  }
+  function paintChip(s: Sess | null) {
+    const chip = $('ssChip')!; chip.hidden = !s;
+    if (s) $('ssWho')!.textContent = tf('st.sess.chip', { name: s.name });
+  }
+  // A PIN that worked: start (or restart) the 10 minutes. Called after the server says who it is.
+  async function start(pin: string) {
+    if (!pin) return;
+    const res = await fetch('/api/staff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'me', pin }) }).catch(() => null);
+    if (!res?.ok) return;
+    const j = await res.json().catch(() => null); if (!j?.user) return;
+    const s = { pin, name: j.user.name, role: j.user.role, until: Date.now() + LIFE };
+    write(s); paintChip(s);
+  }
+  // Activity restarts the clock (at most once every 15 seconds, and not while the countdown window is open).
+  let lastTouch = 0;
+  function touch() {
+    const s = read(); if (!s || dlg.open) return;
+    if (Date.now() - lastTouch < 15_000) return;
+    lastTouch = Date.now(); write({ ...s, until: Date.now() + LIFE });
+  }
+  for (const ev of ['click', 'keydown', 'pointerdown', 'scroll', 'touchstart']) addEventListener(ev, touch, { passive: true, capture: true });
+
+  // Every second: show the countdown in the last 2 minutes; sign out at zero.
+  let had = !!read();
+  setInterval(() => {
+    const s = read();
+    if (!s) { if (had) signOut(t('st.sess.ended')); return; }
+    had = true;
+    const left = s.until - Date.now();
+    if (left <= WARN) {
+      if (!dlg.open) { $('ssText')!.textContent = t('st.sess.text'); dlg.showModal(); }
+      const sec = Math.max(0, Math.ceil(left / 1000));
+      $('ssClock')!.textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+    } else if (dlg.open) dlg.close();
+  }, 1000);
+  $('ssStay')!.addEventListener('click', () => { const s = read(); if (s) write({ ...s, until: Date.now() + LIFE }); dlg.close(); });
+  $('ssOut')!.addEventListener('click', () => signOut());
+  $('ssChipOut')!.addEventListener('click', () => signOut());
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); const s = read(); if (s) write({ ...s, until: Date.now() + LIFE }); dlg.close(); }); // Escape = stay
+
+  // On this page: fill the PIN in from the session, press Show, and start a session when a typed PIN works.
+  const pinBox = document.getElementById('pin') as HTMLInputElement | null;
+  const s0 = read(); paintChip(s0);
+  try { const why = sessionStorage.getItem('staff_signed_out'); if (why) { sessionStorage.removeItem('staff_signed_out'); setTimeout(() => alert(why), 50); } } catch {}
+  if (pinBox) {
+    if (s0) {
+      pinBox.value = s0.pin;
+      try { sessionStorage.setItem('staff_role', s0.role); } catch {}
+      // Let the page's own scripts attach first, then open it as if Show was pressed.
+      setTimeout(() => {
+        const signin = document.getElementById('signin') as HTMLFormElement | null;
+        const load = document.getElementById('load') as HTMLButtonElement | null;
+        if (signin) signin.requestSubmit(); else if (load) load.click(); else pinBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      }, 150);
+    }
+    pinBox.addEventListener('change', () => start(pinBox.value));
+    pinBox.addEventListener('keydown', (e) => { if (e.key === 'Enter') start(pinBox.value); });
+    document.getElementById('load')?.addEventListener('click', () => start(pinBox.value));
+  }
+  // The counter home page signs in with its own form.
+  document.getElementById('signin')?.addEventListener('submit', () => setTimeout(() => start(pinBox?.value ?? ''), 0));
+</script>
