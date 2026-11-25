@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 11:57 CST · Queue, Pickups and Scan a QR taken off the staff menu
+
+- **Asked for:** "lets take out queue, pickups, scan a qr."
+- **What changed:** those three are no longer in the Shipping dropdown or on the counter home page. Shipping now has Batch, Fulfillment and Claims. The pages still work at their addresses (`/counter/queue`, `/counter/pickups`, `/counter/scan`) and nothing on them was deleted; each comes back by un-commenting its line in `site/src/data/staffNav.ts`.
+- **Files:** [site/src/data/staffNav.ts](../site/src/data/staffNav.ts)
+
 ## 2026-11-25 11:51 CST · Exceptions taken off the staff menu
 
 - **Asked for:** "how would we incorporate the exceptions tab?", then (GP Rate Pro doesn't alert on problem packages, but exporting its list every day would be a chore, customers sign a liability waiver, and calling customers about delays is one more thing to handle) "so lets take it out".
