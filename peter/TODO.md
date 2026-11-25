@@ -282,6 +282,8 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 
 ## P9. Find a business card supplier, and price to compete
 
+> **Research done** (2026-11-25 12:32 CST): the five vendors Goin' Postal lists (4over, Printograph, Zoo Printing, Signs365, Signs2Trade), what each is for, who has an API, blind shipping, the price sheet to fill in, the questions to ask, and how customers design with presets: [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md). **Peter's next step:** open the free trade accounts and order sample kits.
+
 **Added:** 2026-11-15 11:28 CST. **Status:** next to research. **Peter's words:** "need to find a business card supplier. and understand their services and features they can provide. and getting prices to make sure we can be competitive."
 
 **Why it matters:** the business card shop page and designer are built, but the prices on them are William's placeholders, and nobody has picked who prints the cards (D20). The supplier decides what the site can honestly offer (papers, finishes, shapes, extras), how fast, at what cost, and the file the designer has to produce.

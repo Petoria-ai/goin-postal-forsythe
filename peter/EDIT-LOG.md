@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 12:32 CST · Printing suppliers researched, and the plan for customers designing with presets
+
+- **Asked for:** the franchise's vendor list (trade printers 4over, Printograph, Zoo Printing; banners and signs Signs2Trade, Signs365) with "i can use whatever i please", and "i also want to be able to do a way where i can allow the customers to customize their product ... but probably only with presets.. nothing too out of ordinary that would cause hiccups or misprints".
+- **What changed (a plan, nothing on the website yet):** new [`monetization/print-suppliers/README.md`](../monetization/print-suppliers/README.md):
+  - Each vendor: what it's for, trade-only, blind shipping, whether it has an API, speed, what to ask. **4over** has a real API (products, options, quotes, orders, status, tracking; needs their approval and a resale certificate). **Printograph** is GotPrint's trade side, with shirts and embroidery, blind shipping, and an API for higher-volume brokers. **Zoo Printing** advertises 1 to 2 days of production. **Signs365** ships blind with no markings (resellers' reports). **Signs2Trade** is eSigns' trade arm.
+  - A routing chart (which vendor prints what), a price sheet to fill in with the same items from each, and the questions to ask every vendor.
+  - **Presets, not a free canvas:** choices only from what the supplier makes; templates with fixed boxes (based on the business card designer); the website checks sharpness, the cut line, text size and QR codes; the customer approves a proof; **staff approve before it goes to the printer**. Phase 1 by hand, phase 2 through 4over's API.
+  - Six decisions for Peter and Rin.
+  - Linked from `monetization/README.md`, the main `README.md` and to-do P9.
+- **Files:** new [monetization/print-suppliers/README.md](../monetization/print-suppliers/README.md), [monetization/README.md](../monetization/README.md), [README.md](../README.md), [TODO.md](TODO.md)
+
 ## 2026-11-25 12:07 CST · Staff stay signed in for 10 minutes, with a 2-minute countdown
 
 - **Asked for:** "lets just keep everything on those tabs the same" (Customers and Store stay as they are), and "for staff sign in, allow the sign in person 10 minutes to stay signed in so we dont have to keep typing in the passcode. and then a popup window pops up that is a countdown timer of the last 2-3 minutes to keep active".
