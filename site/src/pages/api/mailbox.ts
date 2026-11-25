@@ -34,6 +34,9 @@ const VIRTUAL = virtualCfg.providers as { id: string; name: string }[];
 // Every change is audited.
 // The counter's register stays the full record (IDs, the 1583, payments); this is what the website shows and sends.
 
+/** The saved card in a form the pages can show (never the card itself), or null. */
+const cardOf = (st: { payment_method_id: string | null; card_brand: string | null; card_last4: string | null }) => st.payment_method_id ? { brand: st.card_brand, last4: st.card_last4 } : null;
+
 export const POST: APIRoute = async ({ request }) => {
   try {
     const b: any = await request.json().catch(() => ({}));
@@ -156,7 +159,7 @@ export const POST: APIRoute = async ({ request }) => {
       return json({
         today, hold_months: HOLD_MONTHS, keep_months: KEEP_MONTHS, used: [...used].sort((a, c) => a - c),
         sizes: SIZES.map((s) => ({ ...s, free: Array.from({ length: s.to - s.from + 1 }, (_, i) => s.from + i).filter((n) => !used.has(n)).length })),
-        reservations: await Promise.all(res.map(async (r) => ({ ...r, customer: await person(r.customer_id), price: priceFor(r.size as any, r.term as any) }))),
+        reservations: await Promise.all(res.map(async (r) => ({ ...r, customer: await person(r.customer_id), price: priceFor(r.size as any, r.term as any), card: cardOf(await getMailboxSettings(env, r.customer_id)) }))),
         boxes: views.filter((x) => x.mail.do === 'box').map((x) => ({ ...x, due: dueReminder({ ...x, reminders: JSON.parse(x.reminders) }, today) })),
         ids_expiring: await (async () => {
           const docs = new Map((await listAllMailboxDocs(env)).map((d) => [d.id, d]));
@@ -222,7 +225,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
     if (b.action === 'find') {
       const { customers } = await searchCustomers(env, String(b.q ?? '').slice(0, 60), 10);
-      return json({ customers: customers.map((c) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone })) });
+      return json({ customers: await Promise.all(customers.map(async (c) => ({ id: c.id, name: c.name, email: c.email, phone: c.phone, card: cardOf(await getMailboxSettings(env, c.id)) }))) });
     }
     if (b.action === 'assign') {
       const boxNo = Number(b.box_no);
@@ -232,6 +235,9 @@ export const POST: APIRoute = async ({ request }) => {
       if (!isTerm(term)) return json({ error: 'Term must be 6 or 12 months.' }, 400);
       const customer = await getCustomer(env, String(b.customer_id ?? ''));
       if (!customer) return json({ error: 'Pick the customer’s account first.' }, 400);
+      // A card on file before any wall box starts, always (Peter, Nov 25 2026, to-do P15: "card on file needs to 100%
+      // always be there before a mailbox starts"). They can still pay cash; the card covers renewals and fees.
+      if (!(await getMailboxSettings(env, customer.id)).payment_method_id) return json({ error: `${customer.name} has no card on file. Add their card first (Stripe's secure page); they can still pay cash.`, code: 'no_card' }, 400);
       const start = isDay(b.start_date) ? b.start_date : today;
       const paid_through = isDay(b.paid_through) ? b.paid_through : addMonths(start, term);
       const box = await assignMailbox(env, { box_no: boxNo, customer_id: customer.id, size: size.id, term, start_date: start, paid_through });

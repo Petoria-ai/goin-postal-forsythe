@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 11:31 CST · A card on file is required before any wall box starts (to-do P15)
+
+- **Asked for:** "I think card on file needs to 100% always be there before a mailbox starts. especially for physical. anytime mailbox already collects their info".
+- **What changed:**
+  - **Assign** (Counter → Mailboxes) is refused unless the customer has a saved credit or debit card. No exceptions. They can still pay cash; the card covers renewals and fees. Virtual mailboxes aren't affected (Anytime Mailbox collects their payment).
+  - **Assign a box to an account:** after you pick the customer it shows "Card on file: VISA ••4242", or the reason Assign is greyed out, the agreement to tick, and **Add card (Stripe's secure page)**. When you come back from Stripe's page and type the PIN, the form fills itself back in (customer, box number, term) and Assign turns on.
+  - The customer finder shows "No card on file." next to anyone without one.
+  - **Online reservations:** each row shows the card, and **Add card** replaces **Assign** until there is one.
+  - Automatic renewal can still be switched off in Edit for someone who wants to pay cash each time; the card stays on file for fees.
+- **Files:** [site/src/pages/api/mailbox.ts](../site/src/pages/api/mailbox.ts), [site/src/pages/counter/mailboxes.astro](../site/src/pages/counter/mailboxes.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/mailbox.test.ts](../site/tests/mailbox.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, `npm run dev`, Counter → Mailboxes → **Assign a box to an account** → Find someone → Pick.
+
 ## 2026-11-25 11:28 CST · Who may pick up packages (physical and virtual boxes)
 
 - **Asked for:** "adding a box in the and upload id section in the certain mailbox would be nice for who may pick up the packages.. would be nice to have it in the edit button to add. and then i can just search that persons name in the search to pop up that certain box for both virtual and physical mailbox side".

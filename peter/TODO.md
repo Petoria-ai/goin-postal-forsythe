@@ -19,7 +19,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P18 | [Anytime Mailbox on the website: their API and logo](#p18-anytime-mailbox-on-the-website) | ⏳ Tab, ID holds, key box, Test and read-only Sync built Nov 19; Peter to try his key | Anytime Mailbox: API access and logo permission |
 | P17 | [Mailbox service: rules to check and extras to add](#p17-mailbox-service-rules-to-check-and-extras-to-add) | ⏳ Some built Nov 18 | Postmaster, insurance agent, accountant, attorney |
 | P16 | [Store domain, email, and checking in mail by email](#p16-store-domain-email-and-checking-in-mail-by-email) | ⏳ Ask Goin' Postal corporate first | Corporate's answer; then the domain on Cloudflare (William) |
-| P15 | [A card on file before a mailbox starts](#p15-a-card-on-file-before-a-mailbox-starts) | ⏸ Peter to decide the details | Stripe live; the mailbox agreement (attorney) |
+| P15 | [A card on file before a mailbox starts](#p15-a-card-on-file-before-a-mailbox-starts) | ✅ Built Nov 25: always required for wall boxes | Wording on the public Mailboxes page; the attorney (agreement) |
 | P14 | [Raise mailbox prices $2 to $5 each](#p14-raise-mailbox-prices-2-to-5-each) | ⏸ Peter to pick the figure | Peter's numbers; then one file on the website and the Prices tab in William's register |
 | P13 | [Virtual mail on the website](#p13-virtual-mail-on-the-website) | ⏸ Later | What virtual mail we sell and at what price; Anytime Mailbox's rules |
 | P12 | [Automatic mailbox reminders](#p12-automatic-mailbox-reminders) | ✅ Built Nov 16 | Check the first morning run once the site is live; Twilio and Resend keys (P4) |
@@ -427,7 +427,9 @@ Why it helps: renewals and fees (overage, extra packages, storage) can always be
 
 - [ ] **Decide:** does the card turn on automatic renewal (it does today when a card is saved), or can a cash customer keep a card on file only for fees, with automatic renewal off?
 - [ ] **Decide:** does an existing holder need to add one at their next renewal?
-- [ ] **Build:** on Counter → Mailboxes, **Assign** is blocked until the customer has a card on file (the Edit window's Add card, Stripe's page), with a manager-only "assign anyway" for exceptions. Online, **Reserve** asks for the card first.
+- [x] **Decided** (Peter, Nov 25): **100% always** before a wall box starts, no "assign anyway". Virtual mailboxes don't need one (Anytime Mailbox collects).
+- [x] **Built** ✅ 2026-11-25 11:31 CST: Assign refused without a card; Add card in the Assign form and on online reservations, back to a filled-in form.
+- [ ] Online, **Reserve** could ask for the card right away too (today they add it from their dashboard or at the counter).
 - [ ] **Say it:** in the mailbox agreement (attorney) and on the Mailboxes page ("A credit or debit card on file is required; you can still pay cash").
 - [ ] Check with the attorney that charging fees to a card kept "on file" is covered by what the customer signs.
 

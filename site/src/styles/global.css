@@ -1188,6 +1188,9 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-addbox > summary { cursor: pointer; list-style: revert; }
 .vm-addbox > summary h3 { display: inline; }
 .vm-check { margin-top: 1rem; }
+.mb-card-ok { color: #1f6b46; font-weight: 700; }
+.mb-card-need { color: #b3261e; font-weight: 700; }
+.mb-assign-card { flex-basis: 100%; }
 .vm-pickups { margin-top: 1rem; border-top: 1px dashed #d8cfbf; padding-top: .5rem; }
 .vm-pickups h4 { margin: .25rem 0; }
 .mb-pickups { font-weight: 600; }

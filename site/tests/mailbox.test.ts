@@ -1,3 +1,4 @@
+import { saveCard } from '../src/lib/mailboxJobs';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { env } from 'cloudflare:workers';
 import { sizeForBox, priceFor, addressFor, addMonths, boxStatus, dueReminder, day, reminderText, mailAction, endedOn, onExpiredList } from '../src/lib/mailbox';
@@ -107,6 +108,14 @@ describe('mailbox API', () => {
     const list = await call({ action: 'list', pin: '1234' });
     const code = list.body.reservations[0].code;
     expect((await call({ action: 'assign', pin: '1234', customer_id: customerId, box_no: 1290, term: 12 })).status).toBe(400);
+    // A card on file is required before any box starts (Peter, Nov 25 2026, P15).
+    const noCard = await call({ action: 'assign', pin: '1234', customer_id: customerId, box_no: 1230, term: 12, start_date: '2026-11-15', reservation_code: code });
+    expect([noCard.status, noCard.body.code]).toEqual([400, 'no_card']);
+    const listed = await call({ action: 'list', pin: '1234' });
+    expect(listed.body.reservations[0].card).toBeNull();
+    expect((await call({ action: 'find', pin: '1234', q: 'mailbox' })).body.customers.every((c: any) => 'card' in c)).toBe(true);
+    await saveCard(env as any, customerId, { payment_method_id: 'pm_mock_visa', brand: 'visa', last4: '4242', exp: '12/30' }, 'test', null);
+    expect((await call({ action: 'list', pin: '1234' })).body.reservations[0].card).toEqual({ brand: 'visa', last4: '4242' });
     const ok = await call({ action: 'assign', pin: '1234', customer_id: customerId, box_no: 1230, term: 12, start_date: '2026-11-15', reservation_code: code });
     expect(ok.status).toBe(200);
     expect(ok.body.box).toMatchObject({ box_no: 1230, size: 'medium', paid_through: '2027-11-15' });

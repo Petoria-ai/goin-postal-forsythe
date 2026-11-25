@@ -104,6 +104,7 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       <ul id="found" class="mb-found"></ul>
       <form id="assignForm" class="hidden mb-assign">
         <p><span data-i18n="st.mb.for">For:</span> <strong id="assignWho"></strong></p>
+        <div id="assignCard" class="mb-assign-card"></div>
         <label><span data-i18n="st.mb.box">Box #</span> <input name="box_no" id="assignBoxNo" inputmode="numeric" required /></label>
         <button type="button" class="btn small kraft" id="assignPick" data-i18n="st.pick.btn">Choose a box</button>
         <label><span data-i18n="st.mb.term">Term</span> <select name="term"><option value="6" data-i18n="st.mb.six">6 months</option><option value="12" data-i18n="st.mb.year">1 year</option></select></label>
@@ -299,10 +300,20 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
           cell(tr, r.code); cell(tr, r.customer.name); cell(tr, contact(r.customer)); cell(tr, sizeName(r.size)); cell(tr, `${termName(r.term)} · $${r.price}`);
           const input = document.createElement('input'); input.inputMode = 'numeric'; input.size = 6; input.placeholder = String(j.sizes.find((s: any) => s.id === r.size)?.from ?? '');
           const pc = cell(tr, ''); pc.append(input, ' ', btn(t('st.pick.btn'), 'kraft', () => openPicker(input, r.size)));
-          cell(tr, '').appendChild(btn(t('st.mb.assign'), '', async () => {
-            try { await api({ action: 'assign', customer_id: r.customer_id, box_no: Number(input.value), term: r.term, reservation_code: r.code }); say(tf('st.mb.assigned', { box: input.value, name: r.customer.name })); load(); }
-            catch (e: any) { say(e.message, true); }
-          }));
+          const act = cell(tr, '');
+          if (r.card) {
+            const ok = document.createElement('div'); ok.className = 'mb-card-ok mb-small'; ok.textContent = tf('st.card.onfile', { brand: String(r.card.brand ?? '').toUpperCase(), last4: r.card.last4 ?? '' });
+            act.append(ok, btn(t('st.mb.assign'), '', async () => {
+              try { await api({ action: 'assign', customer_id: r.customer_id, box_no: Number(input.value), term: r.term, reservation_code: r.code }); say(tf('st.mb.assigned', { box: input.value, name: r.customer.name })); load(); }
+              catch (e: any) { say(e.message, true); }
+            }));
+          } else { // no card yet: Stripe's page first (P15), then Assign
+            const need = document.createElement('div'); need.className = 'mb-card-need mb-small'; need.textContent = t('st.card.none');
+            act.append(need, btn(t('st.card.add'), '', async () => {
+              if (!confirm(t('st.card.agree'))) return;
+              try { const k = await api({ action: 'card_link', customer_id: r.customer_id, agreed: true }); location.href = k.url; } catch (e: any) { say(e.message, true); }
+            }));
+          }
           rb.appendChild(tr);
         }
         const bb = $('boxTable').querySelector('tbody')!; bb.innerHTML = '';
@@ -742,7 +753,42 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
       } catch (e: any) { say(e.message, true); }
     });
 
-    let chosen: { id: string; name: string } | null = null;
+    let chosen: { id: string; name: string; card?: any; contact?: string } | null = null;
+    // A card on file before a box starts (P15): show it, or offer Stripe's page; the form comes back filled in after.
+    function paintAssignCard() {
+      const box = $('assignCard'); box.innerHTML = '';
+      const submit = ($('assignForm') as HTMLFormElement).querySelector<HTMLButtonElement>('button[type=submit]')!;
+      if (!chosen) return;
+      if (chosen.card) {
+        const p = document.createElement('p'); p.className = 'mb-card-ok'; p.textContent = tf('st.card.onfile', { brand: String(chosen.card.brand ?? '').toUpperCase(), last4: chosen.card.last4 ?? '' });
+        box.appendChild(p); submit.disabled = false; return;
+      }
+      submit.disabled = true;
+      const p = document.createElement('p'); p.className = 'mb-card-need'; p.textContent = t('st.card.needed'); box.appendChild(p);
+      const lab = document.createElement('label'); lab.className = 'check'; const cb = document.createElement('input'); cb.type = 'checkbox';
+      lab.append(cb, ' ', t('st.card.agree')); box.appendChild(lab);
+      box.appendChild(btn(t('st.card.add'), '', async () => {
+        if (!cb.checked) { say(t('st.card.mustagree'), true); return; }
+        const f = $('assignForm') as HTMLFormElement;
+        try {
+          try { sessionStorage.setItem('mb_assign_pending', JSON.stringify({ chosen, form: Object.fromEntries(new FormData(f).entries()) })); } catch {}
+          const r = await api({ action: 'card_link', customer_id: chosen!.id, agreed: true }); location.href = r.url;
+        } catch (e: any) { say(e.message, true); }
+      }));
+    }
+    async function cardAddedReturn() { // back from Stripe's page: refill the Assign form and re-check the card
+      let saved: any = null; try { saved = JSON.parse(sessionStorage.getItem('mb_assign_pending') || 'null'); sessionStorage.removeItem('mb_assign_pending'); } catch {}
+      if (!saved?.chosen || !new URLSearchParams(location.search).has('card')) return;
+      try {
+        const j = await api({ action: 'find', q: saved.chosen.contact || saved.chosen.name });
+        const c = j.customers.find((x: any) => x.id === saved.chosen.id);
+        chosen = { ...saved.chosen, card: c?.card ?? null };
+      } catch { chosen = saved.chosen; }
+      const f = $('assignForm') as HTMLFormElement;
+      for (const [k, v] of Object.entries(saved.form ?? {})) { const el = f.elements.namedItem(k) as HTMLInputElement | null; if (el) el.value = String(v); }
+      $('assignWho').textContent = `${chosen!.name}${chosen!.contact ? ` · ${chosen!.contact}` : ''}`; f.classList.remove('hidden'); paintAssignCard();
+      f.scrollIntoView({ block: 'center' });
+    }
     $('findBtn').addEventListener('click', async () => {
       try {
         const j = await api({ action: 'find', q: ($('findQ') as HTMLInputElement).value });
@@ -750,11 +796,12 @@ import MailboxDocs from '../../components/MailboxDocs.astro';
         if (!j.customers.length) { const li = document.createElement('li'); li.className = 'muted'; li.textContent = t('st.mb.nofound'); ul.appendChild(li); }
         for (const c of j.customers) {
           const li = document.createElement('li');
-          li.append(btn(t('st.mb.pick'), 'kraft', () => { chosen = { id: c.id, name: c.name }; $('assignWho').textContent = `${c.name} · ${contact(c)}`; $('assignForm').classList.remove('hidden'); }), ` ${c.name} · ${contact(c)}`);
+          li.append(btn(t('st.mb.pick'), 'kraft', () => { chosen = { id: c.id, name: c.name, card: c.card, contact: c.email || c.phone || '' }; $('assignWho').textContent = `${c.name} · ${contact(c)}`; $('assignForm').classList.remove('hidden'); paintAssignCard(); }), ` ${c.name} · ${contact(c)}${c.card ? '' : ` · ${t('st.card.none')}`}`);
           ul.appendChild(li);
         }
       } catch (e: any) { say(e.message, true); }
     });
+    $('load').addEventListener('click', () => setTimeout(cardAddedReturn, 600), { once: true });
     $('assignForm').addEventListener('submit', async (ev) => {
       ev.preventDefault(); if (!chosen) return;
       const f = ev.target as HTMLFormElement; const d = Object.fromEntries(new FormData(f).entries()) as Record<string, string>;
