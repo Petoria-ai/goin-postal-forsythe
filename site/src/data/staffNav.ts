@@ -7,7 +7,9 @@ export type NavGroup = { key: string; label: string; links: NavLink[] };
 export const STAFF_NAV: NavGroup[] = [
   { key: 'st.nav.g.shipping', label: 'Shipping', links: [
     { href: '/counter/queue', key: 'st.nav.queue', label: 'Queue' },
-    { href: '/counter/dropoff', key: 'st.nav.dropoffs', label: 'Drop-offs' },
+    // Drop-offs (/counter/dropoff) is off the menu (Peter, Nov 25 2026): GP Rate Pro already scans drop-offs and gives the
+    // receipt. The page still works by its address; put this line back if PeterShip replaces GP Rate Pro:
+    // { href: '/counter/dropoff', key: 'st.nav.dropoffs', label: 'Drop-offs' },
     { href: '/counter/pickups', key: 'st.nav.pickups', label: 'Pickups' },
     { href: '/counter/scan', key: 'st.nav.scan', label: 'Scan a QR' },
     { href: '/counter/batch', key: 'st.nav.batch', label: 'Batch' },

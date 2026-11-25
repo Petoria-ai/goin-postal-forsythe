@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 11:41 CST · Drop-offs taken off the staff menu (GP Rate Pro already does it)
+
+- **Asked for:** "whats the thought process of having the dropoff tab?", then "currently our gpratepro.. does a scan for us and gives them a receipt of time. we also keep track of everything.. so it might be not needed".
+- **What changed:** **Drop-offs** is no longer in the Shipping dropdown or on the counter home page, so staff don't scan the same package in two places. The page and anything recorded on it are untouched and it still opens at `/counter/dropoff`. To bring it back (say, if PeterShip replaces GP Rate Pro), un-comment one line in `site/src/data/staffNav.ts`.
+- **Files:** [site/src/data/staffNav.ts](../site/src/data/staffNav.ts)
+
 ## 2026-11-25 11:32 CST · To-do: security check-up (P20, the headless Shopify question), printing on hold for suppliers, prices note
 
 - **Asked for:** "add to the checklist. a buddy of mine said to possibly integrate with headless shopify to have their backend security features so we dont get hacked and such.. would like your input on whether thats needed or just extra stuff", "lets hold off on the business cards until i find the right supplier", "possibly hold out on the mailbox prices. but im thinking im going to raise either the virtual mailboxes or physical mailbox prices", and "i want to get into finding suppliers".
