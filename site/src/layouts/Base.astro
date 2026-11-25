@@ -165,6 +165,23 @@ import PrintArt from '../components/PrintArt.astro';
       };
       if (loginBtn && !location.pathname.startsWith('/counter')) fetch('/api/account', { credentials: 'same-origin' }).then((r) => r.json()).then((j) => { me = j; paintLogin(); }).catch(() => {});
       paintLogin(); document.addEventListener('langchange', paintLogin);
+      // The catalog bar's big dropdowns (Peter, Nov 25 2026: "it disappears when i try to click one of the options").
+      // A panel opens when the mouse rests on its category, stays open for a moment after the mouse leaves (so the way
+      // down to an option never closes it), and another category takes over only if the mouse stops on it.
+      (() => {
+        const drops = [...document.querySelectorAll<HTMLElement>('.catbar .cat-drop')].filter((d) => d.querySelector('.cat-mega'));
+        let openDrop: HTMLElement | null = null; let closeT = 0; let switchT = 0;
+        const show = (d: HTMLElement | null) => { if (openDrop && openDrop !== d) openDrop.classList.remove('open'); openDrop = d; d?.classList.add('open'); };
+        for (const d of drops) {
+          d.addEventListener('mouseenter', () => {
+            clearTimeout(closeT); clearTimeout(switchT);
+            if (!openDrop) switchT = window.setTimeout(() => show(d), 80);      // first open: a tiny pause so passing over doesn't flash
+            else if (openDrop !== d) switchT = window.setTimeout(() => show(d), 220); // another one is open: switch only if the mouse stays
+          });
+          d.addEventListener('mouseleave', () => { clearTimeout(switchT); closeT = window.setTimeout(() => show(null), 350); });
+        }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') show(null); });
+      })();
       // The account menu: hover or keyboard focus opens it on a computer; a tap on "Hi, Peter" opens it on a phone.
       const acctDrop = document.getElementById('acctDrop');
       loginBtn?.addEventListener('click', (e) => { if (!me?.signed_in) return; e.preventDefault(); acctDrop?.classList.toggle('open'); loginBtn.setAttribute('aria-expanded', String(acctDrop?.classList.contains('open'))); });

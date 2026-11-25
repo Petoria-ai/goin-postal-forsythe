@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 17:57 CST · Catalog dropdowns no longer close on the way down
+
+- **Asked for:** "i hate how when i hover my mouse to go into the womens dropdown. it disappears when i try to click one of the options then i have to hover the button again".
+- **Why it happened:** there was a small gap between the category name and its panel, and moving at an angle down to an option crossed the next category (Men's), which took over.
+- **What changed:** each category now fills the bar's full height, so there's no gap. A panel stays open for about a third of a second after the mouse leaves it, and another category takes over only if the mouse stops on it for a moment. Tested with a slow diagonal path from Women's across Men's down to "Long sleeve": the panel stays open and the click goes through. Escape still closes it, and keyboard users open it with Tab as before.
+- **Files:** [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/styles/global.css](../site/src/styles/global.css)
+- **How to check it:** `git pull`, refresh, point at Women's and move down to an option.
+
 ## 2026-11-25 17:52 CST · Print shop: a big dropdown per category, and shop pages with an "Explore" strip (like Gelato)
 
 - **Asked for:** "lets add a drop down menu like how this works. then i want to have like a selection at the top. like for example if they click t shirt in womens.. it'll still give them the different options like a slide show at the top just incase they want to browse for other stuff" (Gelato's catalog screenshots).

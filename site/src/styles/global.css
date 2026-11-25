@@ -1200,7 +1200,7 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-check { margin-top: 1rem; }
 /* The print catalog bar (Nov 25 2026): airy, like Gelato's: light words, a soft rounded highlight, room to breathe. */
 .catbar { background: #fff; border-bottom: 1px solid #efe9de; box-shadow: 0 6px 18px rgba(40, 30, 10, .04); }
-header.top .catbar-row { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: safe center; align-items: center; gap: 0; padding-top: .45rem; padding-bottom: .45rem; min-height: 0; max-width: 1440px; }
+header.top .catbar-row { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: safe center; align-items: stretch; gap: 0; padding-top: 0; padding-bottom: 0; min-height: 0; max-width: 1440px; }
 .cat-drop { position: relative; display: flex; }
 .cat-link { display: flex; align-items: center; padding: .45rem .7rem; border-radius: 999px; font-weight: 500; font-size: .88rem; color: #4b4f58; text-decoration: none; white-space: nowrap; transition: background .15s, color .15s; }
 .cat-link:hover, .cat-link:focus-visible, .cat-drop:focus-within > .cat-link { background: #f5f1e8; color: #1d1f24; }
@@ -1214,9 +1214,11 @@ html:root[data-contrast="high"] .cat-link, html:root[data-contrast="high"] .cat-
 }
 /* The big dropdown under each catalog category (Nov 25 2026, like Gelato's). It spans the bar's width. */
 .catbar { position: relative; }
-.cat-drop { position: static; }
+.cat-drop { position: static; align-items: center; padding: .45rem 0; } /* fills the bar's height, so there's no gap above the panel */
 .cat-mega { display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 55; background: #fff; border-top: 1px solid #efe9de; box-shadow: 0 22px 40px rgba(40, 30, 10, .12); }
-.cat-drop:hover .cat-mega, .cat-drop:focus-within .cat-mega { display: block; }
+/* Opened by the page script with a short grace time (no flicker on the way down); keyboard focus opens it too. */
+.cat-drop.open .cat-mega, .cat-drop:focus-within .cat-mega { display: block; }
+.cat-drop.open > .cat-link { background: #f5f1e8; color: #1d1f24; }
 header.top .cat-mega-in { display: grid; flex-direction: row; align-items: stretch; grid-template-columns: minmax(14rem, 1fr) 1.2fr minmax(14rem, 1fr); gap: 2rem; padding-top: 1.5rem; padding-bottom: 1.75rem; min-height: 0; }
 .mm-ways { display: grid; gap: .6rem; align-content: start; }
 .mm-quick { display: grid; gap: .1rem; padding: .8rem 1rem; border-radius: 14px; background: #f7f4ee; text-decoration: none; color: #1d1f24; }
