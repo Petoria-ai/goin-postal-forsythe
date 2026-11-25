@@ -4,6 +4,7 @@
 export type NavLink = { href: string; key: string; label: string; min?: 'manager' | 'owner' };
 export type NavGroup = { key: string; label: string; links: NavLink[] };
 
+// A group with no links left (Shipping, today) isn't shown; see `visibleNav`.
 export const STAFF_NAV: NavGroup[] = [
   { key: 'st.nav.g.shipping', label: 'Shipping', links: [
     // { href: '/counter/queue', key: 'st.nav.queue', label: 'Queue' }, // off the menu (Peter, Nov 25 2026); page still works
@@ -12,12 +13,12 @@ export const STAFF_NAV: NavGroup[] = [
     // { href: '/counter/dropoff', key: 'st.nav.dropoffs', label: 'Drop-offs' },
     // { href: '/counter/pickups', key: 'st.nav.pickups', label: 'Pickups' }, // off the menu (Peter, Nov 25 2026); page still works
     // { href: '/counter/scan', key: 'st.nav.scan', label: 'Scan a QR' }, // off the menu (Peter, Nov 25 2026); page still works
-    { href: '/counter/batch', key: 'st.nav.batch', label: 'Batch' },
-    { href: '/counter/fulfillment', key: 'st.nav.fulfillment', label: 'Fulfillment' },
+    // { href: '/counter/batch', key: 'st.nav.batch', label: 'Batch' }, // off the menu (Peter, Nov 25 2026): buys labels through PeterShip; the store uses GP Rate Pro
+    // { href: '/counter/fulfillment', key: 'st.nav.fulfillment', label: 'Fulfillment' }, // off the menu (Peter, Nov 25 2026): turned off until there is shelf space for sellers' stock (to-do P21)
     // Exceptions (/counter/exceptions) is off the menu too (Peter, Nov 25 2026): it only watches labels made through
     // PeterShip, and the store makes labels in GP Rate Pro. It starts filling by itself if PeterShip makes the labels:
     // { href: '/counter/exceptions', key: 'st.nav.exceptions', label: 'Exceptions' },
-    { href: '/counter/claims', key: 'st.nav.claims', label: 'Claims' },
+    // { href: '/counter/claims', key: 'st.nav.claims', label: 'Claims' }, // off the menu (Peter, Nov 25 2026): claims on PeterShip labels; the store uses GP Rate Pro
   ] },
   { key: 'st.nav.g.mail', label: 'Mailboxes', links: [
     { href: '/counter/mailboxes', key: 'st.nav.mailboxes', label: 'Mailboxes' },
@@ -37,3 +38,6 @@ export const STAFF_NAV: NavGroup[] = [
     { href: '/counter/export', key: 'st.nav.export', label: 'Export', min: 'manager' },
   ] },
 ];
+
+/** The groups that still have links (an empty group, like Shipping while labels come from GP Rate Pro, is hidden). */
+export const visibleNav = () => STAFF_NAV.filter((g) => g.links.length > 0);

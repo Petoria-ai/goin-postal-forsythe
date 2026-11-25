@@ -2,13 +2,13 @@
 // The staff menu on every counter page (Peter, Nov 25 2026, to-do P19): four dropdowns from src/data/staffNav.ts.
 // The group holding this page is marked. Once a PIN is typed on the page, the menu asks /api/staff who it is and hides
 // manager-only links from counter staff (only the role is remembered for this tab, never the PIN).
-import { STAFF_NAV } from '../data/staffNav';
+import { visibleNav } from '../data/staffNav';
 const here = Astro.url.pathname.replace(/\/$/, '');
 const isHere = (href: string) => here === href || here.startsWith(href + '/');
 ---
 <nav class="snav" aria-label="Staff pages">
   <a class="snav-home" href="/counter" data-i18n="st.nav.home">Counter</a>
-  {STAFF_NAV.map((g) => {
+  {visibleNav().map((g) => {
     const on = g.links.some((l) => isHere(l.href));
     return (
       <details class={`snav-group${on ? ' on' : ''}`}>

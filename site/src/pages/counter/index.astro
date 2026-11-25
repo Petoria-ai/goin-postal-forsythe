@@ -6,7 +6,7 @@ import Base from '../../layouts/Base.astro';
 // checked once with the staff API's `me` and the page then lists every staff page with who you are
 // and your role. Each counter page still asks for the PIN in its own box; this page is the map.
 // The same groups as the staff menu (src/data/staffNav.ts).
-import { STAFF_NAV } from '../../data/staffNav';
+import { visibleNav } from '../../data/staffNav';
 ---
 <Base title="Counter">
   <section class="hero">
@@ -20,7 +20,7 @@ import { STAFF_NAV } from '../../data/staffNav';
     </form>
     <div class="card hidden" id="pages">
       <p><strong data-i18n="st.in.hello">Signed in as</strong> <span id="who"></span></p>
-      <div class="snav-home-groups">{STAFF_NAV.map((g) => (
+      <div class="snav-home-groups">{visibleNav().map((g) => (
         <div><h3 data-i18n={g.key}>{g.label}</h3>
           <ul class="ps-links">{g.links.map((l) => <li data-min={l.min}><a href={l.href} data-i18n={l.key}>{l.label}</a></li>)}</ul></div>
       ))}</div>

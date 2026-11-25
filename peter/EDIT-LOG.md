@@ -4,6 +4,15 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 12:00 CST · Fulfillment, Batch and Claims off the menu; Fulfillment noted for later (P21)
+
+- **Asked for:** "lets just keep fulfillment in the background but turned off. keep it in the notes because currently the storefront doesnt have the space to hold other people's items currently".
+- **What changed:**
+  - **Fulfillment** is off the staff menu (the page still works at `/counter/fulfillment`), and the new to-do **P21** says what it is and what's needed to turn it on: shelf space, PeterShip making labels, the fees.
+  - **Batch** and **Claims** are off the menu too: both work on labels bought through PeterShip, and the store's labels come from GP Rate Pro. Their pages still work by address.
+  - The **Shipping** dropdown had nothing left, so it's hidden. The menu is now **Counter · Mailboxes · Customers · Store**. A group shows again by itself when one of its lines is put back in `site/src/data/staffNav.ts`.
+- **Files:** [site/src/data/staffNav.ts](../site/src/data/staffNav.ts), [site/src/components/StaffNav.astro](../site/src/components/StaffNav.astro), [site/src/pages/counter/index.astro](../site/src/pages/counter/index.astro), [TODO.md](TODO.md)
+
 ## 2026-11-25 11:57 CST · Queue, Pickups and Scan a QR taken off the staff menu
 
 - **Asked for:** "lets take out queue, pickups, scan a qr."

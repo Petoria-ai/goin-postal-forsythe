@@ -15,6 +15,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 | P7 | [Print & Promo online: the e-commerce side, first](#p7-print--promo-online-the-e-commerce-side-first) | ⏸ On hold Nov 25 (steps 1, 2, 2b ✅) | The supplier (P9): the pages can only offer what the supplier makes |
 | P8 | [Online shipping labels, later and on purpose](#p8-online-shipping-labels-later-and-on-purpose) | ⏸ On the sideline | P7 earning first; then the checks below |
 | P9 | [Find a business card supplier, and price to compete](#p9-find-a-business-card-supplier-and-price-to-compete) | ⏳ **Next** (Peter, Nov 25): suppliers for all the printing | Calls and quotes from suppliers; answers D20 in FOR-WILLIAM.md |
+| P21 | [Fulfillment for local sellers (built, turned off)](#p21-fulfillment-for-local-sellers-built-turned-off) | ⏸ Later | Shelf space for other people's stock; PeterShip making labels |
 | P20 | [Website security check-up (and the headless Shopify idea)](#p20-website-security-check-up-and-the-headless-shopify-idea) | ⏳ Advice written Nov 25 | Peter to pick which steps; William for the Cloudflare ones |
 | P19 | [Tidy up the staff menu](#p19-tidy-up-the-staff-menu) | ✅ Done Nov 25: four dropdowns | Peter can still say which pages to drop |
 | P18 | [Anytime Mailbox on the website: their API and logo](#p18-anytime-mailbox-on-the-website) | ⏳ Tab, ID holds, key box, Test and read-only Sync built Nov 19; Peter to try his key | Anytime Mailbox: API access and logo permission |
@@ -327,6 +328,20 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **Later:** "make it more elegant / try warmer colors" follow-ups, and AI wording suggestions in the Text panel.
 
 ---
+
+## P21. Fulfillment for local sellers (built, turned off)
+
+**Added:** 2026-11-25 12:00 CST. **Status:** later. **Peter:** "lets just keep fulfillment in the background but turned off. keep it in the notes because currently the storefront doesnt have the space to hold other people's items currently".
+
+**What it is (already built by William, T29):** a local business (an Etsy or Shopify seller, for example) keeps its stock on the store's shelf. Their orders come in by SKU; staff print a **pick list**, pick, pack and ship on the store's rates; stock goes down by itself; the per-order fee and storage go on the business's monthly statement (Counter → Accounts). Extra income on top of shipping, and all their shipping goes through the store.
+
+**Why it's off:** no shelf space at the store for other people's stock today, and it buys labels through PeterShip, while the store makes labels in GP Rate Pro.
+
+**To turn it back on:**
+- [ ] Space: a shelf or back room with numbered bins (A1, A2…), and a stockroom plan if it grows (see `monetization/funding/` on a second stockroom).
+- [ ] PeterShip making labels (carrier accounts connected), or a decision to use it with GP Rate Pro labels.
+- [ ] Prices: fee per order, per item, storage per month (they're in `site/src/data/` for the owners to edit).
+- [ ] Un-comment the Fulfillment line in `site/src/data/staffNav.ts` (the page still works at `/counter/fulfillment`; Batch and Claims are off the menu the same way).
 
 ## P20. Website security check-up (and the headless Shopify idea)
 
