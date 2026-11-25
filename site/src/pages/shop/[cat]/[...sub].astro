@@ -1,0 +1,99 @@
+---
+export const prerender = false;
+import Base from '../../../layouts/Base.astro';
+import PrintArt from '../../../components/PrintArt.astro';
+import { store } from '../../../data/store';
+import { catById, lowest, onlineProduct, sectionFrom, type Section } from '../../../data/printCatalog';
+// A print shop category or section (Peter, Nov 25 2026), like Gelato's catalog: /shop/womens or /shop/womens/t-shirts.
+// At the top, the path back (Print shop › Women's › T-shirts) and a strip of the category's sections to browse ("if
+// they click t shirt in womens.. it'll still give them the different options like a slide show at the top just incase
+// they want to browse for other stuff"); below, what's online to design, or "ask for a price" when nothing is yet.
+const cat = catById(Astro.params.cat ?? '');
+if (!cat) return Astro.redirect('/printing');
+const sec = Astro.params.sub ? cat.sections.find((s) => s.id === Astro.params.sub) ?? null : null;
+if (Astro.params.sub && !sec) return Astro.redirect(cat.href);
+const shown: Section[] = sec ? [sec] : cat.sections;
+// The products to show: each online product once, with the section it's in (for its picture).
+const seen = new Set<string>();
+const products = shown.flatMap((s) => s.products.filter((id) => onlineProduct(id) && !seen.has(id) && seen.add(id)).map((id) => ({ id, s, from: lowest(id)! })));
+const links = shown.filter((s) => s.link).map((s) => ({ ...s.link!, s }));
+const prodName: Record<string, [string, string]> = { tshirt: ['prod.tshirt', 'Unisex t-shirt'], poster: ['prod.poster', 'Poster'], flyer: ['prod.flyer', 'Flyers'] };
+const money = (n: number) => `$${n.toFixed(2)}`;
+const tel = store.phone.replace(/\D/g, '');
+const title = sec ? `${sec.label} · ${cat.label}` : cat.label;
+---
+<Base title={`${title} · Print shop · ${store.name}`} description={`${title}: custom printed and made to order, from ${store.name} in Monroe.`}>
+  <div class="shop-crumbs" role="navigation" aria-label="Breadcrumb">
+    <a href="/printing" data-i18n="sec.shop">Print shop</a> <span aria-hidden="true">›</span>
+    {sec ? <><a href={cat.href} data-i18n={cat.key}>{cat.label}</a> <span aria-hidden="true">›</span> <span aria-current="page" data-i18n={sec.key}>{sec.label}</span></>
+         : <span aria-current="page" data-i18n={cat.key}>{cat.label}</span>}
+  </div>
+  <h1 class="shop-h1" data-i18n={sec ? sec.key : cat.key}>{sec ? sec.label : cat.label}</h1>
+
+  <section class="shop-explore" aria-labelledby="exploreH">
+    <div class="shop-explore-head">
+      <h2 id="exploreH"><span data-i18n="sec.explore">Explore</span> <span data-i18n={cat.key}>{cat.label}</span></h2>
+      <p class="shop-arrows"><button type="button" class="shop-arrow" data-dir="-1" aria-label="Scroll left">‹</button><button type="button" class="shop-arrow" data-dir="1" aria-label="Scroll right">›</button></p>
+    </div>
+    <div class="shop-strip" id="shopStrip">
+      {cat.sections.map((s) => {
+        const from = sectionFrom(s);
+        return (
+          <a class={`shop-tile${sec?.id === s.id ? ' on' : ''}`} href={`${cat.href}/${s.id}`} aria-current={sec?.id === s.id ? 'page' : undefined}>
+            <div class={`pcat-pic pcat-${s.art}`}><PrintArt art={s.art} /></div>
+            <p class="shop-tile-name" data-i18n={s.key}>{s.label}</p>
+            {from != null ? <p class="pcat-price"><span data-i18n="cat.from">From</span> {money(from)}</p> : <p class="pcat-price ask" data-i18n="cat.ask">Ask for a price</p>}
+          </a>
+        );
+      })}
+    </div>
+  </section>
+
+  <section class="shop-products">
+    {(products.length > 0 || links.length > 0) && <div class="pcat-grid">
+      {products.map((p) => (
+        <a class="pcat-card" href={`/print?product=${p.id}`}>
+          <div class={`pcat-pic pcat-${p.s.art}`}><PrintArt art={p.s.art} /></div>
+          <div class="pcat-body">
+            <h3 class="pcat-name" data-i18n={prodName[p.id]?.[0]}>{prodName[p.id]?.[1] ?? p.id}</h3>
+            <p class="pcat-price"><span data-i18n="cat.from">From</span> {money(p.from)}</p>
+            <span class="btn small shop-go" data-i18n="sec.design">Design it</span>
+          </div>
+        </a>
+      ))}
+      {links.map((l) => (
+        <a class="pcat-card" href={l.href}>
+          <div class={`pcat-pic pcat-${l.s.art}`}><PrintArt art={l.s.art} /></div>
+          <div class="pcat-body">
+            <h3 class="pcat-name" data-i18n={l.s.key}>{l.s.label}</h3>
+            <p class="pcat-price"><span data-i18n="cat.from">From</span> {money(l.from)}</p>
+            <span class="btn small shop-go" data-i18n={l.key}>{l.label}</span>
+          </div>
+        </a>
+      ))}
+    </div>}
+    <div class="shop-notes">
+      {products.length === 0 && links.length === 0 && (
+        <div class="card shop-ask">
+          <h3 data-i18n="sec.ask.h">Not online yet, but we can make it</h3>
+          <p data-i18n="sec.ask.p">Tell us what you need and we'll send you a price and a proof. More of these are coming online soon.</p>
+          <p class="btnrow"><a class="btn" href="/contact" data-i18n="cat.ask">Ask for a price</a> <a class="btn kraft" href={`tel:${tel}`}><span data-i18n="print.call">Call us</span> {store.phone}</a></p>
+        </div>
+      )}
+      {cat.bulk && (
+        <div class="card shop-bulk">
+          <h3 data-i18n="sec.bulk.h">12 or more, or need it fast?</h3>
+          <p data-i18n="sec.bulk.p">Team, church and business orders and rush jobs are printed locally. Ask us for a quote.</p>
+          <p><a class="btn kraft" href="/printing/t-shirts" data-i18n="cat.shirts.bulk">Team, church & business orders (12+)</a></p>
+        </div>
+      )}
+    </div>
+  </section>
+
+  <script>
+    // The explore strip's arrows: scroll about one screen of tiles; the current tile starts in view.
+    const strip = document.getElementById('shopStrip')!;
+    document.querySelectorAll<HTMLButtonElement>('.shop-arrow').forEach((b) => b.addEventListener('click', () => strip.scrollBy({ left: Number(b.dataset.dir) * strip.clientWidth * 0.8, behavior: 'smooth' })));
+    strip.querySelector<HTMLElement>('.shop-tile.on')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  </script>
+</Base>

@@ -4,6 +4,17 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 17:52 CST · Print shop: a big dropdown per category, and shop pages with an "Explore" strip (like Gelato)
+
+- **Asked for:** "lets add a drop down menu like how this works. then i want to have like a selection at the top. like for example if they click t shirt in womens.. it'll still give them the different options like a slide show at the top just incase they want to browse for other stuff" (Gelato's catalog screenshots).
+- **What changed:**
+  - **The big dropdown:** hovering a category in the catalog bar (Women's, Men's, ...) opens a full-width panel. On the left, ways to order: **Design it online**, **12 or more?** (team, church & business orders), **Need it fast?** (ask about rush). In the middle, **Shop by product** (for Women's: T-shirts, Hoodies, Long sleeve, Tank tops, Crop tops) and **View all Women's**. On the right, a picture with **From $24.99** or **Ask for a price**.
+  - **Shop pages:** each category and section has its own page, for example `/shop/womens` and `/shop/womens/t-shirts`. At the top: the path back (**Print shop › Women's › T-shirts**), the title, and **Explore Women's**, a strip of every section in the category with pictures and prices that scrolls sideways (arrows on a computer, a swipe on a phone), with the one you're on outlined. Below: what's online to design (the unisex t-shirt, **Design it**), or a **"Not online yet, but we can make it"** card with Ask for a price and Call us. Clothing pages also have **"12 or more, or need it fast?"**, pointing to local printing.
+  - **Sections so far:** Women's (T-shirts, Hoodies, Long sleeve, Tank tops, Crop tops), Men's (T-shirts, Hoodies, Long sleeve, Polo shirts, Tank tops), Kids & Baby (Kids' t-shirts, Baby onesies, Kids' hoodies), Hats & Accessories (Caps, Beanies, Tote bags), Drinkware (Mugs, Water bottles, Tumblers), Wall Art & Posters (Posters, Framed prints, Canvas), Signs & Banners (Banners, Yard signs), Business Cards & Stationery (Business cards, Flyers, Postcards). Online today: t-shirts, posters, flyers and business cards; the rest say "Ask for a price" until their Gelato products are added (one line each in `site/src/data/printCatalog.ts`).
+  - The picture cards on Printing and the home page now open these shop pages. Every section has its own simple drawing until real photos arrive.
+- **Files:** [site/src/data/printCatalog.ts](../site/src/data/printCatalog.ts), new [site/src/components/PrintArt.astro](../site/src/components/PrintArt.astro), [site/src/components/PrintCategories.astro](../site/src/components/PrintCategories.astro), new [site/src/pages/shop/[cat]/[...sub].astro](../site/src/pages/shop/%5Bcat%5D/%5B...sub%5D.astro), [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts)
+- **How to check it:** `git pull`, refresh, point at **Women's** in the catalog bar, click **T-shirts**.
+
 ## 2026-11-25 17:17 CST · An airier print catalog: shop by who it's for, with picture cards (for Peter to approve)
 
 - **Asked for:** "whats a good way to make things look alittle more airy? gelato has pictures of the types of things they sell / and i think maybe having the categories would enable shoppers/customers separated in genders", then "lets see what you come up with and i'll adjust or approve it if it looks good".

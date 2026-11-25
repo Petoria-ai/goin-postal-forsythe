@@ -15,7 +15,8 @@ const brandRest = store.headerLabel || store.name.replace(/^Goin' Postal\s*/i, '
 const here = Astro.url.pathname.replace(/\/$/, '') || '/';
 const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')) ? 'page' : undefined);
 import CarrierBadges from '../components/CarrierBadges.astro';
-import { PRINT_CATALOG, ALL_PRINTING } from '../data/printCatalog';
+import { PRINT_CATALOG, ALL_PRINTING, sectionFrom } from '../data/printCatalog';
+import PrintArt from '../components/PrintArt.astro';
 ---
 <!doctype html>
 <html lang="en">
@@ -91,14 +92,33 @@ import { PRINT_CATALOG, ALL_PRINTING } from '../data/printCatalog';
         </nav>
       </div>
       <!-- The print catalog bar (Peter, Nov 25 2026: "i like how vistaprint or 4over has their catalog all over the top"):
-           every printing category on every page, each with a short menu (src/data/printCatalog.ts). On a phone it is one
-           row that swipes sideways; the menus open on hover or keyboard focus on wider screens. -->
+           every printing category on every page, each with a big dropdown (src/data/printCatalog.ts). On a phone it is one
+           row that swipes sideways and each opens its shop page; the dropdowns open on hover or keyboard focus on wide screens. -->
       <div class="catbar">
         <div class="wrap catbar-row" role="navigation" aria-label="Print shop">
           {PRINT_CATALOG.map((g) => (
             <div class="cat-drop">
-              <a href={g.href} class="cat-link" aria-current={cur(g.href.split('?')[0]) ?? undefined} data-i18n={g.key}>{g.label}</a>
-              {g.items.length > 0 && <div class="cat-menu">{g.items.map((i) => <a href={i.href} data-i18n={i.key}>{i.label}</a>)}</div>}
+              <a href={g.href} class="cat-link" aria-current={cur(g.href) ?? undefined} data-i18n={g.key}>{g.label}</a>
+              <!-- The big dropdown (Peter, Nov 25 2026: "lets add a drop down menu like how this works", like Gelato's):
+                   ways to order, the category's sections, and a picture with the starting price. -->
+              <div class="cat-mega">
+                <div class="wrap cat-mega-in">
+                  <div class="mm-ways">
+                    {(() => { const first = g.sections.find((s) => s.products.length || s.link); return first ? <a class="mm-quick" href={first.link ? first.link.href : `/print?product=${first.products[0]}`}><strong data-i18n="mm.design">Design it online</strong><span data-i18n="mm.design.p">Pick, preview and pay</span></a> : <a class="mm-quick" href="/contact"><strong data-i18n="cat.ask">Ask for a price</strong><span data-i18n="mm.ask.p">We'll send a price and a proof</span></a>; })()}
+                    {g.bulk && <a class="mm-quick" href="/printing/t-shirts"><strong data-i18n="mm.bulk">12 or more?</strong><span data-i18n="mm.bulk.p">Team, church & business orders</span></a>}
+                    <a class="mm-quick" href="/contact"><strong data-i18n="mm.rush">Need it fast?</strong><span data-i18n="mm.rush.p">Ask us about rush</span></a>
+                  </div>
+                  <div class="mm-col">
+                    <p class="mm-h" data-i18n="mm.shopby">Shop by product</p>
+                    {g.sections.map((s) => <a href={`${g.href}/${s.id}`} data-i18n={s.key}>{s.label}</a>)}
+                    <a class="mm-all" href={g.href}><span data-i18n="mm.viewall">View all</span> <span data-i18n={g.key}>{g.label}</span></a>
+                  </div>
+                  <a class={`mm-feature pcat-${g.art}`} href={g.href}>
+                    <span class="mm-feature-pic"><PrintArt art={g.art} /></span>
+                    <span class="mm-feature-text"><strong data-i18n={g.key}>{g.label}</strong>{g.from != null ? <span><span data-i18n="cat.from">From</span> ${g.from.toFixed(2)}</span> : <span data-i18n="cat.ask">Ask for a price</span>}</span>
+                  </a>
+                </div>
+              </div>
             </div>
           ))}
           <div class="cat-drop"><a href={ALL_PRINTING.href} class="cat-link cat-all" aria-current={cur('/printing') ?? undefined} data-i18n={ALL_PRINTING.key}>{ALL_PRINTING.label}</a></div>
