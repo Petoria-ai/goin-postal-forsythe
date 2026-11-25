@@ -24,6 +24,20 @@ This widens the October plan for business cards ([`business-cards/`](../business
 | **Signs365** (banners and signs) | Banners, yard signs, rigid signs, other large-format printing | Says it's trade only | **Yes**, by resellers' reports: no markings, and the label shows the reseller as sender | Not found publicly; ask | Ask | API or order upload; sizes and materials; grommets and hems as set options |
 | **Signs2Trade** (banners and signs; the trade arm of eSigns) | Banners and signs the store can't make itself | Yes (separate from its retail sister) | Ask | Not found publicly; ask | Ask | Pricing needs a login; compare with Signs365 on the same three items |
 
+### Other options outside the franchise list
+
+Peter (November 25): "i dont have to use their vendors.. just options i can use. im open to seeing what other options are there. and if they fit better for the website. id do it". What matters most for the website is an **API** (orders go through by themselves, prices and options stay current), then trade prices and blind shipping.
+
+| Option | What it is | Fits the website? | Prices | Use it for |
+|---|---|---|---|---|
+| **Gelato** | Print-on-demand network (100+ print partners); business cards, flyers, posters, cards, apparel | **Best API of the bunch:** a test mode (sandbox), webhooks (it tells the website when an order ships) and public docs | Made for one-at-a-time orders, so higher per piece than a trade printer on big runs; free plan, Gelato+ at $29.99 a month for discounts | Posters, single prints, small runs, and as the easiest first connection to build |
+| **Printful** | Print-on-demand for shirts, hats, mugs and other merch, white-label | Strong API, no minimums | Per piece, higher than bulk screen printing | One-off and small merch orders; bulk shirts stay with Printograph or the local partners ([`screen-printing/`](../screen-printing/README.md)) |
+| **SinaLite** | Trade-only printer (US and Canada), also custom packaging and embroidered hats | API not found publicly; ask | Trade prices; markets itself as cheaper than 4over | Price check against 4over; blind shipping with no branding or invoices in the box |
+| **Smartpress** | Printer with a reseller program | No API found; orders through its website | Sales tax refunded with a resale certificate | Price check; blind shipping |
+| **4OVER4** (not the same company as 4over) | Online printer with a reseller side, 1,000+ products | Ask about an API | Ask | Blind shipping to all 50 states; another price check |
+
+**What this changes:** 4over still fits best for paper products at trade prices with an API. **Gelato** is the easiest connection to build first and the best for posters and one-off prints, at a higher cost per piece; it could run the first automated products while 4over's API approval comes through. **Printful** covers merch with no minimums. SinaLite, Smartpress and 4OVER4 go on the price sheet.
+
 ### Which one prints what (a starting plan)
 
 ```mermaid
@@ -101,7 +115,7 @@ The ideas waiting in P7 (the full-screen card editor, a free sample pack, reques
 
 ## The price sheet to fill in
 
-Ask each vendor for the same items, delivered to Monroe, so the numbers compare:
+Ask each vendor for the same items, delivered to Monroe, so the numbers compare (add SinaLite, Smartpress, 4OVER4 and Gelato as extra columns if their prices look close):
 
 | Item | 4over | Printograph | Zoo Printing | Signs365 | Signs2Trade |
 |---|---|---|---|---|---|
@@ -131,7 +145,7 @@ Ask each vendor for the same items, delivered to Monroe, so the numbers compare:
 
 1. **Open all five trade accounts and order sample kits?** (Free; a week or two.)
 2. **The first products online:** business cards, flyers, postcards and one banner size, or a different starting set?
-3. **4over as the main supplier with its API later,** with Printograph, Signs365 and Zoo Printing for what 4over doesn't do best?
+3. **4over as the main supplier with its API later,** with Printograph, Signs365 and Zoo Printing for what 4over doesn't do best? Or **start automated with Gelato** (easiest connection, higher cost per piece) while 4over's API approval comes through?
 4. **Staff approval before every order goes to the printer?** (Recommended; it's the last guard against misprints.)
 5. **Shipping:** to the store for pickup (the customer comes back in, maybe buys something else), straight to the customer, or both?
 6. **Markup:** the same percentage on everything, or set per product once the price sheet is filled in?
@@ -145,4 +159,5 @@ Found November 25, 2026; vendors' terms change, so confirm with each one.
 - Zoo Printing: [Zoo Printing labels page](https://www.zooprinting.com/products/labels), [LinkedIn](https://www.linkedin.com/company/zoo-printing), [Trustpilot reviews](https://www.trustpilot.com/review/zooprinting.com), [PrintPlanet thread](https://printplanet.com/threads/zoo-printing-w2p.10140/)
 - Signs365: [Signs101: what is Signs365?](https://www.signs101.com/threads/what-is-signs365.167657), [Signs101: dropshipping](https://signs101.com/threads/dropshipping.147473), [Signs101: Signs 365 my new go-to for banners](https://www.signs101.com/threads/signs-365-my-new-go-to-for-banners.135551), [PrintPlanet: banners quote surprise](https://printplanet.com/threads/banners-quote-surprise.294581)
 - Signs2Trade: [Signs101 thread with a Signs2Trade representative](https://signs101.com/threads/signs2trade.135210/post-1306796), [Signs101: Signs2Trade photo examples](https://signs101.com/threads/signs2trade-photo-examples.130925)
+- Outside the franchise list: [SinaLite about (trade-only, blind shipping, no branding)](https://sinalite.com/en_us/about), [SinaLite vs 4over offer page](https://offers.sinalite.com/better-than-4over/), [Gelato printing service and print API](https://gelato.com/printing-service), [Gelato API terms](https://gelato.com/en-US/legal/api-terms/), [Gelato pricing](https://www.gelato.com/resources/pricing), [Printful API](https://www.printful.com/de/api), [Smartpress print reseller program](https://smartpress.com/pages/print-reseller-program), [4OVER4 blind shipping](https://v2.4over4.com/benefit/blind-shipping)
 - Blind shipping in general: [PrintKEG: white label, blind and drop shipping](https://www.printkeg.com/blogs/tips/blind-shipping-drop-shipping-prints), [Wikipedia: trade printing](https://en.wikipedia.org/wiki/Trade_printing)

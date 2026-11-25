@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 12:32 CST · Printing plan: options outside the franchise's list
+
+- **Asked for:** "i dont have to use their vendors.. just options i can use. im open to seeing what other options are there. and if they fit better for the website. id do it".
+- **What changed (plan only):** a new section in [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md#other-options-outside-the-franchise-list): **Gelato** (the best API: test mode, notices when orders ship; higher cost per piece, made for small runs), **Printful** (merch with no minimums, strong API), **SinaLite** (trade-only, blind shipping, says it's cheaper than 4over), **Smartpress** (reseller program, tax refunded on resale), **4OVER4** (a different company from 4over; blind shipping). 4over still fits best for trade-priced paper products with an API; Gelato could be the first automated connection while 4over's approval comes through. Decision 3 updated.
+- **Files:** [monetization/print-suppliers/README.md](../monetization/print-suppliers/README.md)
+
 ## 2026-11-25 12:32 CST · Printing suppliers researched, and the plan for customers designing with presets
 
 - **Asked for:** the franchise's vendor list (trade printers 4over, Printograph, Zoo Printing; banners and signs Signs2Trade, Signs365) with "i can use whatever i please", and "i also want to be able to do a way where i can allow the customers to customize their product ... but probably only with presets.. nothing too out of ordinary that would cause hiccups or misprints".
