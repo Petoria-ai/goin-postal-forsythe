@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 16:23 CST · Printing plan: Gelato does embroidery; leaning Gelato for everything
+
+- **Asked for:** "im looking at gelato and then theres printful or printify.. i feel i realyl cant go wrong with them", then "gelato has embroidery on select items".
+- **What changed (plan only):** the clothing section in [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md#clothing-dropship-only-peter-november-25) notes Gelato's embroidery on select items and the leaning: **Gelato for everything to start** (one account, one connection, one branding setup, one bill), with Printify or Printful added later for shirts if wanted.
+- **Files:** [monetization/print-suppliers/README.md](../monetization/print-suppliers/README.md)
+
 ## 2026-11-25 16:16 CST · Printing plan: local shops for rush clothing orders
 
 - **Asked for:** "im thinking if i have to go local. then it'd be more for rush shipping if i need it tomorrow or something i feel".
