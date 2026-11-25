@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 16:14 CST · Printing plan: clothing by dropship only (Printify first); business cards on hold
+
+- **Asked for:** "i may have to hold off on business cards. cloudprinter seems more expensive / lets go into clothing for garments and stuff", then "i dont want to buy a printer at all.. dropshipping only ... i could use print shops nearby locally but i'd have to price them higher".
+- **What changed (plan only):** a clothing section in [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md#clothing-dropship-only-peter-november-25): no equipment or stock; **Printify** first (lowest base prices, API), **Printful** as the quality and branding alternative; presets on the website (styles, color, sizes, logo or text in fixed spots, a mockup); staff approval; bulk orders of 12+ by quote through the local partners at a higher price. Peter's next step: free accounts, the same shirt priced on both, one sample shirt each.
+- **Files:** [monetization/print-suppliers/README.md](../monetization/print-suppliers/README.md)
+
 ## 2026-11-25 15:29 CST · Printing plan: Cloudprinter's business card quotes saved
 
 - **Asked for:** Peter's Cloudprinter quotes (100, 200 and 500 US-size cards, 350gsm, gloss lamination) and "my price isnt a set in stone price.. im just trying to see these products and their customizability and print on demand service".
