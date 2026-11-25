@@ -487,6 +487,9 @@ html:root[data-contrast="high"] nav .nav-menu a { color: #fff; }
 .login-btn:hover { background: linear-gradient(to bottom, #ffe7a3, #cfa061); color: var(--navy); }
 .login-btn.in { background: none; color: #fff; border-color: #ffffff99; }
 .login-btn.in:hover { color: var(--kraft); }
+/* Every dropdown: an invisible bridge over the space between the button and its panel, so the mouse never "leaves"
+   on the way down (Nov 25 2026). The page script adds a short wait before closing. */
+.nav-menu::before, .acct-menu::before { content: ''; position: absolute; left: 0; right: 0; top: -12px; height: 12px; }
 /* The account menu under "Hi, Peter" (Nov 25 2026). */
 .acct-drop { position: relative; flex: none; }
 .acct-menu { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 70; min-width: 14rem; padding: 8px; background: #fff; border: 1px solid var(--hair, #e3d9c8); border-radius: 14px; box-shadow: 0 12px 28px rgba(40, 30, 10, .16); }

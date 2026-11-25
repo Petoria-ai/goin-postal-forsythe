@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 17:59 CST · Every dropdown stays open on the way down (Tracking and the account menu too)
+
+- **Asked for:** "and thats for all the drop down menu stuff.. can we eliminate the gap for any drop down menu like 'Tracking' tab".
+- **What changed:** **Tracking ▾** and the **"Hi, …"** account menu now work like the catalog bar: an invisible bridge covers the space between the button and its menu, the menu waits about a third of a second before closing, and another menu takes over only if the mouse stops on it. Phones are unchanged (a tap opens and closes). Tested with a slow diagonal mouse path into each menu: Tracking → View all shipments, Hi → My mailbox, Men's → Long sleeve; each stayed open and the click went through.
+- **Files:** [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/styles/global.css](../site/src/styles/global.css)
+- **How to check it:** `git pull`, refresh, move slowly from Tracking down to "View all shipments".
+
 ## 2026-11-25 17:57 CST · Catalog dropdowns no longer close on the way down
 
 - **Asked for:** "i hate how when i hover my mouse to go into the womens dropdown. it disappears when i try to click one of the options then i have to hover the button again".
