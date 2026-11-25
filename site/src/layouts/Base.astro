@@ -60,7 +60,17 @@ import { PRINT_CATALOG } from '../data/printCatalog';
           <!-- The carriers the store ships with (Peter, Nov 15 2026), in the space between the logo and Log in. Wide screens only. -->
           <div class="hdr-carriers"><span class="muted" data-i18n="carr.weship">Authorized for</span><CarrierBadges /></div>
           <!-- Log in, top right of every page (Peter, Nov 14 2026). Signed in, it greets the customer and opens their account. -->
-          <a class="login-btn" id="loginBtn" href="/account" data-i18n="acct.login">Log in</a>
+          <!-- Signed in, the button says "Hi, Peter" and opens the account menu (Peter, Nov 25 2026: "account could be ... where
+               it saids 'Hi, Peter' possibly a dropdown menu"); signed out, it's Log in. -->
+          <div class="acct-drop" id="acctDrop">
+            <a class="login-btn" id="loginBtn" href="/account" data-i18n="acct.login">Log in</a>
+            <div class="acct-menu" id="acctMenu">
+              <a href="/account" data-i18n="acct.m.account">My account</a>
+              <a href="/account#orders" data-i18n="acct.m.orders">My orders & shipments</a>
+              <a href="/account#mailbox" data-i18n="acct.m.mailbox">My mailbox</a>
+              <button type="button" id="acctOut" data-i18n="acct.logout">Sign out</button>
+            </div>
+          </div>
         </div>
         <nav aria-label="Main">
           <a href="/ship" class="ps-tab" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
@@ -73,25 +83,11 @@ import { PRINT_CATALOG } from '../data/printCatalog';
               <a href="/account#orders" data-i18n="nav.allships">View all shipments</a>
             </div>
           </div>
-          <!-- Printing menu (Peter, Nov 14 2026): every printing product, then "See all printing" at the bottom. Same behavior as Tracking. -->
-          <div class="nav-drop" id="printDrop">
-            <a href="/printing" aria-current={cur('/printing') ?? cur('/cards')} data-i18n="nav.printing">Printing</a>
-            <button type="button" class="nav-caret" aria-expanded="false" aria-controls="printMenu" aria-label="Printing menu">▾</button>
-            <div class="nav-menu" id="printMenu">
-              <a href="/cards" data-i18n="nav.print.cards">Business Cards</a>
-              <a href="/printing/banners" data-i18n="nav.print.banners">Banners & Yard Signs</a>
-              <a href="/print" data-i18n="nav.print.online">Order shirts, posters & flyers online</a>
-              <a href="/printing/t-shirts" data-i18n="nav.print.shirts">Custom T-Shirts</a>
-              <a href="/printing/promo" data-i18n="nav.print.promo">Pens & Promo Items</a>
-              <div class="nav-sep" role="separator"></div>
-              <a href="/printing" data-i18n="nav.print.all">See all printing</a>
-            </div>
-          </div>
+          <!-- Printing is the catalog bar below (Nov 25 2026); Hours and Contact are one link; Account is the "Hi" button;
+               About PeterShip is in the footer. -->
+          <a href="/mailbox" aria-current={cur('/mailbox')} data-i18n="nav.mailboxes">Mailboxes</a>
           <a href="/#services" data-i18n="nav.services">Services</a>
-          <a href="/#hours" data-i18n="nav.hours">Hours</a>
-          <a href="/contact" aria-current={cur('/contact')} data-i18n="nav.contact">Contact</a>
-          <a href="/account" aria-current={cur('/account')} data-i18n="nav.account">Account</a>
-          <a href="/petership" aria-current={cur('/petership')} data-i18n="nav.about">About PeterShip</a>
+          <a href="/contact" aria-current={cur('/contact')} data-i18n="nav.contacthours">Contact & Hours</a>
         </nav>
       </div>
       <!-- The print catalog bar (Peter, Nov 25 2026: "i like how vistaprint or 4over has their catalog all over the top"):
@@ -116,6 +112,7 @@ import { PRINT_CATALOG } from '../data/printCatalog';
         <div class="foot-carriers"><span data-i18n="carr.footer">Authorized shipping location for</span><CarrierBadges /></div>
         {store.name} · {store.address}.
         <span data-i18n="footer">Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.</span>
+        · <a href="/petership" data-i18n="nav.about">About PeterShip</a>
         · <a href="/counter" data-i18n="st.in.link">Staff sign-in</a>
       </div>
     </footer>
@@ -142,14 +139,23 @@ import { PRINT_CATALOG } from '../data/printCatalog';
       let me: { signed_in: boolean; name?: string } | null = null;
       const paintLogin = () => {
         if (!loginBtn) return;
-        if (me?.signed_in) { delete loginBtn.dataset.i18n; loginBtn.textContent = me.name ? t('acct.hi').replace('{name}', me.name) : t('nav.account'); loginBtn.href = '/account'; loginBtn.classList.add('in'); }
+        if (me?.signed_in) { delete loginBtn.dataset.i18n; loginBtn.textContent = me.name ? t('acct.hi').replace('{name}', me.name) : t('nav.account'); loginBtn.href = '/account'; loginBtn.classList.add('in'); document.getElementById('acctDrop')?.classList.add('in'); loginBtn.setAttribute('aria-haspopup', 'true'); }
         else if (!location.pathname.startsWith('/account')) loginBtn.href = `/account?next=${encodeURIComponent(location.pathname + location.search)}`;
       };
       if (loginBtn && !location.pathname.startsWith('/counter')) fetch('/api/account', { credentials: 'same-origin' }).then((r) => r.json()).then((j) => { me = j; paintLogin(); }).catch(() => {});
       paintLogin(); document.addEventListener('langchange', paintLogin);
+      // The account menu: hover or keyboard focus opens it on a computer; a tap on "Hi, Peter" opens it on a phone.
+      const acctDrop = document.getElementById('acctDrop');
+      loginBtn?.addEventListener('click', (e) => { if (!me?.signed_in) return; e.preventDefault(); acctDrop?.classList.toggle('open'); loginBtn.setAttribute('aria-expanded', String(acctDrop?.classList.contains('open'))); });
+      document.addEventListener('click', (e) => { if (acctDrop && !acctDrop.contains(e.target as Node)) acctDrop.classList.remove('open'); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') acctDrop?.classList.remove('open'); });
+      document.getElementById('acctOut')?.addEventListener('click', async () => {
+        await fetch('/api/account', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) }).catch(() => {});
+        location.href = '/';
+      });
       // Tracking and Printing menus: the arrow button opens and closes one (hover and keyboard focus open it through CSS);
       // opening one closes the other; Escape or a click elsewhere closes it.
-      const drops = [['trackDrop', 'nav.trackmenu'], ['printDrop', 'nav.printmenu']].map(([id, label]) => {
+      const drops = [['trackDrop', 'nav.trackmenu'], ['printDrop', 'nav.printmenu']].filter(([id]) => document.getElementById(id)).map(([id, label]) => {
         const drop = document.getElementById(id)!, caret = drop.querySelector<HTMLButtonElement>('.nav-caret')!;
         return { drop, caret, label };
       });

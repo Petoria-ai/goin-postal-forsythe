@@ -4,6 +4,19 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 17:06 CST · Top menu cleaned up; Account is the "Hi, Peter" dropdown
+
+- **Asked for:** "i think we need to clean up the first row. like hours/contact / maybe account could be a where it saids 'Hi, Peter' possibly a dropdown menu".
+- **What changed:**
+  - The top row is now **Ship a package · Tracking ▾ · Mailboxes · Services · Contact & Hours** (it was nine items).
+  - **Hours** and **Contact** are one link, **Contact & Hours** (the contact page already shows the hours).
+  - **Printing ▾** left the top row; the print catalog bar right under it covers every printing category.
+  - **Mailboxes** is in the top row now (the mailbox page was only linked from elsewhere).
+  - **Account** is the button at the top right: signed in it says **"Hi, Peter"** and opens a menu on hover (a tap on a phone): **My account · My orders & shipments · My mailbox · Sign out**. Signed out it's still **Log in**.
+  - **About PeterShip** moved to the footer, next to Staff sign-in.
+- **Files:** [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/styles/global.css](../site/src/styles/global.css), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts)
+- **How to check it:** `git pull`, refresh, sign in on the website, point at "Hi, …".
+
 ## 2026-11-25 16:59 CST · A print catalog bar across the top of every page (like Vistaprint and 4over)
 
 - **Asked for:** "whats the best way arrange my website to advertise i do printing as well? instead of just having a 'Printing' tab", then (to the idea of a single shirt button) "that looks ghetto.. because some people may see it as just a building a shirt.. i like how vistaprint or 4over has their catalog all over the top".

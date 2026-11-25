@@ -487,6 +487,16 @@ html:root[data-contrast="high"] nav .nav-menu a { color: #fff; }
 .login-btn:hover { background: linear-gradient(to bottom, #ffe7a3, #cfa061); color: var(--navy); }
 .login-btn.in { background: none; color: #fff; border-color: #ffffff99; }
 .login-btn.in:hover { color: var(--kraft); }
+/* The account menu under "Hi, Peter" (Nov 25 2026). */
+.acct-drop { position: relative; flex: none; }
+.acct-menu { display: none; position: absolute; right: 0; top: calc(100% + 6px); z-index: 70; min-width: 14rem; padding: 8px; background: #fff; border: 1px solid var(--hair, #e3d9c8); border-radius: 14px; box-shadow: 0 12px 28px rgba(40, 30, 10, .16); }
+.acct-drop.in:hover .acct-menu, .acct-drop.in:focus-within .acct-menu, .acct-drop.in.open .acct-menu { display: grid; gap: 2px; }
+.acct-drop.in::after { content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 8px; } /* keeps the menu open while the mouse moves down */
+.acct-menu a, .acct-menu button { display: flex; align-items: center; min-height: 44px; padding: 10px 12px; border-radius: 10px; color: var(--navy, #1d2a5c); font: inherit; font-weight: 700; text-decoration: none; background: none; border: 0; text-align: left; cursor: pointer; white-space: nowrap; }
+.acct-menu a:hover, .acct-menu a:focus-visible, .acct-menu button:hover, .acct-menu button:focus-visible { background: var(--soft-blue, #e8eef9); }
+.acct-menu button { color: #b3261e; border-top: 1px solid var(--hair, #e3d9c8); border-radius: 0 0 10px 10px; }
+html:root[data-contrast="high"] .acct-menu { background: #000; border-color: #fff; }
+html:root[data-contrast="high"] .acct-menu a, html:root[data-contrast="high"] .acct-menu button { color: #fff; }
 html:root[data-contrast="high"] .login-btn { background: #ffd166; color: #000; border-color: #000; box-shadow: none; }
 html:root[data-contrast="high"] .login-btn.in { background: #000; color: #fff; border-color: #fff; }
 

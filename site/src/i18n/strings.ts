@@ -954,6 +954,11 @@ export const STRINGS: Record<string, T> = {
   'cat.promo': s('Promo Products', 'Productos promocionales', 'Quà tặng quảng cáo', 'ສິນຄ້າໂປຣໂມຊັນ', 'ផលិតផលផ្សព្វផ្សាយ', '판촉물', '促销品', '宣傳品', '販促品', 'สินค้าโปรโมชั่น', 'Brindes', 'Promotieartikelen', 'Promosieprodukte', 'Objets promotionnels'),
   'cat.promo.items': s('Pens, mugs & giveaways', 'Bolígrafos, tazas y regalos', 'Bút, cốc & quà tặng', 'ບິກ, ຈອກ & ຂອງແຈກ', 'ប៊ិច ពែង និងរបស់ចែក', '펜, 머그 & 증정품', '笔、杯子和赠品', '筆、杯同贈品', 'ペン・マグ・配布品', 'ปากกา แก้ว และของแจก', 'Canetas, canecas e brindes', 'Pennen, mokken & weggevers', 'Penne, bekers & weggee-items', 'Stylos, mugs et cadeaux'),
   'cat.all': s('All Printing', 'Toda la impresión', 'Tất cả dịch vụ in', 'ການພິມທັງໝົດ', 'ការបោះពុម្ពទាំងអស់', '전체 인쇄', '全部印刷', '全部印刷', '印刷すべて', 'งานพิมพ์ทั้งหมด', 'Toda a impressão', 'Alle drukwerk', 'Alle drukwerk', 'Toute l’impression'),
+  'nav.mailboxes': s('Mailboxes', 'Buzones', 'Hộp thư', 'ຕູ້ຈົດໝາຍ', 'ប្រអប់សំបុត្រ', '사서함', '信箱', '信箱', '私書箱', 'ตู้จดหมาย', 'Caixas postais', 'Postbussen', 'Posbusse', 'Boîtes aux lettres'),
+  'nav.contacthours': s('Contact & Hours', 'Contacto y horario', 'Liên hệ & Giờ mở cửa', 'ຕິດຕໍ່ & ເວລາ', 'ទំនាក់ទំនង និងម៉ោង', '연락처 & 영업시간', '联系方式和营业时间', '聯絡同營業時間', '連絡先・営業時間', 'ติดต่อและเวลาทำการ', 'Contato e horário', 'Contact & openingstijden', 'Kontak & ure', 'Contact et horaires'),
+  'acct.m.account': s('My account', 'Mi cuenta', 'Tài khoản của tôi', 'ບັນຊີຂອງຂ້ອຍ', 'គណនីរបស់ខ្ញុំ', '내 계정', '我的账户', '我嘅戶口', 'マイアカウント', 'บัญชีของฉัน', 'Minha conta', 'Mijn account', 'My rekening', 'Mon compte'),
+  'acct.m.orders': s('My orders & shipments', 'Mis pedidos y envíos', 'Đơn hàng & lô gửi của tôi', 'ຄຳສັ່ງ & ການສົ່ງຂອງຂ້ອຍ', 'ការបញ្ជាទិញ និងការផ្ញើរបស់ខ្ញុំ', '내 주문 & 배송', '我的订单和寄件', '我嘅單同寄件', '注文・発送', 'คำสั่งซื้อและการส่งของฉัน', 'Meus pedidos e envios', 'Mijn bestellingen & zendingen', 'My bestellings & besendings', 'Mes commandes et envois'),
+  'acct.m.mailbox': s('My mailbox', 'Mi buzón', 'Hộp thư của tôi', 'ຕູ້ຈົດໝາຍຂອງຂ້ອຍ', 'ប្រអប់សំបុត្ររបស់ខ្ញុំ', '내 사서함', '我的信箱', '我嘅信箱', '私の私書箱', 'ตู้จดหมายของฉัน', 'Minha caixa postal', 'Mijn postbus', 'My posbus', 'Ma boîte aux lettres'),
 };
 
 export function t(key: string, lang: Lang): string {
