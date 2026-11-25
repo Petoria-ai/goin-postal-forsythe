@@ -52,6 +52,18 @@ Gelato's premium silk business cards were $1.81 for 10 (about 18¢ a card; $1.27
 
 Next: free accounts at Cloudprinter and 4over, and prices for 250 and 500 cards (16 pt, two sides) shipped to Monroe; the shop's laser keeps the quick 100 and 250 runs.
 
+**Cloudprinter quotes Peter got (November 25, 2026; "Business card DS US L FC TNR": double-sided, US size 2 × 3.5 in, landscape, full color; 350gsm gloss board, gloss lamination both sides, square corners; shipped to Louisiana; euros, about $1.08 each):**
+
+| Cards | Printing | Shipping | Total (about) | Per card |
+|---|---|---|---|---|
+| 100 | €11.22 | €6.08 to €14.92 | $18.65 to $28.20 | about 12¢ |
+| 200 | €22.44 | €6.08 to €14.92 | $30.80 to $40.30 | about 12¢ (no discount at 200) |
+| 500 | €53.25 | €11.66 to €12.75 | about $70 to $71 | about 11.5¢ |
+
+(A first quote was for a 30 × 70 mm mini card on 250gsm: €2.94 for 100, which is why it looked so cheap.)
+
+**What it means** (Peter: "my price isnt a set in stone price.. im just trying to see these products and their customizability and print on demand service"): Cloudprinter works well as a print-on-demand service (no minimums, the choices a card shop needs, an API with live prices and shipping on the free plan), but at about 11 to 12¢ a card plus shipping it fits **premium laminated cards priced to cost** (for example 100 for about $29.99 to $39.99, 500 for about $84.99 to $94.99), while everyday cards stay with the shop's laser or 4over. Still to try on Cloudprinter: no lamination, rounded corners, matte against gloss, one side against two, its file rules (bleed, safe zone, PDF type), and whether the box is plain.
+
 ### Which one prints what (a starting plan)
 
 ```mermaid

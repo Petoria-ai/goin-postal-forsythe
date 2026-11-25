@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 15:29 CST · Printing plan: Cloudprinter's business card quotes saved
+
+- **Asked for:** Peter's Cloudprinter quotes (100, 200 and 500 US-size cards, 350gsm, gloss lamination) and "my price isnt a set in stone price.. im just trying to see these products and their customizability and print on demand service".
+- **What changed (plan only):** the quotes, what the codes mean, and the read on them are in [`monetization/print-suppliers/`](../monetization/print-suppliers/README.md#business-cards-not-on-gelato-peter-november-25): about 11 to 12¢ a card plus shipping at every quantity; good as a print-on-demand service for premium laminated cards priced to cost; everyday cards stay with the shop's laser or 4over; what to try next on Cloudprinter.
+- **Files:** [monetization/print-suppliers/README.md](../monetization/print-suppliers/README.md)
+
 ## 2026-11-25 15:09 CST · Printing plan: business cards off Gelato; API printers for cards
 
 - **Asked for:** Gelato's business card price ($1.81 for 10), "lets skip business cards in gelato.. do you possibly have any ideas of what websites that have api, customizations similar to gelato but for business cards?"
