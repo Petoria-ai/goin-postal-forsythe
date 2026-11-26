@@ -341,7 +341,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 
 **To go live:**
 - [ ] **Peter:** a Gelato account; create an **API key** (Developer → API keys) and paste it on Counter → Print orders with the owner PIN (never in chat). The banner turns to DRAFTS.
-- [ ] **Gelato's product codes:** for each product (the t-shirt by size and color, each poster and flyer size), copy Gelato's product code into `gelato_uid` in `printProducts.json`, or send them to Claude. The ones there now are best guesses of Gelato's format.
+- [ ] **Gelato's product codes:** for each product (the t-shirt by size and color, each poster and flyer size), copy Gelato's product code into `gelato_uid` in `printProducts.json`, or send them to Claude. The ones there now are best guesses of Gelato's format. **Easiest (Nov 25):** save the Gelato key on Print orders, press **Download Gelato's product list**, and send Claude the file from Downloads; it has every product code and no key.
 - [ ] **Prices:** the t-shirt ($24.99), posters ($19.99 to $39.99), flyers ($19.99 to $89.99) and $6.99 shipping are starting guesses; set them from Gelato's real costs (the staff page shows about what's kept on each order).
 - [ ] **A test in DRAFTS:** place an order on the website, approve it, and check that it shows in Gelato's dashboard as a draft with the right product and artwork.
 - [ ] **The webhook:** paste the address the staff page shows into Gelato (Developer → Webhooks).

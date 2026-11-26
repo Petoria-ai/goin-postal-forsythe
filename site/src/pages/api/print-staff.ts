@@ -5,13 +5,14 @@ import { json } from '../../lib/validate';
 import { authenticate, atLeast } from '../../lib/auth';
 import { logAudit } from '../../shipping/store';
 import { listPrintOrders, getPrintOrder, updatePrintOrder, artUrl } from '../../lib/printOrders';
-import { sendToGelato, gelatoStatus, gelatoMode, setGelatoLive } from '../../lib/gelato';
-import { serviceKeyInfo, saveServiceKey, removeServiceKey, cleanKey, keysReady } from '../../lib/serviceKeys';
+import { sendToGelato, gelatoStatus, gelatoMode, setGelatoLive, gelatoCatalogs, gelatoCatalog } from '../../lib/gelato';
+import { serviceKeyInfo, saveServiceKey, removeServiceKey, cleanKey, keysReady, serviceKey } from '../../lib/serviceKeys';
 
 // Counter → Print orders (Peter, Nov 25 2026): the staff side of Gelato orders. Any staff PIN: list, art {id} (links
 // to look at the artwork), approve {id} (sends it to Gelato), refresh {id} (asks Gelato for status and tracking).
 // Manager or owner: cancel {id} (before it's sent; refund it in Stripe). Owner: key_save {key}, key_remove,
-// set_live {on} (real orders on or off; off sends drafts Gelato doesn't print).
+// set_live {on} (real orders on or off; off sends drafts Gelato doesn't print). Manager or owner: catalog_list and
+// catalog_one {uid} read Gelato's product catalog (read only) for the "Gelato's product list" file.
 export const POST: APIRoute = async ({ request }) => {
   const b: any = await request.json().catch(() => ({}));
   const user = await authenticate(env, b.pin);
@@ -60,6 +61,15 @@ export const POST: APIRoute = async ({ request }) => {
       const next = await updatePrintOrder(env, o.id, { status: 'cancelled' }, `cancelled${b.reason ? `: ${String(b.reason).slice(0, 200)}` : ''}`, user.name);
       await logAudit(env, who, 'print.cancel', o.id, String(b.reason ?? '').slice(0, 200) || null);
       return json({ ok: true, order: next, refund: o.status === 'paid' });
+    }
+    if (b.action === 'catalog_list' || b.action === 'catalog_one') {
+      if (!atLeast(user, 'manager')) return json({ error: 'Only a manager or owner can read Gelato\'s catalog.' }, 403);
+      const key = await serviceKey(env, 'gelato');
+      if (!key) return json({ error: 'Save the Gelato key first.' }, 400);
+      if (b.action === 'catalog_list') return json({ catalogs: await gelatoCatalogs(key) });
+      const uid = String(b.uid ?? '');
+      if (!/^[\w.-]{1,120}$/.test(uid)) return json({ error: 'Bad catalog id' }, 400);
+      return json({ catalog: await gelatoCatalog(key, uid) });
     }
     if (['key_save', 'key_remove', 'set_live'].includes(b.action)) {
       if (!atLeast(user, 'owner')) return json({ error: 'Only an owner PIN can change the Gelato connection.' }, 403);

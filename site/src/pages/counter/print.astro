@@ -44,6 +44,13 @@ import StaffNav from '../../components/StaffNav.astro';
       </form>
       <p class="btnrow" id="poLiveRow" hidden><label class="check"><input type="checkbox" id="poLive" /> <strong data-i18n="st.po.live">Send real orders (Gelato prints, ships and bills)</strong></label></p>
       <p class="muted small" id="poHook"></p>
+      <!-- Gelato's product list (Nov 25 2026): reads Gelato's whole catalog with the saved key (read only, nothing is
+           ordered) and saves it as a file. The file has no key in it, so it is safe to send to Claude. -->
+      <div id="poCatBox" hidden>
+        <h4 data-i18n="st.po.cat.h">Gelato's product list</h4>
+        <p class="muted small" data-i18n="st.po.cat.p">Reads every product Gelato makes (sizes, colors and product codes) and saves it as a file on this computer. Nothing is ordered, and the key is not in the file, so it's safe to send to Claude.</p>
+        <p class="btnrow"><button type="button" class="btn small" id="poCatBtn" data-i18n="st.po.cat.btn">Download Gelato's product list</button> <span id="poCatMsg" class="muted small"></span></p>
+      </div>
     </div>
   </div>
 
@@ -112,6 +119,7 @@ import StaffNav from '../../components/StaffNav.astro';
       ($('poKeyForm') as HTMLFormElement).hidden = !data.can_owner; $('poKeyRemove').hidden = k.source !== 'site';
       $('poLiveRow').hidden = !data.can_owner || mode === 'pretend'; ($('poLive') as HTMLInputElement).checked = mode === 'live';
       $('poHook').textContent = tf('st.po.hook', { url: `${location.origin}/api/gelato-webhook` });
+      $('poCatBox').hidden = !data.can_manager || mode === 'pretend';
     }
     async function showArt(id: string) {
       try {
@@ -124,6 +132,25 @@ import StaffNav from '../../components/StaffNav.astro';
       try { data = await api({ action: 'list' }); $('poMain').classList.remove('hidden'); paint(); } catch (e: any) { say(e.message, true); }
     }
     $('load').addEventListener('click', load);
+    // Gelato's product list: one catalog at a time, then one file to download.
+    $('poCatBtn').addEventListener('click', async () => {
+      const btn = $('poCatBtn') as HTMLButtonElement; const out = $('poCatMsg'); btn.disabled = true;
+      try {
+        const { catalogs } = await api({ action: 'catalog_list' });
+        const all: any[] = []; const failed: string[] = [];
+        for (let i = 0; i < catalogs.length; i++) {
+          out.textContent = tf('st.po.cat.progress', { n: i + 1, of: catalogs.length, title: catalogs[i].title });
+          try { all.push((await api({ action: 'catalog_one', uid: catalogs[i].uid })).catalog); } catch { failed.push(catalogs[i].uid); }
+        }
+        const file = { source: 'Gelato Product API v3', saved_at: new Date().toISOString(), catalogs: all, failed };
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(file, null, 1)], { type: 'application/json' }));
+        a.download = `gelato-catalog-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        out.textContent = tf('st.po.cat.done', { n: all.length, file: a.download }) + (failed.length ? ` (${failed.length} ✗)` : '');
+      } catch (e: any) { out.textContent = ''; say(e.message, true); }
+      btn.disabled = false;
+    });
     $('pin').addEventListener('keydown', (e) => { if ((e as KeyboardEvent).key === 'Enter') load(); });
     $('poFilter').addEventListener('click', (e) => { const b = (e.target as HTMLElement).closest('button'); if (!b) return; filter = b.dataset.f!; $('poFilter').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b)); paint(); });
     ($('poKeyForm') as HTMLFormElement).addEventListener('submit', async (ev) => {

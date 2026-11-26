@@ -4,6 +4,15 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 20:49 CST · Print orders: a "Download Gelato's product list" button
+
+- **Asked for:** "would it help if i attached gelato's api for you to see all of gelatos products in one spot?", then "whats the safest way to do it? last time we just put a input api key for virtual mail but on the admin side".
+- **What changed:** the safest way is the key box already on **Counter → Print orders** (owner PIN only, the key is locked before it's saved and never shown again). Below it is a new **Gelato's product list** button (manager or owner PIN). It reads Gelato's whole catalog with that key, one product group at a time with a progress line, and saves a file such as `gelato-catalog-2026-11-25.json` to your Downloads folder. It only reads: nothing is ordered or changed in Gelato. The file has products, sizes, colors and product codes but **no key**, so it's safe to send to Claude.
+- **Why it helps:** the product codes in our print setup are guesses until now; with the file Claude can put in Gelato's real codes (P23) and make the menus match exactly what Gelato makes.
+- **Tested:** with a pretend Gelato (3 new tests: the catalog list, reading every page of a catalog, and a clear "check the key" message when Gelato refuses it), and on the page (the box shows for a manager or owner once a key is saved). It can't reach the real Gelato from Claude's workspace; it will from your PC.
+- **Files:** [site/src/lib/gelato.ts](../site/src/lib/gelato.ts), [site/src/pages/api/print-staff.ts](../site/src/pages/api/print-staff.ts), [site/src/pages/counter/print.astro](../site/src/pages/counter/print.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/gelatoCatalog.test.ts](../site/tests/gelatoCatalog.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, restart `npm run dev`, open Counter → Print orders with the owner PIN, paste the Gelato key in the key box at the bottom and press Save key, then press **Download Gelato's product list**.
+
 ## 2026-11-25 18:16 CST · Print shop dropdowns match Gelato's lists
 
 - **Asked for:** Peter sent Gelato's dropdowns for Home and living, Kids and baby, and Drinkware: "this is what is in gelatos dropdown menus".
