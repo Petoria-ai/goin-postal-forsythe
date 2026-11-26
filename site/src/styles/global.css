@@ -1203,7 +1203,7 @@ header.top nav, .utility-in, header.top .wrap, .utility .wrap { min-width: 0; }
 .vm-check { margin-top: 1rem; }
 /* The print catalog bar (Nov 25 2026): airy, like Gelato's: light words, a soft rounded highlight, room to breathe. */
 .catbar { background: #fff; border-bottom: 1px solid #efe9de; box-shadow: 0 6px 18px rgba(40, 30, 10, .04); }
-header.top .catbar-row { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: safe center; align-items: stretch; gap: 0; padding-top: 0; padding-bottom: 0; min-height: 0; max-width: 1440px; }
+header.top .catbar-row { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: safe center; align-items: stretch; gap: 0; padding-top: 0; padding-bottom: 0; min-height: 0; max-width: 1600px; }
 .cat-drop { position: relative; display: flex; }
 .cat-link { display: flex; align-items: center; padding: .45rem .7rem; border-radius: 999px; font-weight: 500; font-size: .88rem; color: #4b4f58; text-decoration: none; white-space: nowrap; transition: background .15s, color .15s; }
 .cat-link:hover, .cat-link:focus-visible, .cat-drop:focus-within > .cat-link { background: #f5f1e8; color: #1d1f24; }
@@ -1211,7 +1211,8 @@ header.top .catbar-row { display: flex; flex-direction: row; flex-wrap: nowrap; 
 .cat-all { color: var(--navy, #1d2a5c); font-weight: 700; }
 html:root[data-contrast="high"] .catbar, html:root[data-contrast="high"] .cat-mega { background: #000; border-color: #fff; }
 html:root[data-contrast="high"] .cat-link, html:root[data-contrast="high"] .cat-mega a { color: #fff; }
-@media (max-width: 1200px) {
+@media (max-width: 1440px) { .cat-link { padding: .45rem .55rem; font-size: .85rem; } }
+@media (max-width: 1300px) {
   header.top .catbar-row { overflow-x: auto; justify-content: flex-start; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
   .cat-mega { display: none !important; }
 }
@@ -1260,6 +1261,8 @@ header.top .cat-mega-in { display: grid; flex-direction: row; align-items: stret
 .shop-ask, .shop-bulk { background: #fff; border-radius: 18px; }
 .pcat-pic.pcat-hoodie { background: #fbeef3; } .pcat-pic.pcat-tee { background: #edf3fb; } .pcat-pic.pcat-kidstee { background: #fdf5e4; } .pcat-pic.pcat-longsleeve { background: #eaf5f0; } .pcat-pic.pcat-tank { background: #eff0f2; }
 .pcat-pic.pcat-crop { background: #fdeeed; } .pcat-pic.pcat-polo { background: #edf0f8; } .pcat-pic.pcat-beanie { background: #fbecea; } .pcat-pic.pcat-tote { background: #f8f3ea; } .pcat-pic.pcat-mug { background: #fbf0ec; }
+.pcat-pic.pcat-pillow { background: #fdf3ea; } .pcat-pic.pcat-blanket { background: #e9f5f2; } .pcat-pic.pcat-phonecase { background: #fdf5e4; } .pcat-pic.pcat-apron { background: #fbecea; }
+.pcat-pic.pcat-bandana { background: #f8f1e7; } .pcat-pic.pcat-petbed { background: #edf3fb; } .pcat-pic.pcat-petbowl { background: #f8f1e7; }
 .pcat-pic.pcat-bottle { background: #edf3fb; } .pcat-pic.pcat-poster { background: #fbf3e6; } .pcat-pic.pcat-canvas { background: #e9f5f2; } .pcat-pic.pcat-yardsign { background: #edf0f8; } .pcat-pic.pcat-postcard { background: #eaf5fb; }
 /* The print shop's picture cards (Nov 25 2026). */
 .pcat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; margin: 1.5rem 0 2.5rem; }
@@ -1272,6 +1275,7 @@ header.top .cat-mega-in { display: grid; flex-direction: row; align-items: stret
 .pcat-pic svg, .pcat-pic img { width: 82%; height: 82%; object-fit: contain; }
 .pcat-pic img { width: 100%; height: 100%; object-fit: cover; }
 .pcat-womens { background: #fbeee8; } .pcat-mens { background: #eef0f2; } .pcat-kids { background: #eaf5fb; } .pcat-hats { background: #edf0f8; }
+.pcat-home { background: #fbeee8; } .pcat-pets { background: #f8f1e7; }
 .pcat-drinkware { background: #e9f5f2; } .pcat-wallart { background: #fbf3e6; } .pcat-signs { background: #fbecea; } .pcat-stationery { background: #eef3fa; }
 .pcat-body { padding: .9rem 1.1rem 1.1rem; }
 .pcat-kicker { margin: 0; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: #8a8f98; font-weight: 600; }

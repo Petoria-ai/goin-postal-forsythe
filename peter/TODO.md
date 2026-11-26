@@ -349,7 +349,7 @@ Ideas and projects Peter wants to do later. Each one has what it is, why it's wa
 - [ ] **The embroidered item:** pick it in Gelato's catalog, fill in its code and turn it on (`active: true`).
 - [ ] Order one sample of each product for the counter, to show customers.
 - [ ] **Products per category** (Nov 25): pick in Gelato a women's tee or hoodie, a men's tee or hoodie, a kids' tee and a baby onesie, a cap, a mug; send each one's name and Gelato product code, and they go online with the same presets. Until then Women's and Men's show the unisex t-shirt and the rest say "Ask for a price".
-- [ ] **Photos for the picture cards:** from Gelato's Mockup Studio or samples, one per category, in `site/public/print/<category>.jpg`.
+- [ ] **Photos for the picture cards:** from Gelato's Mockup Studio or samples, one per category, in `site/public/print/<category>.jpg`. Categories now include **Home & Living** and **Pets** (Nov 25 2026). Ideas (Nov 25): Gelato's Mockup Studio first (real models in the exact product); AI model tools (Photoroom, Botika, FASHN, Claid) if needed, including AI pet models for the Pets cards; check each tool's commercial-use terms. A store mascot: draft it with an AI image tool, then have an illustrator redraw it as a vector you own (pure AI art can't be copyrighted), kept separate from the Goin' Postal logo.
 
 ## P22. Printify or Printful for cheaper shirts (later)
 

@@ -4,6 +4,15 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 18:10 CST · Print shop: Home & Living and Pets categories
+
+- **Asked for:** "also lets add home and living and pets" (Gelato's catalog bar), and "im probably going to need ai pet models too haha".
+- **What changed:** two new categories in the catalog bar, each with its own big dropdown, shop page, explore strip and picture card. **Home & Living:** throw pillows, blankets, phone cases, aprons. **Pets:** pet bandanas, pet beds, pet bowls. Nothing in them is online yet, so they show "Ask for a price" until Gelato products are set up. Each has a drawing until real photos arrive; the names are in all 14 languages.
+- **To make room:** three category names are shorter: "Hats & Bags" (was Hats & Accessories), "Wall Art" (was Wall Art & Posters), "Cards & Stationery" (was Business Cards & Stationery). The bar fits on one row on screens 1301 pixels wide and up (a common laptop is 1366) and swipes sideways on smaller ones, as before.
+- **Photos:** the to-do (P23) now notes the photo ideas: Gelato's Mockup Studio first, AI model tools (including AI pet models) if needed, and the mascot plan.
+- **Files:** [site/src/data/printCatalog.ts](../site/src/data/printCatalog.ts), [site/src/components/PrintArt.astro](../site/src/components/PrintArt.astro), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/styles/global.css](../site/src/styles/global.css), [TODO.md](TODO.md), [FOR-WILLIAM.md](FOR-WILLIAM.md)
+- **How to check it:** `git pull`, refresh, point at **Pets** in the catalog bar, then open **Home & Living**.
+
 ## 2026-11-25 18:00 CST · Fix: a type error in the dropdown change
 
 - **What happened:** the previous commit (every dropdown stays open) passed the browser check but was pushed with one line the type checker rejects (it read a touch-screen detail that mouse events don't have), so `npm test` failed. Claude's check printed nothing and the commit went through anyway.

@@ -2,7 +2,7 @@
 // their catalog all over the top"), its big dropdown per category ("lets add a drop down menu like how this works",
 // like Gelato's), the picture cards on the print shop and home pages, and the shop pages /shop/<category> and
 // /shop/<category>/<section> with a strip of the category's other sections at the top ("just incase they want to browse
-// for other stuff").
+// for other stuff"). Home & Living and Pets added Nov 26 2026 (Peter, from Gelato's bar).
 // Each category has sections (T-shirts, Hoodies, ...). A section lists the products that are online (ids from
 // src/data/printProducts.json, or a link such as business cards); a section with none yet shows "ask for a price".
 // Pictures are drawings (components/PrintArt.astro) until real photos arrive. To add a section or a product, edit here.
@@ -35,19 +35,26 @@ const RAW: Omit<CatGroup, 'href' | 'from'>[] = [
   { id: 'kids', key: 'cat.kids', label: 'Kids & Baby', art: 'kids', bulk: true, sections: [
     S('kids-tees', 'sec.kidstees', "Kids' t-shirts", 'kidstee'), S('onesies', 'sec.onesies', 'Baby onesies', 'kids'), S('kids-hoodies', 'sec.kidshoodies', "Kids' hoodies", 'hoodie'),
   ] },
-  { id: 'hats', key: 'cat.hats', label: 'Hats & Accessories', art: 'hats', bulk: true, sections: [
+  { id: 'hats', key: 'cat.hats', label: 'Hats & Bags', art: 'hats', bulk: true, sections: [
     S('caps', 'sec.caps', 'Caps', 'hats'), S('beanies', 'sec.beanies', 'Beanies', 'beanie'), S('totes', 'sec.totes', 'Tote bags', 'tote'),
+  ] },
+  { id: 'home-living', key: 'cat.home', label: 'Home & Living', art: 'home', sections: [
+    S('pillows', 'sec.pillows', 'Throw pillows', 'pillow'), S('blankets', 'sec.blankets', 'Blankets', 'blanket'),
+    S('phone-cases', 'sec.phonecases', 'Phone cases', 'phonecase'), S('aprons', 'sec.aprons', 'Aprons', 'apron'),
+  ] },
+  { id: 'pets', key: 'cat.pets', label: 'Pets', art: 'pets', sections: [
+    S('bandanas', 'sec.bandanas', 'Pet bandanas', 'bandana'), S('pet-beds', 'sec.petbeds', 'Pet beds', 'petbed'), S('pet-bowls', 'sec.petbowls', 'Pet bowls', 'petbowl'),
   ] },
   { id: 'drinkware', key: 'cat.drink', label: 'Drinkware', art: 'drinkware', sections: [
     S('mugs', 'sec.mugs', 'Mugs', 'mug'), S('bottles', 'sec.bottles', 'Water bottles', 'bottle'), S('tumblers', 'sec.tumblers', 'Tumblers', 'drinkware'),
   ] },
-  { id: 'wall-art', key: 'cat.wallart', label: 'Wall Art & Posters', art: 'wallart', sections: [
+  { id: 'wall-art', key: 'cat.wallart', label: 'Wall Art', art: 'wallart', sections: [
     S('posters', 'sec.posters', 'Posters', 'poster', ['poster']), S('framed', 'sec.framed', 'Framed prints', 'wallart'), S('canvas', 'sec.canvas', 'Canvas', 'canvas'),
   ] },
   { id: 'signs', key: 'cat.signsonly', label: 'Signs & Banners', art: 'signs', sections: [
     S('banners', 'sec.banners', 'Banners', 'signs'), S('yard-signs', 'sec.yardsigns', 'Yard signs', 'yardsign'),
   ] },
-  { id: 'stationery', key: 'cat.stationery', label: 'Business Cards & Stationery', art: 'stationery', sections: [
+  { id: 'stationery', key: 'cat.stationery', label: 'Cards & Stationery', art: 'stationery', sections: [
     S('business-cards', 'sec.cards', 'Business cards', 'card', [], { href: '/cards', key: 'cat.cards.design', label: 'Design your business cards', from: cardsFrom }),
     S('flyers', 'sec.flyers', 'Flyers', 'stationery', ['flyer']), S('postcards', 'sec.postcards', 'Postcards', 'postcard'),
   ] },
