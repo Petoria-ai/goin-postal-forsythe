@@ -174,8 +174,8 @@ import PrintArt from '../components/PrintArt.astro';
         let openDrop: HTMLElement | null = null; let closeT = 0; let switchT = 0;
         const show = (d: HTMLElement | null) => { if (openDrop && openDrop !== d) openDrop.classList.remove('open'); openDrop = d; d?.classList.add('open'); };
         for (const d of drops) {
-          d.addEventListener('mouseenter', (e) => {
-            if ((e as MouseEvent).pointerType === 'touch' || !matchMedia('(hover: hover)').matches || !when(d)) return; // phones use a tap
+          d.addEventListener('mouseenter', () => {
+            if (!matchMedia('(hover: hover)').matches || !when(d)) return; // phones and tablets use a tap
             clearTimeout(closeT); clearTimeout(switchT);
             if (!openDrop) switchT = window.setTimeout(() => show(d), 80);      // first open: a tiny pause so passing over doesn't flash
             else if (openDrop !== d) switchT = window.setTimeout(() => show(d), 220); // another one is open: switch only if the mouse stays

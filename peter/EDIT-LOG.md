@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 18:00 CST · Fix: a type error in the dropdown change
+
+- **What happened:** the previous commit (every dropdown stays open) passed the browser check but was pushed with one line the type checker rejects (it read a touch-screen detail that mouse events don't have), so `npm test` failed. Claude's check printed nothing and the commit went through anyway.
+- **What changed:** that line is removed; the other check on the same line (does this screen have a mouse) already keeps phones and tablets on taps. `npm test` passes again (295 tests), and the browser check was re-run: Tracking, the account menu and the catalog all stay open on the way down; the phone tap still works.
+- **Files:** [site/src/layouts/Base.astro](../site/src/layouts/Base.astro)
+
 ## 2026-11-25 17:59 CST · Every dropdown stays open on the way down (Tracking and the account menu too)
 
 - **Asked for:** "and thats for all the drop down menu stuff.. can we eliminate the gap for any drop down menu like 'Tracking' tab".
