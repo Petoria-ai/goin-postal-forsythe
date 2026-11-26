@@ -30,7 +30,28 @@ describe("Gelato's product list (read only)", () => {
     expect(c.products[229]).toEqual({ uid: 'mug_229', attributes: { MugSize: '11-oz' } });
     expect(c.more).toBe(false);
   });
-  it('says to check the key when Gelato refuses it', async () => {
-    await expect(gelatoCatalog('bad', 'nope', fakeGelato([]))).rejects.toThrow(/check the key/);
+  it("keeps Gelato's reason when it refuses, instead of failing the whole file", async () => {
+    const c = await gelatoCatalog('bad', 'nope', fakeGelato([]));
+    expect(c.products).toEqual([]);
+    expect(c.errors[0]).toMatch(/^catalog: Gelato answered 401 \(check the key\): no$/);
+  });
+  it('asks for smaller pages when Gelato refuses 100 at a time', async () => {
+    const seen: string[] = [];
+    const f = (async (url: string, init?: RequestInit) => {
+      seen.push(String(init?.body ?? ''));
+      if (url.endsWith('/catalogs/mugs')) return new Response(JSON.stringify({ title: 'Mugs', productAttributes: [] }));
+      const { limit, offset } = JSON.parse(String(init?.body));
+      if (limit > 50) return new Response('{"message":"limit too big"}', { status: 400 });
+      return new Response(JSON.stringify({ products: offset === 0 ? Array.from({ length: 30 }, (_, i) => ({ productUid: `m${i}` })) : [] }));
+    }) as typeof fetch;
+    const c = await gelatoCatalog('k', 'mugs', f);
+    expect(c.products).toHaveLength(30);
+    expect(c.errors).toEqual([]);
+    expect(seen.some((b) => b.includes('"limit":50'))).toBe(true);
+  });
+  it('sends no Content-Type on a plain read', async () => {
+    const heads: any[] = [];
+    await gelatoCatalogs('k', (async (_u: string, init?: RequestInit) => { heads.push(init?.headers); return new Response('{"data":[]}'); }) as typeof fetch);
+    expect(heads[0]['Content-Type']).toBeUndefined();
   });
 });

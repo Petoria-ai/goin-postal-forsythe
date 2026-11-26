@@ -137,17 +137,18 @@ import StaffNav from '../../components/StaffNav.astro';
       const btn = $('poCatBtn') as HTMLButtonElement; const out = $('poCatMsg'); btn.disabled = true;
       try {
         const { catalogs } = await api({ action: 'catalog_list' });
-        const all: any[] = []; const failed: string[] = [];
+        const all: any[] = []; const failed: { uid: string; errors: string[] }[] = [];
         for (let i = 0; i < catalogs.length; i++) {
           out.textContent = tf('st.po.cat.progress', { n: i + 1, of: catalogs.length, title: catalogs[i].title });
-          try { all.push((await api({ action: 'catalog_one', uid: catalogs[i].uid })).catalog); } catch { failed.push(catalogs[i].uid); }
+          try { const c = (await api({ action: 'catalog_one', uid: catalogs[i].uid })).catalog; all.push(c); if (c.errors?.length) failed.push({ uid: c.uid, errors: c.errors }); }
+          catch (e: any) { failed.push({ uid: catalogs[i].uid, errors: [e.message] }); }
         }
         const file = { source: 'Gelato Product API v3', saved_at: new Date().toISOString(), catalogs: all, failed };
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(file, null, 1)], { type: 'application/json' }));
         a.download = `gelato-catalog-${new Date().toISOString().slice(0, 10)}.json`; a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-        out.textContent = tf('st.po.cat.done', { n: all.length, file: a.download }) + (failed.length ? ` (${failed.length} ✗)` : '');
+        out.textContent = tf('st.po.cat.done', { n: all.length, file: a.download }) + (failed.length ? ` (${failed.length} ✗: ${failed[0].errors[0]})` : '');
       } catch (e: any) { out.textContent = ''; say(e.message, true); }
       btn.disabled = false;
     });

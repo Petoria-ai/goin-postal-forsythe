@@ -99,15 +99,24 @@ export async function gelatoStatus(env: Env, gelatoOrderId: string, f: typeof fe
 // catalog at a time (a Worker can only make so many calls per request) and saves the lot as a file to send Claude.
 export const GELATO_PRODUCTS = 'https://product.gelatoapis.com/v3';
 type Get = (url: string, init?: RequestInit) => Promise<any>;
+/** Gelato said no: its status and the start of its answer (never the key), so the saved file says why. */
+export class GelatoError extends Error { constructor(msg: string, public status: number | null) { super(msg); } }
 function getter(key: string, f: typeof fetch): Get {
   return async (url, init) => {
+    const headers: Record<string, string> = { 'X-API-KEY': key, Accept: 'application/json' };
+    if (init?.body) headers['Content-Type'] = 'application/json';
     for (let i = 0; i < 3; i++) {
-      const res = await f(url, { ...init, headers: { 'X-API-KEY': key, Accept: 'application/json', 'Content-Type': 'application/json' } }).catch(() => null);
+      let res: Response | null = null; let why = '';
+      try { res = await f(url, { ...init, headers }); } catch (e: any) { why = String(e?.message ?? e).slice(0, 120); }
       if (res?.status === 429) { await new Promise((r) => setTimeout(r, 1200 * (i + 1))); continue; }
-      if (!res?.ok) throw new Error(`Gelato answered ${res?.status ?? 'nothing'}${res?.status === 401 || res?.status === 403 ? ': check the key' : ''}`);
+      if (!res) throw new GelatoError(`Gelato answered nothing${why ? ` (${why})` : ''}`, null);
+      if (!res.ok) {
+        const text = (await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300);
+        throw new GelatoError(`Gelato answered ${res.status}${res.status === 401 || res.status === 403 ? ' (check the key)' : ''}${text ? `: ${text}` : ''}`, res.status);
+      }
       return res.json();
     }
-    throw new Error('Gelato is busy (too many requests); try again in a minute.');
+    throw new GelatoError('Gelato is busy (too many requests); try again in a minute.', 429);
   };
 }
 /** Gelato's catalogs: [{ uid, title }]. */
@@ -116,23 +125,31 @@ export async function gelatoCatalogs(key: string, f: typeof fetch = fetch): Prom
   const list: any[] = Array.isArray(j) ? j : j?.data ?? j?.catalogs ?? [];
   return list.map((c) => ({ uid: String(c.catalogUid ?? c.uid ?? ''), title: String(c.title ?? c.catalogUid ?? '') })).filter((c) => c.uid);
 }
-/** One catalog: its choices (size, color, ...) and up to `max` products with their codes and choices. */
+/** One catalog: its choices (size, color, ...) and up to `max` products with their codes and choices. Never throws:
+ *  what failed is in `errors` (Gelato's own words), and a page size Gelato refuses is retried smaller. */
 export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = fetch, max = 500) {
   const get = getter(key, f);
   const base = `${GELATO_PRODUCTS}/catalogs/${encodeURIComponent(uid)}`;
-  const c: any = await get(base);
+  const errors: string[] = [];
+  let c: any = null;
+  try { c = await get(base); } catch (e: any) { errors.push(`catalog: ${e.message}`); }
   const attributes = (c?.productAttributes ?? []).map((a: any) => ({
     uid: a.productAttributeUid, title: a.title,
     values: (a.values ?? []).map((v: any) => ({ uid: v.productAttributeValueUid, title: v.title })),
   }));
   const products: { uid: string; attributes: Record<string, string> }[] = [];
-  let hits: any = null;
-  for (let offset = 0; offset < max; offset += 100) {
-    const page: any = await get(`${base}/products:search`, { method: 'POST', body: JSON.stringify({ limit: 100, offset }) });
+  let hits: any = null; let limit = 100; let done = false;
+  for (let offset = 0; offset < max && !done; ) {
+    let page: any;
+    try { page = await get(`${base}/products:search`, { method: 'POST', body: JSON.stringify({ limit, offset }) }); }
+    catch (e: any) {
+      if ((e as GelatoError).status === 400 || (e as GelatoError).status === 422) { if (limit > 25) { limit = limit === 100 ? 50 : 25; continue; } }
+      errors.push(`products (limit ${limit}, offset ${offset}): ${e.message}`); break;
+    }
     hits ??= page?.hits ?? null;
     const got: any[] = page?.products ?? [];
     for (const p of got) products.push({ uid: String(p.productUid ?? ''), attributes: p.attributes ?? {} });
-    if (got.length < 100) break;
+    offset += limit; done = got.length < limit;
   }
-  return { uid, title: String(c?.title ?? uid), attributes, products, more: products.length >= max, hits };
+  return { uid, title: String(c?.title ?? uid), attributes, products, more: !done && products.length >= max, hits, errors };
 }

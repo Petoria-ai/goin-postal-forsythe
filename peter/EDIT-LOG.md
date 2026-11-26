@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 20:57 CST · Gelato's product list: keep Gelato's reason when a part fails
+
+- **What happened:** Peter's first download read Gelato's list of 61 product groups (so the key works), but every group came back as failed, and the file didn't say why.
+- **What changed:** the file now keeps Gelato's own answer for anything that fails (its error code and the start of its message, never the key), and the page shows the first one next to the button. A product group's sizes and colors are kept even if its product list fails. If Gelato refuses 100 products at a time, it asks for 50, then 25. Plain reads no longer send a "Content-Type" line (some servers refuse that). 3 more tests (303 pass).
+- **Files:** [site/src/lib/gelato.ts](../site/src/lib/gelato.ts), [site/src/pages/counter/print.astro](../site/src/pages/counter/print.astro), [site/tests/gelatoCatalog.test.ts](../site/tests/gelatoCatalog.test.ts)
+- **How to check it:** `git pull`, restart `npm run dev`, press **Download Gelato's product list** again, and send Claude the new file.
+
 ## 2026-11-25 20:49 CST · Print orders: a "Download Gelato's product list" button
 
 - **Asked for:** "would it help if i attached gelato's api for you to see all of gelatos products in one spot?", then "whats the safest way to do it? last time we just put a input api key for virtual mail but on the admin side".
