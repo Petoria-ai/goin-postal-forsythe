@@ -15,7 +15,7 @@ const brandRest = store.headerLabel || store.name.replace(/^Goin' Postal\s*/i, '
 const here = Astro.url.pathname.replace(/\/$/, '') || '/';
 const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')) ? 'page' : undefined);
 import CarrierBadges from '../components/CarrierBadges.astro';
-import { PRINT_CATALOG, ALL_PRINTING, sectionFrom } from '../data/printCatalog';
+import { PRINT_CATALOG, ALL_PRINTING, sectionFrom, mmColumns } from '../data/printCatalog';
 import PrintArt from '../components/PrintArt.astro';
 ---
 <!doctype html>
@@ -108,9 +108,15 @@ import PrintArt from '../components/PrintArt.astro';
                     {g.bulk && <a class="mm-quick" href="/printing/t-shirts"><strong data-i18n="mm.bulk">12 or more?</strong><span data-i18n="mm.bulk.p">Team, church & business orders</span></a>}
                     <a class="mm-quick" href="/contact"><strong data-i18n="mm.rush">Need it fast?</strong><span data-i18n="mm.rush.p">Ask us about rush</span></a>
                   </div>
-                  <div class="mm-col">
-                    <p class="mm-h" data-i18n="mm.shopby">Shop by product</p>
-                    {g.sections.map((s) => <a href={`${g.href}/${s.id}`} data-i18n={s.key}>{s.label}</a>)}
+                  <!-- One column per heading, like Gelato's ("Kitchen and table", "Home and decor"); a long list without headings
+                       is split into columns of five. -->
+                  <div class="mm-cols" style={`--mm-n: ${mmColumns(g.sections).length}`}>
+                    {mmColumns(g.sections).map((col) => (
+                      <div class="mm-col">
+                        {col.head ? <p class="mm-h" data-i18n={col.head.key}>{col.head.label}</p> : <p class="mm-h" aria-hidden={col.more ? 'true' : undefined} data-i18n={col.more ? undefined : 'mm.shopby'}>{col.more ? '\u00a0' : 'Shop by product'}</p>}
+                        {col.items.map((s) => <a href={`${g.href}/${s.id}`} data-i18n={s.key}>{s.label}</a>)}
+                      </div>
+                    ))}
                     <a class="mm-all" href={g.href}><span data-i18n="mm.viewall">View all</span> <span data-i18n={g.key}>{g.label}</span></a>
                   </div>
                   <a class={`mm-feature pcat-${g.art}`} href={g.href}>

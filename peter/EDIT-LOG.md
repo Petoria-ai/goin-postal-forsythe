@@ -4,6 +4,18 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-25 18:16 CST · Print shop dropdowns match Gelato's lists
+
+- **Asked for:** Peter sent Gelato's dropdowns for Home and living, Kids and baby, and Drinkware: "this is what is in gelatos dropdown menus".
+- **What changed:** our lists now follow Gelato's, since Gelato is the supplier, and the big dropdown shows **headings in columns** like Gelato's:
+  - **Kids & Baby:** "Kids, 2 to 14" (t-shirts, hoodies, long sleeve, caps), "Baby, 0 to 24 months" (bodysuits, rompers), "Also for kids" (aprons, lunch boxes).
+  - **Home & Living:** "Kitchen and table" (aprons, coasters, lunch boxes), "Home and decor" (ornaments, candles, golf balls). Throw pillows and blankets are gone (not in Gelato's list); phone cases moved to Accessories.
+  - **Drinkware:** ceramic, enamel, travel, latte and slim mugs, water bottles, glassware & cups, tumblers, can coolers, food jars, in two columns.
+  - **Hats & Bags is now "Accessories"** (Gelato's name; caps, beanies, tote bags, phone cases). Its page is now /shop/accessories.
+- Every new name is in all 14 languages, each item has a drawing until photos arrive, and a new test checks that every name is translated and the columns come out right. The bar still fits on one row from 1301 pixels wide.
+- **Files:** [site/src/data/printCatalog.ts](../site/src/data/printCatalog.ts), [site/src/layouts/Base.astro](../site/src/layouts/Base.astro), [site/src/components/PrintArt.astro](../site/src/components/PrintArt.astro), [site/src/i18n/strings.ts](../site/src/i18n/strings.ts), [site/src/styles/global.css](../site/src/styles/global.css), [site/tests/printCatalog.test.ts](../site/tests/printCatalog.test.ts)
+- **How to check it:** `git pull`, refresh, point at **Kids & Baby**, **Home & Living** and **Drinkware**.
+
 ## 2026-11-25 18:10 CST · Print shop: Home & Living and Pets categories
 
 - **Asked for:** "also lets add home and living and pets" (Gelato's catalog bar), and "im probably going to need ai pet models too haha".

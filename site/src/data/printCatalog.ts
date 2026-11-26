@@ -9,7 +9,7 @@
 import print from './printProducts.json';
 import { PRICES } from '../lib/cards';
 
-export type Section = { id: string; key: string; label: string; art: string; products: string[]; link?: { href: string; key: string; label: string; from: number } };
+export type Section = { id: string; key: string; label: string; art: string; products: string[]; link?: { href: string; key: string; label: string; from: number }; group?: { key: string; label: string } };
 export type CatGroup = { id: string; key: string; label: string; art: string; href: string; from: number | null; sections: Section[]; bulk?: boolean };
 
 const product = (id: string) => (print.products as any[]).find((p) => p.id === id && p.active);
@@ -23,6 +23,9 @@ export const onlineProduct = product;
 const cardsFrom = Math.min(...Object.values(PRICES));
 const S = (id: string, key: string, label: string, art: string, products: string[] = [], link?: Section['link']): Section => ({ id, key, label, art, products, link });
 
+/** A column heading in the big dropdown (like Gelato's "Kitchen and table"); sections without one go under "Shop by product". */
+const G = (key: string, label: string, sections: Section[]) => sections.map((s) => ({ ...s, group: { key, label } }));
+
 const RAW: Omit<CatGroup, 'href' | 'from'>[] = [
   { id: 'womens', key: 'cat.womens', label: "Women's", art: 'womens', bulk: true, sections: [
     S('t-shirts', 'sec.tshirts', 'T-shirts', 'womens', ['tshirt']), S('hoodies', 'sec.hoodies', 'Hoodies', 'hoodie'),
@@ -32,21 +35,29 @@ const RAW: Omit<CatGroup, 'href' | 'from'>[] = [
     S('t-shirts', 'sec.tshirts', 'T-shirts', 'tee', ['tshirt']), S('hoodies', 'sec.hoodies', 'Hoodies', 'mens'),
     S('long-sleeve', 'sec.longsleeve', 'Long sleeve', 'longsleeve'), S('polos', 'sec.polos', 'Polo shirts', 'polo'), S('tank-tops', 'sec.tanks', 'Tank tops', 'tank'),
   ] },
+  // Kids & Baby, Home & Living and Drinkware follow Gelato's own dropdowns (Peter's screenshots, Nov 25 2026).
   { id: 'kids', key: 'cat.kids', label: 'Kids & Baby', art: 'kids', bulk: true, sections: [
-    S('kids-tees', 'sec.kidstees', "Kids' t-shirts", 'kidstee'), S('onesies', 'sec.onesies', 'Baby onesies', 'kids'), S('kids-hoodies', 'sec.kidshoodies', "Kids' hoodies", 'hoodie'),
+    ...G('grp.kids', 'Kids, 2 to 14', [S('kids-tees', 'sec.kidstees', "Kids' t-shirts", 'kidstee'), S('kids-hoodies', 'sec.kidshoodies', "Kids' hoodies", 'hoodie'),
+      S('kids-long-sleeve', 'sec.longsleeve', 'Long sleeve', 'longsleeve'), S('kids-caps', 'sec.caps', 'Caps', 'hats')]),
+    ...G('grp.baby', 'Baby, 0 to 24 months', [S('bodysuits', 'sec.bodysuits', 'Bodysuits', 'kids'), S('rompers', 'sec.rompers', 'Rompers', 'romper')]),
+    ...G('grp.alsokids', 'Also for kids', [S('kids-aprons', 'sec.aprons', 'Aprons', 'apron'), S('kids-lunch-boxes', 'sec.lunchboxes', 'Lunch boxes', 'lunchbox')]),
   ] },
-  { id: 'hats', key: 'cat.hats', label: 'Hats & Bags', art: 'hats', bulk: true, sections: [
+  { id: 'accessories', key: 'cat.hats', label: 'Accessories', art: 'hats', bulk: true, sections: [
     S('caps', 'sec.caps', 'Caps', 'hats'), S('beanies', 'sec.beanies', 'Beanies', 'beanie'), S('totes', 'sec.totes', 'Tote bags', 'tote'),
+    S('phone-cases', 'sec.phonecases', 'Phone cases', 'phonecase'),
   ] },
   { id: 'home-living', key: 'cat.home', label: 'Home & Living', art: 'home', sections: [
-    S('pillows', 'sec.pillows', 'Throw pillows', 'pillow'), S('blankets', 'sec.blankets', 'Blankets', 'blanket'),
-    S('phone-cases', 'sec.phonecases', 'Phone cases', 'phonecase'), S('aprons', 'sec.aprons', 'Aprons', 'apron'),
+    ...G('grp.kitchen', 'Kitchen and table', [S('aprons', 'sec.aprons', 'Aprons', 'apron'), S('coasters', 'sec.coasters', 'Coasters', 'coaster'), S('lunch-boxes', 'sec.lunchboxes', 'Lunch boxes', 'lunchbox')]),
+    ...G('grp.decor', 'Home and decor', [S('ornaments', 'sec.ornaments', 'Ornaments', 'ornament'), S('candles', 'sec.candles', 'Candles', 'candle'), S('golf-balls', 'sec.golfballs', 'Golf balls', 'golfball')]),
   ] },
   { id: 'pets', key: 'cat.pets', label: 'Pets', art: 'pets', sections: [
     S('bandanas', 'sec.bandanas', 'Pet bandanas', 'bandana'), S('pet-beds', 'sec.petbeds', 'Pet beds', 'petbed'), S('pet-bowls', 'sec.petbowls', 'Pet bowls', 'petbowl'),
   ] },
   { id: 'drinkware', key: 'cat.drink', label: 'Drinkware', art: 'drinkware', sections: [
-    S('mugs', 'sec.mugs', 'Mugs', 'mug'), S('bottles', 'sec.bottles', 'Water bottles', 'bottle'), S('tumblers', 'sec.tumblers', 'Tumblers', 'drinkware'),
+    S('ceramic-mugs', 'sec.ceramicmugs', 'Ceramic mugs', 'mug'), S('enamel-mugs', 'sec.enamelmugs', 'Enamel mugs', 'enamelmug'), S('travel-mugs', 'sec.travelmugs', 'Travel mugs', 'travelmug'),
+    S('bottles', 'sec.bottles', 'Water bottles', 'bottle'), S('latte-mugs', 'sec.lattemugs', 'Latte mugs', 'lattemug'), S('slim-mugs', 'sec.slimmugs', 'Slim mugs', 'slimmug'),
+    S('glassware', 'sec.glassware', 'Glassware & cups', 'glass'), S('tumblers', 'sec.tumblers', 'Tumblers', 'drinkware'), S('can-coolers', 'sec.cancoolers', 'Can coolers', 'cancooler'),
+    S('food-jars', 'sec.foodjars', 'Food jars', 'foodjar'),
   ] },
   { id: 'wall-art', key: 'cat.wallart', label: 'Wall Art', art: 'wallart', sections: [
     S('posters', 'sec.posters', 'Posters', 'poster', ['poster']), S('framed', 'sec.framed', 'Framed prints', 'wallart'), S('canvas', 'sec.canvas', 'Canvas', 'canvas'),
@@ -72,3 +83,17 @@ export { sectionFrom };
 export const catById = (id: string) => PRINT_CATALOG.find((c) => c.id === id) ?? null;
 /** The bar also ends with a link to every printing product. */
 export const ALL_PRINTING = { href: '/printing', key: 'cat.all', label: 'All Printing' };
+
+/** The big dropdown's columns: one per heading (Section.group), in order; sections without a heading go under "Shop by
+ *  product", five to a column (the later ones have no heading of their own, `more`). */
+export function mmColumns(sections: Section[], perCol = 5): { head: Section['group'] | null; more: boolean; items: Section[] }[] {
+  const cols: { head: Section['group'] | null; more: boolean; items: Section[] }[] = [];
+  const plain = sections.filter((s) => !s.group);
+  for (let i = 0; i < plain.length; i += perCol) cols.push({ head: null, more: i > 0, items: plain.slice(i, i + perCol) });
+  for (const s of sections) {
+    if (!s.group) continue;
+    const c = cols.find((x) => x.head?.key === s.group!.key);
+    if (c) c.items.push(s); else cols.push({ head: s.group, more: false, items: [s] });
+  }
+  return cols;
+}

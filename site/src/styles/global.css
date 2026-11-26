@@ -1223,16 +1223,18 @@ html:root[data-contrast="high"] .cat-link, html:root[data-contrast="high"] .cat-
 /* Opened by the page script with a short grace time (no flicker on the way down); keyboard focus opens it too. */
 .cat-drop.open .cat-mega, .cat-drop:focus-within .cat-mega { display: block; }
 .cat-drop.open > .cat-link { background: #f5f1e8; color: #1d1f24; }
-header.top .cat-mega-in { display: grid; flex-direction: row; align-items: stretch; grid-template-columns: minmax(14rem, 1fr) 1.2fr minmax(14rem, 1fr); gap: 2rem; padding-top: 1.5rem; padding-bottom: 1.75rem; min-height: 0; }
+header.top .cat-mega-in { display: grid; flex-direction: row; align-items: stretch; grid-template-columns: minmax(12rem, .7fr) 2.6fr minmax(13rem, .8fr); gap: 2rem; padding-top: 1.5rem; padding-bottom: 1.75rem; min-height: 0; }
 .mm-ways { display: grid; gap: .6rem; align-content: start; }
 .mm-quick { display: grid; gap: .1rem; padding: .8rem 1rem; border-radius: 14px; background: #f7f4ee; text-decoration: none; color: #1d1f24; }
 .mm-quick strong { font-weight: 700; } .mm-quick span { color: #6b707a; font-size: .88rem; }
 .mm-quick:hover, .mm-quick:focus-visible { background: #efe9de; }
+.mm-cols { display: grid; grid-template-columns: repeat(var(--mm-n, 1), minmax(0, 1fr)); gap: 0 1.5rem; align-content: start; }
+.mm-cols .mm-all { grid-column: 1 / -1; justify-self: start; }
 .mm-col { display: grid; align-content: start; gap: .1rem; }
 .mm-h { margin: 0 0 .35rem; font-weight: 700; color: #1d1f24; }
 .mm-col a { padding: .35rem 0; color: #4b4f58; text-decoration: none; }
 .mm-col a:hover, .mm-col a:focus-visible { color: #1d1f24; text-decoration: underline; }
-.mm-col .mm-all { margin-top: .5rem; font-weight: 600; color: #1d1f24; text-decoration: underline; }
+.mm-all { margin-top: .5rem; font-weight: 600; color: #1d1f24; text-decoration: underline; }
 .mm-feature { display: grid; grid-template-rows: 1fr auto; border-radius: 16px; overflow: hidden; text-decoration: none; min-height: 13rem; }
 .mm-feature-pic { display: grid; place-items: center; padding: .5rem; }
 .mm-feature-pic svg { width: 80%; max-height: 10rem; }
@@ -1261,7 +1263,9 @@ header.top .cat-mega-in { display: grid; flex-direction: row; align-items: stret
 .shop-ask, .shop-bulk { background: #fff; border-radius: 18px; }
 .pcat-pic.pcat-hoodie { background: #fbeef3; } .pcat-pic.pcat-tee { background: #edf3fb; } .pcat-pic.pcat-kidstee { background: #fdf5e4; } .pcat-pic.pcat-longsleeve { background: #eaf5f0; } .pcat-pic.pcat-tank { background: #eff0f2; }
 .pcat-pic.pcat-crop { background: #fdeeed; } .pcat-pic.pcat-polo { background: #edf0f8; } .pcat-pic.pcat-beanie { background: #fbecea; } .pcat-pic.pcat-tote { background: #f8f3ea; } .pcat-pic.pcat-mug { background: #fbf0ec; }
-.pcat-pic.pcat-pillow { background: #fdf3ea; } .pcat-pic.pcat-blanket { background: #e9f5f2; } .pcat-pic.pcat-phonecase { background: #fdf5e4; } .pcat-pic.pcat-apron { background: #fbecea; }
+.pcat-pic.pcat-phonecase { background: #fdf5e4; } .pcat-pic.pcat-apron { background: #fbecea; }
+.pcat-pic.pcat-romper { background: #fdeeed; } .pcat-pic.pcat-coaster { background: #f8f3ea; } .pcat-pic.pcat-lunchbox { background: #e9f5f2; } .pcat-pic.pcat-ornament { background: #fbecea; } .pcat-pic.pcat-candle { background: #eaf5f0; } .pcat-pic.pcat-golfball { background: #eef5e8; }
+.pcat-pic.pcat-enamelmug { background: #edf0f8; } .pcat-pic.pcat-travelmug { background: #eff0f2; } .pcat-pic.pcat-lattemug { background: #fbf0ec; } .pcat-pic.pcat-slimmug { background: #edf3fb; } .pcat-pic.pcat-glass { background: #f4f9fc; } .pcat-pic.pcat-cancooler { background: #fdf5e4; } .pcat-pic.pcat-foodjar { background: #edf3fb; }
 .pcat-pic.pcat-bandana { background: #f8f1e7; } .pcat-pic.pcat-petbed { background: #edf3fb; } .pcat-pic.pcat-petbowl { background: #f8f1e7; }
 .pcat-pic.pcat-bottle { background: #edf3fb; } .pcat-pic.pcat-poster { background: #fbf3e6; } .pcat-pic.pcat-canvas { background: #e9f5f2; } .pcat-pic.pcat-yardsign { background: #edf0f8; } .pcat-pic.pcat-postcard { background: #eaf5fb; }
 /* The print shop's picture cards (Nov 25 2026). */
