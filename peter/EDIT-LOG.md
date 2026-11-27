@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-27 17:50 CST · Gelato's product list: read Gelato's sizes and colors the way Gelato sends them
+
+- **What happened:** Peter's second download showed Gelato answering for every product group (good news: the key and the addresses are right). Our page then tripped on Gelato's list of sizes and colors, which comes in a different shape than expected, so each group stopped there. Two of Gelato's own groups, "enterprise" and "default-flat-prices", aren't products and answer with a Gelato server error.
+- **What changed:** the page now reads sizes and colors in either shape, and also keeps Gelato's original list in the file in case it differs again. It skips Gelato's three internal groups (default, default-flat-prices, enterprise). One more test (304 pass).
+- **Files:** [site/src/lib/gelato.ts](../site/src/lib/gelato.ts), [site/tests/gelatoCatalog.test.ts](../site/tests/gelatoCatalog.test.ts)
+- **How to check it:** `git pull`, restart `npm run dev`, press **Download Gelato's product list** again, and send Claude the new file.
+
 ## 2026-11-25 20:57 CST · Gelato's product list: keep Gelato's reason when a part fails
 
 - **What happened:** Peter's first download read Gelato's list of 61 product groups (so the key works), but every group came back as failed, and the file didn't say why.

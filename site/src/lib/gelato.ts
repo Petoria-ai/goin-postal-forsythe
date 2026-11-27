@@ -123,8 +123,16 @@ function getter(key: string, f: typeof fetch): Get {
 export async function gelatoCatalogs(key: string, f: typeof fetch = fetch): Promise<{ uid: string; title: string }[]> {
   const j = await getter(key, f)(`${GELATO_PRODUCTS}/catalogs`);
   const list: any[] = Array.isArray(j) ? j : j?.data ?? j?.catalogs ?? [];
-  return list.map((c) => ({ uid: String(c.catalogUid ?? c.uid ?? ''), title: String(c.title ?? c.catalogUid ?? '') })).filter((c) => c.uid);
+  return list.map((c) => ({ uid: String(c.catalogUid ?? c.uid ?? ''), title: String(c.title ?? c.catalogUid ?? '') })).filter((c) => c.uid && !GELATO_SKIP.has(c.uid));
 }
+/** Gelato's lists come as an array, or as an object keyed by id ({ "white": { title: "White" } } or { "white": "White" }). */
+function listOf(x: any, idField: string): any[] {
+  if (Array.isArray(x)) return x;
+  if (!x || typeof x !== 'object') return [];
+  return Object.entries(x).map(([k, v]) => (v && typeof v === 'object' ? { [idField]: k, ...(v as object) } : { [idField]: k, title: String(v) }));
+}
+/** Gelato's own catalogs that aren't products (they answer with a server error). */
+export const GELATO_SKIP = new Set(['default', 'default-flat-prices', 'enterprise']);
 /** One catalog: its choices (size, color, ...) and up to `max` products with their codes and choices. Never throws:
  *  what failed is in `errors` (Gelato's own words), and a page size Gelato refuses is retried smaller. */
 export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = fetch, max = 500) {
@@ -133,10 +141,11 @@ export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = 
   const errors: string[] = [];
   let c: any = null;
   try { c = await get(base); } catch (e: any) { errors.push(`catalog: ${e.message}`); }
-  const attributes = (c?.productAttributes ?? []).map((a: any) => ({
-    uid: a.productAttributeUid, title: a.title,
-    values: (a.values ?? []).map((v: any) => ({ uid: v.productAttributeValueUid, title: v.title })),
-  }));
+  let attributes: { uid: string; title: string; values: { uid: string; title: string }[] }[] = [];
+  try { attributes = listOf(c?.productAttributes, 'productAttributeUid').map((a: any) => ({
+    uid: String(a.productAttributeUid ?? ''), title: String(a.title ?? a.productAttributeUid ?? ''),
+    values: listOf(a.values, 'productAttributeValueUid').map((v: any) => ({ uid: String(v.productAttributeValueUid ?? ''), title: String(v.title ?? v.productAttributeValueUid ?? '') })),
+  })); } catch (e: any) { errors.push(`choices: ${e.message}`); }
   const products: { uid: string; attributes: Record<string, string> }[] = [];
   let hits: any = null; let limit = 100; let done = false;
   for (let offset = 0; offset < max && !done; ) {
@@ -151,5 +160,5 @@ export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = 
     for (const p of got) products.push({ uid: String(p.productUid ?? ''), attributes: p.attributes ?? {} });
     offset += limit; done = got.length < limit;
   }
-  return { uid, title: String(c?.title ?? uid), attributes, products, more: !done && products.length >= max, hits, errors };
+  return { uid, title: String(c?.title ?? uid), attributes, raw_choices: c?.productAttributes ?? null, products, more: !done && products.length >= max, hits, errors };
 }

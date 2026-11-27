@@ -6,7 +6,7 @@ function fakeGelato(seen: string[]) {
   return (async (url: string, init?: RequestInit) => {
     seen.push(`${init?.method ?? 'GET'} ${url} ${(init?.headers as any)?.['X-API-KEY']}`);
     const ok = (j: unknown) => new Response(JSON.stringify(j), { status: 200 });
-    if (url.endsWith('/v3/catalogs')) return ok({ data: [{ catalogUid: 'mugs', title: 'Mugs' }, { catalogUid: 't-shirts', title: 'T-shirts' }] });
+    if (url.endsWith('/v3/catalogs')) return ok({ data: [{ catalogUid: 'mugs', title: 'Mugs' }, { catalogUid: 'enterprise', title: 'enterprise' }, { catalogUid: 't-shirts', title: 'T-shirts' }] });
     if (url.endsWith('/catalogs/mugs')) return ok({ catalogUid: 'mugs', title: 'Mugs', productAttributes: [{ productAttributeUid: 'MugSize', title: 'Size', values: [{ productAttributeValueUid: '11-oz', title: '11 oz' }] }] });
     if (url.endsWith('/catalogs/mugs/products:search')) {
       const { offset } = JSON.parse(String(init?.body));
@@ -48,6 +48,14 @@ describe("Gelato's product list (read only)", () => {
     expect(c.products).toHaveLength(30);
     expect(c.errors).toEqual([]);
     expect(seen.some((b) => b.includes('"limit":50'))).toBe(true);
+  });
+  it("reads choices sent as an object keyed by id (Gelato's real shape)", async () => {
+    const f = (async (url: string) => url.endsWith('/catalogs/t-shirts')
+      ? new Response(JSON.stringify({ title: 'T-shirts', productAttributes: [{ productAttributeUid: 'GarmentColor', title: 'Color', values: { white: { title: 'White' }, black: 'Black' } }] }))
+      : new Response(JSON.stringify({ products: [] }))) as typeof fetch;
+    const c = await gelatoCatalog('k', 't-shirts', f);
+    expect(c.errors).toEqual([]);
+    expect(c.attributes[0].values).toEqual([{ uid: 'white', title: 'White' }, { uid: 'black', title: 'Black' }]);
   });
   it('sends no Content-Type on a plain read', async () => {
     const heads: any[] = [];
