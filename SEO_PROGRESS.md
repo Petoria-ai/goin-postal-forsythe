@@ -175,16 +175,18 @@ and P3, not as finished work.
 - **Owner priority:** e-commerce and mailboxes come before online shipping. Order the Priority 2 and 3 work accordingly.
 - **Header and home page stay as they are.** Peter will update the "Ship a package" and "About PeterShip" tabs and the home page's PeterShip panel himself as the business changes. Do not hide or restyle them.
 - **Google-Extended stays blocked.** It gives no search benefit: Google Search, AI Overviews, Maps and "near me" answers do not depend on it. Recorded in `src/data/crawlers.ts`.
+- **Physical mailbox prices** (Peter, Nov 28 2026): small $90 for 6 months or $180 for a year, medium $120 or $240, large $180 or $360. They appear on `/mailboxes/physical` (a table, the pricing text and an FAQ) and in its Service structured data as six Offers, with a "From $90" row on `/mailboxes`. **Note for the register:** the Calc template's Prices tab uses monthly rates of $15, $22 and $30, so a medium box works out to $132, not $120. Set the medium rate to $20 so the counter and the website agree.
+- **Map pin and Maps link:** `geo` is 32.528492, -92.116822, taken from the listing's own pin (`!3d…!4d…` in Peter's Maps link, not the `@` viewport). `mapsUrl` is `https://maps.google.com/?cid=14209401352782944093`, a permanent link built from the listing's place ID, and is used for `hasMap`.
+- **Payments:** cash, all major credit cards and Apple Pay; no checks. Recorded as `paymentAccepted` (structured data) and `paymentNote`, which appears on every page with the hours block, in the footer and in llms.txt.
+- **Closed every Thanksgiving and Christmas:** `holidayClosures` in `store.ts`, as yearly rules (Thanksgiving is the 4th Thursday of November). The dates are worked out **when a page renders**, and again in the browser for the open/closed badge, never when the module loads, because Cloudflare's runtime reports the date as 1970 at that point (found while testing this). The closures appear in the visible text, the footer, `specialOpeningHoursSpecification` and llms.txt. Checked in a browser: on Christmas the badge reads "Closed for Christmas Day · opens tomorrow at 9:00 AM".
 - **Google review link:** `https://g.page/r/CV0Xlec-7zHFEAI/review` is set as `reviewUrl` and `profiles.googleReview` (one constant in `store.ts`). PeterShip's delivered email asks for a review with it, and the Contact page has a "Review us on Google" button. It is not in `sameAs`, because it is an action link, not a profile.
 - **Franchise store page:** `https://goinpostal.com/store/GP490.1` is in `profiles.other`, and is shown in the footer and in `sameAs`.
 - **Virtual mailbox sign-up:** `profiles.anytimeMailbox` is `https://www.anytimemailbox.com/s/monroe-1800-forsythe-avenue` (Peter set the location up himself). `/mailboxes/virtual` shows a "Sign up online" button to it (CTA keyword `anytimeMailbox`; the button hides if the link is ever blanked). The page could not be loaded from the build environment, because its network blocks anytimemailbox.com, so Peter is checking it in a private browser window.
 - **Google Business Profile exists and is being promoted.** Its share link, `https://share.google/WSq90cS7IAT59Xtjm`, is in `profiles.googleBusiness`. It now appears in the footer as "Google Maps", and in the LocalBusiness `sameAs` and `hasMap`. Optional: swap in the full Google Maps URL, which is more robust than a short link.
 
 ### Still open
-1. **Domain name to buy**, and whether GP Brands' franchise rules limit domains that use "Goin' Postal".
-2. **Physical mailbox prices** (the register's template prices are placeholders).
-3. **Exact map pin** (`geo`), payment methods (`paymentAccepted`), holiday closures (`specialHours`).
-4. **Privacy page:** have it reviewed before launch.
+1. **Domain name to buy** (not needed until launch; Peter is finishing the site first), and whether GP Brands' franchise rules limit domains that use "Goin' Postal". Cloudflare is set up at the same time as the domain.
+2. **Privacy page:** have it reviewed before launch.
 
 ## Manual actions required from the owners (none block the code)
 

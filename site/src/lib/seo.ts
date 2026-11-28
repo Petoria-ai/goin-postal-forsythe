@@ -7,7 +7,7 @@
 // - One business entity, one @id (SITE/#business), referenced from every other node.
 // - Leave a property out rather than guess it (geo, payment methods, prices that are not published).
 import type { StoreFacts } from '../data/store';
-import { verifiedProfiles } from '../data/store';
+import { verifiedProfiles, allSpecialHours } from '../data/store';
 import { openingHoursSpecification, specialOpeningHoursSpecification } from './hours';
 
 /** The canonical origin, from astro.config.mjs `site` (PUBLIC_SITE_URL at build). No trailing slash. */
@@ -92,9 +92,9 @@ export function localBusinessLd(s: StoreFacts, site = SITE_URL, opts: { todayYmd
     logo: { '@type': 'ImageObject', '@id': i.logo, url: absoluteUrl(s.logo, site) },
     address: postalAddress(s),
     geo: s.geo ? { '@type': 'GeoCoordinates', latitude: s.geo.lat, longitude: s.geo.lng } : undefined,
-    hasMap: s.profiles.googleBusiness || undefined,
+    hasMap: s.mapsUrl || s.profiles.googleBusiness || undefined,
     openingHoursSpecification: openingHoursSpecification(s.weeklyHours),
-    specialOpeningHoursSpecification: specialOpeningHoursSpecification(s.specialHours, opts.todayYmd),
+    specialOpeningHoursSpecification: specialOpeningHoursSpecification(allSpecialHours(s, opts.todayYmd ? new Date(opts.todayYmd + 'T12:00:00Z') : new Date()), opts.todayYmd),
     areaServed: areaServed(s),
     paymentAccepted: s.paymentAccepted || undefined,
     priceRange: s.priceRange || undefined,
@@ -156,7 +156,7 @@ export function faqLd(faqs: FaqItem[], path: string, site = SITE_URL) {
   return { '@type': 'FAQPage', '@id': canonicalUrl(path, site) + '#faq', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) };
 }
 
-export function serviceLd(o: { name: string; description: string; path: string; serviceType?: string; providerName?: string; brand?: string[]; offers?: { price: number; priceCurrency?: string; description?: string }[] }, s: StoreFacts, site = SITE_URL) {
+export function serviceLd(o: { name: string; description: string; path: string; serviceType?: string; providerName?: string; brand?: string[]; offers?: { price: number; priceCurrency?: string; name?: string; description?: string }[] }, s: StoreFacts, site = SITE_URL) {
   return clean({
     '@type': 'Service',
     '@id': canonicalUrl(o.path, site) + '#service',
@@ -167,7 +167,7 @@ export function serviceLd(o: { name: string; description: string; path: string; 
     provider: { '@id': ids(site).business },
     areaServed: areaServed(s),
     brand: o.brand?.map((b) => ({ '@type': 'Brand', name: b })),
-    offers: o.offers?.map((of) => clean({ '@type': 'Offer', price: of.price.toFixed(2), priceCurrency: of.priceCurrency ?? 'USD', description: of.description, seller: { '@id': ids(site).business } })),
+    offers: o.offers?.map((of) => clean({ '@type': 'Offer', name: of.name, price: of.price.toFixed(2), priceCurrency: of.priceCurrency ?? 'USD', description: of.description, seller: { '@id': ids(site).business } })),
   });
 }
 

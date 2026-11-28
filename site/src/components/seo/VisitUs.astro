@@ -2,7 +2,7 @@
 // Name, address, phone, hours and the two buttons people want: call and directions. Shown on every
 // service page, the contact page and the about page, all from src/data/store.ts.
 import { store, telHref, directionsUrl } from '../../data/store';
-import { groupHours } from '../../lib/hours';
+import { groupHours, holidayText } from '../../lib/hours';
 import OpenStatus from './OpenStatus.astro';
 interface Props { heading?: string; id?: string }
 const { heading = 'Hours and location', id = 'visit' } = Astro.props;
@@ -25,7 +25,8 @@ const groups = groupHours(store.weeklyHours);
       </tbody>
     </table>
   </div>
-  <p class="muted small">Open seven days a week. Packages dropped off on a weekend leave with the next scheduled carrier pickup.</p>
+  <p class="muted small">Open seven days a week. {holidayText(store.holidayClosures)} Packages dropped off on a weekend leave with the next scheduled carrier pickup.</p>
+  {store.paymentNote && <p class="small">{store.paymentNote}</p>}
   <p class="btnrow">
     <a class="btn" href={telHref()} data-track="phone_click">Call {store.phone}</a>
     <a class="btn kraft" href={directionsUrl()} target="_blank" rel="noopener" data-track="directions_click">Get directions</a>

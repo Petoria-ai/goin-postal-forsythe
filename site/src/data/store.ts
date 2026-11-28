@@ -14,7 +14,7 @@
 //   is claimed. A blank profile is never published.
 // Items marked TODO are for the owners to confirm.
 import { env as cfEnv } from 'cloudflare:workers';
-import { displayRows, type DayHours, type SpecialHours } from '../lib/hours';
+import { displayRows, expandHolidays, type DayHours, type SpecialHours, type HolidayRule } from '../lib/hours';
 
 export interface StoreProfiles {
   facebook?: string;
@@ -42,13 +42,16 @@ export interface StoreFacts {
   phone: string;              // display form: 318-570-2132
   email: string;
   timezone: string;           // IANA zone for hours and the open-now badge
-  geo?: { lat: number; lng: number } | null; // null until checked against the Google Business Profile pin
+  geo?: { lat: number; lng: number } | null; // the Google Business Profile pin
+  mapsUrl?: string;           // permanent Google Maps link to the listing (from its place ID), for hasMap
   origin: { contact_name: string; company_name: string; contact_phone: string; contact_email: string; line_1: string; line_2?: string; city: string; state: string; postal_code: string; country_alpha2: string };
   formEndpoint: string;
   reviewUrl?: string;         // the Google Business Profile review link (issue 7); the delivered email asks for a review when set
   /** The weekly table every hours display is built from. A day left out is closed. */
   weeklyHours: DayHours[];
-  /** Holidays and one-off closures, YYYY-MM-DD. Staff can add live ones at /counter/seo too. */
+  /** Closures that repeat every year (Thanksgiving, Christmas). Shown on the pages and turned into dated closures below. */
+  holidayClosures: HolidayRule[];
+  /** One-off dated closures and special hours, YYYY-MM-DD. The yearly holidays are added by allSpecialHours(). */
   specialHours: SpecialHours[];
   /** Older display rows, derived from weeklyHours. Kept so existing pages and the API keep their shape. */
   hours: { days: string; key: string; open: string; openKey?: string }[];
@@ -56,7 +59,8 @@ export interface StoreFacts {
   /** Places the store genuinely serves, nearest first. Used in copy and as schema.org areaServed. */
   serviceArea: string[];
   carriers: string[];         // carriers customers can ship with at the counter
-  paymentAccepted?: string;   // e.g. "Cash, Credit Card" once confirmed; blank leaves it out
+  paymentAccepted?: string;   // schema.org paymentAccepted, e.g. "Cash, Credit Card"; blank leaves it out
+  paymentNote?: string;       // the same, in words, shown on every page that has the hours block
   priceRange?: string;        // e.g. "$$" once the owners choose; blank leaves it out
   profiles: StoreProfiles;
   logo: string;               // site-relative path to the logo used in structured data
@@ -95,7 +99,8 @@ export const defaults: StoreFacts = {
   phone: '318-570-2132',
   email: 'wbp93623@gmail.com',
   timezone: 'America/Chicago',
-  geo: null, // TODO: copy the exact pin from the Google Business Profile before turning this on
+  geo: { lat: 32.528492, lng: -92.116822 }, // the Business Profile pin (Peter's Maps link, Nov 28 2026)
+  mapsUrl: 'https://maps.google.com/?cid=14209401352782944093', // the listing's place ID 0xc531ef3ee795175d
   // Ship-from address printed on labels.
   origin: {
     contact_name: "Goin' Postal Monroe",
@@ -111,7 +116,11 @@ export const defaults: StoreFacts = {
   formEndpoint: 'https://formspree.io/f/REPLACE_ME', // TODO: create a Formspree form and paste its ID
   reviewUrl: GOOGLE_REVIEW, // the delivered email asks for a review with this link (issue 7)
   weeklyHours,
-  // Example: { date: '2026-12-25', closed: true, label: 'Christmas Day' }. Add only dates the owners have decided.
+  // Closed every year (Peter, Nov 28 2026). One-off closures (weather, a day off) go in specialHours as
+  // { date: 'YYYY-MM-DD', closed: true, label: '...' }, or live at /counter/seo once that page exists.
+  holidayClosures: [{ rule: 'thanksgiving', label: 'Thanksgiving Day' }, { rule: '12-25', label: 'Christmas Day' }],
+  // Only one-off dates here. Yearly holidays are expanded when a page renders (allSpecialHours), never at
+  // module load: Cloudflare's runtime reports the date as 1970 while a module is first evaluated.
   specialHours: [],
   hours: displayRows(weeklyHours),
   services: [
@@ -125,7 +134,8 @@ export const defaults: StoreFacts = {
   ],
   serviceArea: ['Monroe', 'West Monroe', 'Ouachita Parish', 'Sterlington', 'Bastrop', 'Northeast Louisiana'],
   carriers: ['UPS', 'FedEx', 'USPS', 'DHL'],
-  paymentAccepted: '', // TODO: confirm (cash, cards, ...) before it is published
+  paymentAccepted: 'Cash, Credit Card, Apple Pay', // Peter, Nov 28 2026; shown on the pages as paymentNote
+  paymentNote: 'We take cash, all major credit cards and Apple Pay. No checks.',
   priceRange: '',
   profiles: {
     facebook: 'https://www.facebook.com/monroegoinpostal/',
@@ -161,6 +171,10 @@ function overrideFromEnv(): Partial<StoreFacts> | null {
 }
 
 export const store: StoreFacts = mergeStore(defaults, overrideFromEnv());
+
+/** The yearly holidays for this year and next, plus the one-off dates. Call at render time, never at module load. */
+export const allSpecialHours = (s: StoreFacts = store, now: Date = new Date()): SpecialHours[] =>
+  [...expandHolidays(s.holidayClosures, now.getUTCFullYear(), 2).filter((h) => !s.specialHours.some((x) => x.date === h.date)), ...s.specialHours].sort((a, b) => a.date.localeCompare(b.date));
 
 /** Digits-only phone for tel: links, with the country code. */
 export const telHref = (s: StoreFacts = store) => `tel:+1${s.phone.replace(/\D/g, '').replace(/^1(?=\d{10}$)/, '')}`;

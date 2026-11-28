@@ -66,6 +66,15 @@ describe('open-now status', () => {
     expect(specialOpeningHoursSpecification(special, '2026-12-01')[0]).toMatchObject({ validFrom: '2026-12-25', opens: '00:00', closes: '00:00' });
     expect(checkHours(w, [{ date: '2026-13-40', closed: true }])).toHaveLength(1);
   });
+  it('yearly holidays: Thanksgiving is the 4th Thursday of November, Christmas Dec 25', async () => {
+    const { thanksgiving, expandHolidays, holidayText } = await import('../src/lib/hours');
+    expect(thanksgiving(2026)).toBe('2026-11-26');
+    expect(thanksgiving(2027)).toBe('2027-11-25');
+    expect(thanksgiving(2029)).toBe('2029-11-22');
+    expect(expandHolidays(defaults.holidayClosures, 2027, 2).map((x) => x.date)).toEqual(['2027-11-25', '2027-12-25', '2028-11-23', '2028-12-25']);
+    expect(holidayText(defaults.holidayClosures)).toBe('Closed Thanksgiving Day and Christmas Day.');
+    expect(statusAt(new Date('2027-11-25T18:00:00Z'), defaults.weeklyHours, expandHolidays(defaults.holidayClosures, 2027), 'America/Chicago').text).toBe('Closed for Thanksgiving Day · opens tomorrow at 9:00 AM');
+  });
   it('zoned() reads the store clock', () => {
     expect(zoned(new Date('2026-11-30T05:30:00Z'), tz)).toMatchObject({ ymd: '2026-11-29', day: 'Sunday', minute: 23 * 60 + 30 });
     expect(fmt12('00:15')).toBe('12:15 AM');
@@ -81,12 +90,13 @@ describe('structured data', () => {
     expect(openingHoursSpecification(store.weeklyHours)).toHaveLength(3);
     expect(lb.openingHoursSpecification[0].dayOfWeek).toHaveLength(5);
     expect(lb.sameAs).toEqual(['https://www.facebook.com/monroegoinpostal/', 'https://share.google/WSq90cS7IAT59Xtjm', 'https://goinpostal.com/store/GP490.1']);
-    expect(lb.hasMap).toBe('https://share.google/WSq90cS7IAT59Xtjm');
     expect(lb.areaServed.map((a: any) => a.name)).toContain('West Monroe, Louisiana');
   });
-  it('leaves out unverified facts instead of guessing', () => {
-    expect(lb.geo).toBeUndefined();
-    expect(lb.paymentAccepted).toBeUndefined();
+  it('has the confirmed pin, map link, payments and holidays; never reviews', () => {
+    expect(lb.geo).toEqual({ '@type': 'GeoCoordinates', latitude: 32.528492, longitude: -92.116822 });
+    expect(lb.hasMap).toBe('https://maps.google.com/?cid=14209401352782944093');
+    expect(lb.paymentAccepted).toBe('Cash, Credit Card, Apple Pay');
+    expect(lb.specialOpeningHoursSpecification.map((x: any) => x.validFrom)).toContain(`${new Date().getUTCFullYear()}-12-25`);
     expect(lb.aggregateRating).toBeUndefined();
     expect(lb.review).toBeUndefined();
   });
@@ -225,5 +235,13 @@ describe('owner decisions (Nov 28 2026)', () => {
     const routes = allRoutes({ store: on });
     expect(routes.find((r) => r.path === '/ship')?.indexable).toBe(true);
     expect(routes.find((r) => r.path === '/shipping/domestic')?.links).toContain('/ship');
+  });
+});
+
+describe('holiday dates are worked out when used, not when the module loads', () => {
+  it('allSpecialHours follows the date it is given', async () => {
+    const { allSpecialHours } = await import('../src/data/store');
+    expect(allSpecialHours(defaults, new Date('2030-06-01T12:00:00Z')).map((x) => x.date)).toEqual(['2030-11-28', '2030-12-25', '2031-11-27', '2031-12-25']);
+    expect(defaults.specialHours).toEqual([]);
   });
 });

@@ -3,7 +3,7 @@
 // Google Business Profile and the structured data), links to every service area, and only the
 // profile links that are verified in src/data/store.ts.
 import { store, telHref, directionsUrl, verifiedProfiles } from '../../data/store';
-import { groupHours } from '../../lib/hours';
+import { groupHours, holidayText } from '../../lib/hours';
 import { anyTracking } from '../../lib/analytics-config';
 import OpenStatus from './OpenStatus.astro';
 const groups = groupHours(store.weeklyHours);
@@ -25,6 +25,8 @@ const cols = [
       </address>
       <OpenStatus />
       <ul class="foot-hours">{groups.map((g) => <li><span>{g.label}</span> {g.text}</li>)}</ul>
+      {store.holidayClosures.length > 0 && <p class="small">{holidayText(store.holidayClosures)}</p>}
+      {store.paymentNote && <p class="small">{store.paymentNote}</p>}
       <p class="small">Serving {store.serviceArea.slice(0, -1).join(', ')} and {store.serviceArea[store.serviceArea.length - 1]}.</p>
       {profiles.length > 0 && <p class="foot-social">{profiles.map((p, i) => <>{i > 0 && ' · '}<a href={p.url} rel="noopener me" target="_blank" data-track="social_click" data-track-platform={p.name}>{p.name}</a></>)}</p>}
     </div>

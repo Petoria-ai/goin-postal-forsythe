@@ -6,7 +6,7 @@ import { verifiedProfiles } from '../data/store';
 import { crawlerPolicy, SEARCH_ENGINES, AI_SEARCH, AI_USER_FETCHERS, AI_TRAINING, DISALLOW } from '../data/crawlers';
 import type { RouteMeta } from './routes';
 import { canonicalUrl, absoluteUrl } from './seo';
-import { groupHours } from './hours';
+import { groupHours, holidayText } from './hours';
 import type { Product } from '../data/catalog';
 import { productPath } from '../data/catalog';
 
@@ -94,7 +94,8 @@ export function llmsTxt(s: StoreFacts, routes: RouteMeta[], site: string, faqs: 
     `- Phone: ${s.phone}`,
     `- Website: ${site}/`,
     `- Hours (${s.timezone}): ${groupHours(s.weeklyHours).map((g) => `${g.label} ${g.text}`).join('; ')}`,
-    '- Open seven days a week. Packages dropped off on weekends leave with the next scheduled carrier pickup.',
+    `- Open seven days a week. ${holidayText(s.holidayClosures)} Packages dropped off on weekends leave with the next scheduled carrier pickup.`,
+    ...(s.paymentNote ? [`- Payment: ${s.paymentNote}`] : []),
     `- Carriers: ${s.carriers.join(', ')}`,
     `- Service area: ${s.serviceArea.join(', ')}`,
     s.onlineShipping

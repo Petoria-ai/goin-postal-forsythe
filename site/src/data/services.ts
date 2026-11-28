@@ -522,6 +522,7 @@ export const SERVICES: ServiceEntry[] = [
           ['Address', 'Street address with your box number', 'Street address with your mailbox number'],
           ['Getting your mail', 'Pick up in person during store hours', 'See your mail online; ask for scans, forwarding or shredding'],
           ['Packages', 'Accepted from every carrier, held for you', 'Accepted and logged; forward or pick up'],
+          ['Price', 'From $90 for 6 months (small box)', 'Set by the plan you choose in Anytime Mailbox'],
           ['Best for', 'People who live or work nearby', 'Travelers, remote workers and businesses outside Monroe'],
           ['Sign-up', 'At the counter with two IDs and USPS Form 1583', 'Online through Anytime Mailbox, with USPS Form 1583'],
         ],
@@ -544,7 +545,7 @@ export const SERVICES: ServiceEntry[] = [
     category: 'mailboxes', slug: 'physical', name: 'Physical mailbox rental',
     h1: 'Private physical mailbox rental in Monroe, LA',
     title: 'Private Mailbox Rental in Monroe, LA: Street Address & Packages',
-    description: 'Rent a private mailbox at {street}, Monroe: a real street address, packages from every carrier, and pickup 7 days a week. Small, medium, large.',
+    description: 'Private mailboxes at {street}, Monroe from $90 for 6 months: a real street address, packages from every carrier, pickup 7 days a week.',
     intro: 'A private mailbox at {name} gives you a real street address, {street} #your box number, Monroe, LA. We accept your letters and packages from USPS, UPS, FedEx and DHL and keep them safe until you pick them up, seven days a week.',
     sections: [
       { h: 'What you get', list: [
@@ -554,6 +555,11 @@ export const SERVICES: ServiceEntry[] = [
         'Small, medium and large box sizes.',
         'Six-month or yearly terms.',
       ] },
+      { h: 'Box sizes and prices', table: {
+        caption: 'Paid in advance for the term. Sign up at the counter.',
+        head: ['Box size', '6 months', '12 months'],
+        rows: [['Small', '$90', '$180'], ['Medium', '$120', '$240'], ['Large', '$180', '$360']],
+      } },
       { h: 'How to sign up', list: [
         'Come to the counter with two current forms of ID. One must have your photo; one must show your address.',
         'Sign USPS Form 1583, which authorizes us to receive mail for you. We witness it at the counter.',
@@ -563,16 +569,22 @@ export const SERVICES: ServiceEntry[] = [
         'Mail to your box is addressed to your name, then {street} #box number, then Monroe, LA 71201. USPS rules require the box number with "#" or "PMB".',
       ] },
     ],
-    pricing: 'Prices depend on the box size and term. Call {phone} or ask at the counter for current prices.',
+    pricing: 'Small boxes are $90 for 6 months or $180 for a year; medium $120 or $240; large $180 or $360. Not sure which size you need? Tell us how much mail and how many packages you get and we will suggest one.',
+    offers: [
+      { name: 'Small mailbox, 6 months', price: 90 }, { name: 'Small mailbox, 12 months', price: 180 },
+      { name: 'Medium mailbox, 6 months', price: 120 }, { name: 'Medium mailbox, 12 months', price: 240 },
+      { name: 'Large mailbox, 6 months', price: 180 }, { name: 'Large mailbox, 12 months', price: 360 },
+    ],
     restrictions: ['USPS requires two forms of ID and a signed Form 1583 before we can accept mail for you.'],
     faqs: [
       { q: 'Can I receive Amazon and UPS packages at my mailbox?', a: 'Yes. Packages from every carrier are accepted and held for you.' },
+      { q: 'How much does a mailbox cost?', a: 'A small box is $90 for 6 months or $180 for a year. Medium is $120 or $240, and large is $180 or $360.' },
       { q: 'How long are the rental terms?', a: 'Six months or a year.' },
       { q: 'Can someone else pick up my mail?', a: 'Anyone who will receive mail at the box must be listed on the Form 1583. Ask at the counter about adding people.' },
       { q: 'Is my mailbox address a real street address?', a: 'Yes. Your address is our street address with your box number, which works where a PO Box is not accepted.' },
     ],
     related: ['/mailboxes', '/mailboxes/virtual', '/mailboxes/mail-forwarding', '/guides/private-mailbox-vs-po-box'],
-    cta: [{ label: 'Call about box sizes and prices', href: 'tel', track: 'mailbox_inquiry' }],
+    cta: [{ label: 'Call about a mailbox', href: 'tel', track: 'mailbox_inquiry' }],
     status: 'published', updated: UPDATED,
     keywords: ['personal mailbox rental Monroe LA', 'package receiving Monroe', 'private mailbox Monroe'],
   },

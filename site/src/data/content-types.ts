@@ -38,6 +38,7 @@ export interface ServiceEntry {
   intro: string;             // the lead paragraph: the direct answer
   sections: Section[];
   pricing?: string;          // how pricing works; only published numbers
+  offers?: { name: string; price: number }[]; // published prices, for the Service structured data (must also be shown on the page)
   restrictions?: string[];
   providers?: string[];      // carriers or partners involved, for copy and schema brand
   faqs: FaqItem[];

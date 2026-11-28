@@ -39,7 +39,7 @@ const ctas = (svc.cta ?? [])
   .filter((c) => c.href !== 'anytimeMailbox' || /^https:\/\//.test(store.profiles.anytimeMailbox ?? ''))
   .map((c) => ({ ...c, href: c.href === 'tel' ? telHref() : c.href === 'anytimeMailbox' ? store.profiles.anytimeMailbox! : c.href }));
 const jsonLd = [
-  serviceLd({ name: plainText(svc.h1, tk), description: meta.description, path, serviceType: svc.name, brand: undefined }, store),
+  serviceLd({ name: plainText(svc.h1, tk), description: meta.description, path, serviceType: svc.name, offers: svc.offers }, store),
   ...(isHub ? [{ '@type': 'ItemList', '@id': canonicalUrl(path) + '#services', name: `${CATEGORY_NAMES[svc.category]} at ${store.name}`, itemListElement: children.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, url: canonicalUrl(pathOf(c)) })) }] : []),
   ...(faqs.length ? [faqLd(faqs, path)] : []),
 ];

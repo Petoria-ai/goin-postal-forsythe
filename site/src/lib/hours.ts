@@ -158,3 +158,30 @@ export function checkHours(weekly: DayHours[], special: SpecialHours[] = []): st
   }
   return errs;
 }
+
+// ---- every-year holiday closures ------------------------------------------------------------------
+/** A closure that repeats every year: a fixed date ("12-25") or a named floating holiday. */
+export interface HolidayRule { rule: 'thanksgiving' | `${number}-${number}`; label: string }
+/** Thanksgiving: the fourth Thursday of November. */
+export function thanksgiving(year: number): string {
+  const firstDow = new Date(Date.UTC(year, 10, 1)).getUTCDay(); // 0 = Sunday
+  const firstThu = 1 + ((4 - firstDow + 7) % 7);
+  return `${year}-11-${String(firstThu + 21).padStart(2, '0')}`;
+}
+/** The yearly rules as dated closures for `years` years from `fromYear` (the site rebuilds often, so two is plenty). */
+export function expandHolidays(rules: HolidayRule[], fromYear: number, years = 2): SpecialHours[] {
+  const out: SpecialHours[] = [];
+  for (let y = fromYear; y < fromYear + years; y++) {
+    for (const r of rules) {
+      const date = r.rule === 'thanksgiving' ? thanksgiving(y) : `${y}-${r.rule}`;
+      if (validDate(date)) out.push({ date, closed: true, label: r.label });
+    }
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+/** "Closed Thanksgiving Day and Christmas Day." for the visible pages (structured data must match what people see). */
+export function holidayText(rules: HolidayRule[]): string {
+  if (!rules.length) return '';
+  const names = rules.map((r) => r.label);
+  return `Closed ${names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0]}.`;
+}
