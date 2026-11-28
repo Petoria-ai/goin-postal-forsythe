@@ -603,7 +603,8 @@ export const SERVICES: ServiceEntry[] = [
       { q: 'Can I switch from a virtual mailbox to a physical one?', a: 'Yes. Sign up for a physical box at the counter; it needs its own Form 1583 with the new box number.' },
     ],
     related: ['/mailboxes', '/mailboxes/physical', '/mailboxes/mail-forwarding', '/guides/physical-vs-virtual-mailbox'],
-    cta: [{ label: 'Ask about virtual mailboxes', href: 'tel', track: 'virtual_mailbox_inquiry' }],
+    // The sign-up button appears once profiles.anytimeMailbox (src/data/store.ts) holds the store's Anytime Mailbox page.
+    cta: [{ label: 'Sign up online', href: 'anytimeMailbox', track: 'virtual_mailbox_signup' }, { label: 'Ask about virtual mailboxes', href: 'tel', track: 'virtual_mailbox_inquiry' }],
     status: 'published', updated: UPDATED,
     keywords: ['virtual mailbox Monroe LA', 'virtual business address Monroe'],
   },

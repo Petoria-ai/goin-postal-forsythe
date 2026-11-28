@@ -35,8 +35,8 @@ describe('business facts', () => {
     expect(store.hours.find((h) => h.key === 'days.sun')?.open).toBe('10:00 am to 3:00 pm');
   });
   it('only verified https profiles are published', () => {
-    expect(verifiedProfiles().map((p) => p.name)).toEqual(['Facebook', 'Google Maps']);
-    expect(verifiedProfiles(mergeStore(defaults, { profiles: { yelp: 'http://insecure', bbb: '' } }))).toHaveLength(2);
+    expect(verifiedProfiles().map((p) => p.name)).toEqual(['Facebook', 'Google Maps', "Goin' Postal store page"]);
+    expect(verifiedProfiles(mergeStore(defaults, { profiles: { yelp: 'http://insecure', bbb: '' } }))).toHaveLength(3);
   });
   it('a store JSON with its own weekly hours gets matching display rows', () => {
     const s = mergeStore(defaults, { weeklyHours: [{ day: 'Monday', opens: '08:00', closes: '17:00' }] });
@@ -78,7 +78,7 @@ describe('structured data', () => {
     expect(lb.address).toMatchObject({ streetAddress: '1800 Forsythe Ave, Suite 2', addressLocality: 'Monroe', addressRegion: 'LA', postalCode: '71201', addressCountry: 'US' });
     expect(openingHoursSpecification(store.weeklyHours)).toHaveLength(3);
     expect(lb.openingHoursSpecification[0].dayOfWeek).toHaveLength(5);
-    expect(lb.sameAs).toEqual(['https://www.facebook.com/monroegoinpostal/', 'https://share.google/WSq90cS7IAT59Xtjm']);
+    expect(lb.sameAs).toEqual(['https://www.facebook.com/monroegoinpostal/', 'https://share.google/WSq90cS7IAT59Xtjm', 'https://goinpostal.com/store/GP490.1']);
     expect(lb.hasMap).toBe('https://share.google/WSq90cS7IAT59Xtjm');
     expect(lb.areaServed.map((a: any) => a.name)).toContain('West Monroe, Louisiana');
   });

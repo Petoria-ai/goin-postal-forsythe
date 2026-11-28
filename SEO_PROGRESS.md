@@ -175,15 +175,16 @@ and P3, not as finished work.
 - **Owner priority:** e-commerce and mailboxes come before online shipping. Order the Priority 2 and 3 work accordingly.
 - **Header and home page stay as they are.** Peter will update the "Ship a package" and "About PeterShip" tabs and the home page's PeterShip panel himself as the business changes. Do not hide or restyle them.
 - **Google-Extended stays blocked.** It gives no search benefit: Google Search, AI Overviews, Maps and "near me" answers do not depend on it. Recorded in `src/data/crawlers.ts`.
+- **Franchise store page:** `https://goinpostal.com/store/GP490.1` is in `profiles.other`, and is shown in the footer and in `sameAs`.
+- **Virtual mailbox sign-up:** once `profiles.anytimeMailbox` holds the store's Anytime Mailbox location page, a "Sign up online" button appears on `/mailboxes/virtual` automatically (CTA keyword `anytimeMailbox`). While it is blank the button is hidden and the page offers a phone call.
 - **Google Business Profile exists and is being promoted.** Its share link, `https://share.google/WSq90cS7IAT59Xtjm`, is in `profiles.googleBusiness`. It now appears in the footer as "Google Maps", and in the LocalBusiness `sameAs` and `hasMap`. Optional: swap in the full Google Maps URL, which is more robust than a short link.
 
 ### Still open
-1. **The franchise listing on goinpostal.com:** get the exact URL of the store's location page there. It can go in `profiles.other` as a verified profile.
-2. **Domain name to buy**, and whether GP Brands' franchise rules limit domains that use "Goin' Postal".
-3. **The Business Profile's "Ask for reviews" link** (`profiles.googleReview`). The delivered-package email can then ask for reviews (`reviewUrl`).
-4. **Physical mailbox prices** (the register's template prices are placeholders) and the **Anytime Mailbox sign-up link** (`profiles.anytimeMailbox`).
-5. **Exact map pin** (`geo`), payment methods (`paymentAccepted`), holiday closures (`specialHours`).
-6. **Privacy page:** have it reviewed before launch.
+1. **Domain name to buy**, and whether GP Brands' franchise rules limit domains that use "Goin' Postal".
+2. **The Business Profile's "Ask for reviews" link** (`profiles.googleReview`). The delivered-package email can then ask for reviews (`reviewUrl`).
+3. **Physical mailbox prices** (the register's template prices are placeholders) and the **Anytime Mailbox sign-up link** (`profiles.anytimeMailbox`).
+4. **Exact map pin** (`geo`), payment methods (`paymentAccepted`), holiday closures (`specialHours`).
+5. **Privacy page:** have it reviewed before launch.
 
 ## Manual actions required from the owners (none block the code)
 

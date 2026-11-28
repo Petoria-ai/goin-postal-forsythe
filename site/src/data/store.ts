@@ -130,7 +130,7 @@ export const defaults: StoreFacts = {
     googleBusiness: 'https://share.google/WSq90cS7IAT59Xtjm', // the Business Profile share link Peter sent, Nov 28 2026
     googleReview: '', // TODO: the "Ask for reviews" link from the Business Profile bingPlaces: '', appleBusiness: '', yelp: '', bbb: '',
     instagram: '', nextdoor: '', upsLocator: '', fedexLocator: '', dhlLocator: '', anytimeMailbox: '',
-    other: [],
+    other: [{ name: "Goin' Postal store page", url: 'https://goinpostal.com/store/GP490.1' }], // the franchise's page for this store, from Peter Nov 28 2026
   },
   logo: '/images/logo.png',
   // Off until the e-commerce and mailbox side is stable (Peter, Nov 28 2026). Flip to true to promote online shipping again.
