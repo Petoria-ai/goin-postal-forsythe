@@ -68,6 +68,9 @@ export interface StoreFacts {
   siblings?: { id: string; name: string; url: string }[];
 }
 
+// The Business Profile's "Get more reviews" link (Peter, Nov 28 2026). Used by the delivered email and the Contact page.
+const GOOGLE_REVIEW = 'https://g.page/r/CV0Xlec-7zHFEAI/review';
+
 const weeklyHours: DayHours[] = [
   { day: 'Monday', opens: '09:00', closes: '18:30' },
   { day: 'Tuesday', opens: '09:00', closes: '18:30' },
@@ -106,7 +109,7 @@ export const defaults: StoreFacts = {
     country_alpha2: 'US',
   },
   formEndpoint: 'https://formspree.io/f/REPLACE_ME', // TODO: create a Formspree form and paste its ID
-  reviewUrl: '', // TODO: the Google review link from the Business Profile (issue 7); blank sends no review ask
+  reviewUrl: GOOGLE_REVIEW, // the delivered email asks for a review with this link (issue 7)
   weeklyHours,
   // Example: { date: '2026-12-25', closed: true, label: 'Christmas Day' }. Add only dates the owners have decided.
   specialHours: [],
@@ -128,7 +131,7 @@ export const defaults: StoreFacts = {
     facebook: 'https://www.facebook.com/monroegoinpostal/',
     // Fill in only after each listing is claimed and verified. Blank ones are never shown.
     googleBusiness: 'https://share.google/WSq90cS7IAT59Xtjm', // the Business Profile share link Peter sent, Nov 28 2026
-    googleReview: '', // TODO: the "Ask for reviews" link from the Business Profile bingPlaces: '', appleBusiness: '', yelp: '', bbb: '',
+    googleReview: GOOGLE_REVIEW, bingPlaces: '', appleBusiness: '', yelp: '', bbb: '',
     instagram: '', nextdoor: '', upsLocator: '', fedexLocator: '', dhlLocator: '',
     anytimeMailbox: 'https://www.anytimemailbox.com/s/monroe-1800-forsythe-avenue', // the store's location page, set up by Peter (Nov 28 2026)
     other: [{ name: "Goin' Postal store page", url: 'https://goinpostal.com/store/GP490.1' }], // the franchise's page for this store, from Peter Nov 28 2026

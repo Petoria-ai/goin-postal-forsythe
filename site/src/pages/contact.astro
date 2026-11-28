@@ -12,6 +12,7 @@ const meta = routeMeta('/contact')!;
     <p class="btnrow">
       <a class="btn" href={telHref()} data-track="phone_click">Call {store.phone}</a>
       <a class="btn kraft" href={directionsUrl()} target="_blank" rel="noopener" data-track="directions_click">Get directions</a>
+      {store.reviewUrl && <a class="btn kraft" href={store.reviewUrl} target="_blank" rel="noopener" data-track="review_click">Review us on Google</a>}
     </p>
   </section>
   <VisitUs />

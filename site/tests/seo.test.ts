@@ -24,6 +24,8 @@ describe('business facts', () => {
     expect(store.profiles.facebook).toBe('https://www.facebook.com/monroegoinpostal/');
     expect(telHref()).toBe('tel:+13185702132');
     expect(directionsUrl()).toContain('destination=');
+    expect(store.reviewUrl).toBe('https://g.page/r/CV0Xlec-7zHFEAI/review');
+    expect(store.profiles.googleReview).toBe(store.reviewUrl);
   });
   it('hours are open seven days: weekdays 9-6:30, Saturday 9-3, Sunday 10-3', () => {
     expect(store.weeklyHours).toHaveLength(7);
