@@ -156,7 +156,7 @@ export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = 
     values: listOf(a.values, 'productAttributeValueUid').map((v: any) => ({ uid: String(v.productAttributeValueUid ?? ''), title: String(v.title ?? v.productAttributeValueUid ?? '') })),
   })); } catch (e: any) { errors.push(`choices: ${e.message}`); }
   const products: { uid: string; attributes: Record<string, string> }[] = [];
-  let hits: any = null; let limit = 100; let done = false;
+  let hits: any = null; let sample: any = null; let limit = 100; let done = false;
   for (let offset = 0; offset < max && !done; ) {
     let page: any;
     try { page = await get(`${base}/products:search`, { method: 'POST', body: JSON.stringify(filters ? { attributeFilters: filters, limit, offset } : { limit, offset }) }); }
@@ -165,6 +165,7 @@ export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = 
       errors.push(`products (limit ${limit}, offset ${offset}): ${e.message}`); break;
     }
     hits ??= page?.hits ?? null;
+    sample ??= page?.products?.[0] ?? null; // one product exactly as Gelato sent it (does it have pictures?)
     const got: any[] = page?.products ?? [];
     for (const p of got) products.push({ uid: String(p.productUid ?? ''), attributes: p.attributes ?? {} });
     offset += limit; done = got.length < limit;
@@ -174,5 +175,5 @@ export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = 
     const off = products.filter((p) => Object.entries(filters).some(([k, vals]) => p.attributes[k] != null && !vals.includes(String(p.attributes[k]))));
     if (off.length) errors.push(`filters: ${off.length} of ${products.length} products don't match the filters (Gelato may not have applied them)`);
   }
-  return { uid, title: String(c?.title ?? uid), attributes, raw_choices: c?.productAttributes ?? null, products, more: !done && products.length >= max, hits, errors };
+  return { uid, title: String(c?.title ?? uid), attributes, raw_choices: c?.productAttributes ?? null, sample_raw: sample, products, more: !done && products.length >= max, hits, errors };
 }

@@ -4,6 +4,13 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-27 18:09 CST · Gelato files keep one whole product, to see if Gelato sends pictures
+
+- **Asked for:** "ok with this api. would u be able to get their photos or what?"
+- **What changed:** the Gelato files saved only each product's code and choices, so we couldn't tell if Gelato also sends pictures. Each group in the file now also keeps one product exactly as Gelato sent it (`sample_raw`). The last download had no picture links in what was kept.
+- **Files:** [site/src/lib/gelato.ts](../site/src/lib/gelato.ts), [site/tests/gelatoCatalog.test.ts](../site/tests/gelatoCatalog.test.ts)
+- **How to check it:** `git pull`, restart `npm run dev`, press **Find our products' codes**, and send Claude the file.
+
 ## 2026-11-27 18:05 CST · Print orders: a "Find our products' codes" button
 
 - **What happened:** Peter's third download worked: 59 of Gelato's product groups with their sizes, colors and codes (only Gelato's t-shirt group stopped early, on a Gelato server error deep in the list). But Gelato's groups are huge (the t-shirt group alone has over 200,000 codes: every brand, color, size and print spot), and the download reads the first 500 of each, so the exact shirt, poster and flyer we sell weren't in it.

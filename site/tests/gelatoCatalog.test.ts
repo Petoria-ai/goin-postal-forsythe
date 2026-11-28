@@ -28,6 +28,7 @@ describe("Gelato's product list (read only)", () => {
     expect(c.attributes).toEqual([{ uid: 'MugSize', title: 'Size', values: [{ uid: '11-oz', title: '11 oz' }] }]);
     expect(c.products).toHaveLength(230);
     expect(c.products[229]).toEqual({ uid: 'mug_229', attributes: { MugSize: '11-oz' } });
+    expect(c.sample_raw).toEqual({ productUid: 'mug_0', attributes: { MugSize: '11-oz' }, weight: { value: 1 } });
     expect(c.more).toBe(false);
   });
   it("keeps Gelato's reason when it refuses, instead of failing the whole file", async () => {
