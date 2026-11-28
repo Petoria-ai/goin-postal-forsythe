@@ -6,7 +6,7 @@ import { store as defaultStore, type StoreFacts } from '../data/store';
 import { SERVICES, CATEGORY_NAMES } from '../data/services';
 import { GUIDES } from '../data/guides';
 import { PRODUCTS, CATEGORIES, productPath, categoryPath, liveCategories, categoryIndexable, lowPrice, publishedProducts } from '../data/catalog';
-import { pathOf, guidePath, type SeoOverrides, type Status } from '../data/content-types';
+import { pathOf, guidePath, forMode, isOnlineShippingPath, type SeoOverrides, type Status } from '../data/content-types';
 import { canonicalPath, pageTitle, isPrivatePath, type Crumb } from './seo';
 import { storeTokens, plainText, linksIn } from './richtext';
 import redirectsJson from '../data/redirects.json';
@@ -87,7 +87,8 @@ export function allRoutes(opts: RouteOpts = {}): RouteMeta[] {
     const path = pathOf(sv);
     const hub = SERVICES.find((x) => x.category === sv.category && !x.slug);
     const trail: Crumb[] = sv.slug ? [{ name: CATEGORY_NAMES[sv.category], path: pathOf({ category: sv.category, slug: '' }) }, { name: sv.name, path }] : [{ name: sv.name, path }];
-    const text = [sv.intro, ...sv.sections.flatMap((x) => [...(x.body ?? []), ...(x.list ?? [])]), ...sv.faqs.map((f) => f.a)].join('\n');
+    const on = s.onlineShipping;
+    const text = [sv.intro, ...forMode(sv.sections, on).flatMap((x) => [...(x.body ?? []), ...(x.list ?? [])]), ...forMode(sv.faqs, on).map((f) => f.a)].join('\n');
     const rawTitle = fill(sv.title);
     const vi = sv.translations?.vi;
     const viBuilt = vi && built(vi.status);
@@ -95,7 +96,7 @@ export function allRoutes(opts: RouteOpts = {}): RouteMeta[] {
     out.push(applySeo({
       path, kind: sv.slug ? 'service' : 'service-hub', rawTitle, title: pageTitle(rawTitle, brand), description: fill(sv.description), h1: fill(sv.h1),
       indexable: sv.status === 'published', status: sv.status, lastmod: sv.updated, lang: 'en', alternates,
-      links: [...linksIn(text), ...sv.related, ...(sv.cta ?? []).map((c) => c.href).filter((h) => h.startsWith('/'))],
+      links: [...linksIn(text), ...sv.related, ...(sv.cta ?? []).map((c) => c.href).filter((h) => h.startsWith('/') && (on || !isOnlineShippingPath(h)))],
       images: sv.image ? [sv.image] : [], crumbs: crumbsFor(path, trail), section: CATEGORY_NAMES[sv.category],
     }, sv.seo, brand, fill));
     if (hub && hub.status !== 'published' && sv.slug) out[out.length - 1].links.push(pathOf(hub));
@@ -110,7 +111,7 @@ export function allRoutes(opts: RouteOpts = {}): RouteMeta[] {
   for (const g of guides) {
     const path = guidePath(g);
     const rawTitle = fill(g.seoTitle ?? g.title);
-    const text = [g.summary, ...g.sections.flatMap((x) => [...(x.body ?? []), ...(x.list ?? [])]), ...(g.faqs ?? []).map((f) => f.a)].join('\n');
+    const text = [g.summary, ...forMode(g.sections, s.onlineShipping).flatMap((x) => [...(x.body ?? []), ...(x.list ?? [])]), ...forMode(g.faqs ?? [], s.onlineShipping).map((f) => f.a)].join('\n');
     out.push(applySeo({ path, kind: 'guide', rawTitle, title: pageTitle(rawTitle, brand), description: fill(g.description), h1: fill(g.title), indexable: g.status === 'published', status: g.status, lastmod: g.updated, lang: 'en', links: [...linksIn(text), ...g.related], images: g.image ? [g.image] : [], crumbs: crumbsFor(path, [{ name: 'Guides', path: '/guides' }, { name: fill(g.title), path }]), section: 'Guides' }, g.seo, brand, fill));
   }
 
@@ -133,6 +134,8 @@ export function allRoutes(opts: RouteOpts = {}): RouteMeta[] {
   }
 
   for (const r of out) {
+    // Online shipping switched off: its pages stay reachable but out of search engines and the sitemap.
+    if (!s.onlineShipping && isOnlineShippingPath(r.path)) r.indexable = false;
     if (isPrivatePath(r.path)) r.indexable = false;
     if (r.status !== 'published') r.indexable = false;
   }

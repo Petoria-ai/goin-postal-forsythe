@@ -15,7 +15,8 @@
     "check": "astro check",
     "test": "astro check && vitest run && astro build",
     "test:unit": "vitest run",
-    "seo:audit": "node scripts/seo-audit.mjs"
+    "seo:audit": "node scripts/seo-audit.mjs",
+    "seo:check": "PUBLIC_SITE_URL=https://www.example.com astro build && node scripts/seo-audit.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",

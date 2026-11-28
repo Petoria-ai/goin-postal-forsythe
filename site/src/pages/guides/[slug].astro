@@ -7,7 +7,7 @@ import Faq from '../../components/seo/Faq.astro';
 import Related from '../../components/seo/Related.astro';
 import VisitUs from '../../components/seo/VisitUs.astro';
 import { GUIDES, GUIDE_CATEGORY_NAMES } from '../../data/guides';
-import { guidePath, type GuideEntry } from '../../data/content-types';
+import { guidePath, forMode, type GuideEntry } from '../../data/content-types';
 import { store } from '../../data/store';
 import { storeTokens, richText, plainText } from '../../lib/richtext';
 import { articleLd, faqLd } from '../../lib/seo';
@@ -20,7 +20,9 @@ const path = guidePath(g);
 const tk = storeTokens(store);
 const meta = routeMeta(path)!;
 const fmt = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-const faqs = (g.faqs ?? []).map((f) => ({ q: plainText(f.q, tk), a: plainText(f.a, tk) }));
+const gFaqs = forMode(g.faqs ?? [], store.onlineShipping);
+const gSections = forMode(g.sections, store.onlineShipping);
+const faqs = gFaqs.map((f) => ({ q: plainText(f.q, tk), a: plainText(f.a, tk) }));
 const jsonLd = [
   articleLd({ path, headline: meta.h1, description: meta.description, datePublished: g.published, dateModified: g.updated, image: g.image?.src, section: GUIDE_CATEGORY_NAMES[g.category] }),
   ...(faqs.length ? [faqLd(faqs, path)] : []),
@@ -37,8 +39,8 @@ const jsonLd = [
       <h2 class="sr-only">Short answer</h2>
       <p set:html={richText(g.summary, tk)} />
     </section>
-    <ContentSections sections={g.sections} tokens={tk} />
-    <Faq faqs={g.faqs ?? []} tokens={tk} />
+    <ContentSections sections={gSections} tokens={tk} />
+    <Faq faqs={gFaqs} tokens={tk} />
     {g.sources && g.sources.length > 0 && (
       <section class="content-section">
         <h2>Sources</h2>

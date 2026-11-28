@@ -125,11 +125,11 @@ export const GUIDES: GuideEntry[] = [
         '**Surcharges**: residential delivery, remote areas, large or heavy packages.',
       ] },
       { h: 'Compare in one place', body: [
-        'At {name} we quote all four for your box at the counter, and [PeterShip](/ship) compares USPS, UPS, FedEx and DHL online for U.S. addresses.',
+        'At {name} we quote all four for your box at the counter, or call [{phone}](tel) with the weight, size and destination.',
       ] },
     ],
     sources: [{ name: 'USPS', url: 'https://www.usps.com/' }, { name: 'UPS', url: 'https://www.ups.com/' }, { name: 'FedEx', url: 'https://www.fedex.com/' }, { name: 'DHL', url: 'https://www.dhl.com/' }],
-    related: ['/shipping', '/shipping/international', '/shipping/domestic', '/ship'],
+    related: ['/shipping', '/shipping/international', '/shipping/domestic', '/shipping/packing'],
   },
   {
     slug: 'how-to-package-a-shipment', category: 'shipping', status: 'published', published: D, updated: D,
@@ -191,11 +191,11 @@ export const GUIDES: GuideEntry[] = [
       { h: 'Your options', list: [
         '**A QR code from a retailer or carrier**: show it at the counter; we scan and print.',
         '**A PDF label in your email**: forward it or show it; we print it.',
-        '**No label yet**: buy one at the counter, or online with [PeterShip](/ship) and show us the QR code.',
+        '**No label yet**: we compare carriers and sell you one at the counter.',
       ] },
       { h: 'Tips', list: ['Have the package sealed before you arrive.', 'Remove or cover any old labels on a reused box.', 'Keep the receipt or drop-off scan as proof.'] },
     ],
-    related: ['/shipping/label-printing', '/shipping/drop-off', '/shipping/returns', '/ship'],
+    related: ['/shipping/label-printing', '/shipping/drop-off', '/shipping/returns', '/shipping/domestic'],
   },
   {
     slug: 'how-to-return-online-purchases', category: 'shipping', status: 'published', published: D, updated: D,

@@ -6,7 +6,7 @@ const LANG_MENU_TOP = ['en', 'vi', 'af', 'es', 'fr', 'pt', 'nl'];
 const LANG_MENU_ORDER: string[] = [...LANG_MENU_TOP, ...LANGS.map((l) => l.code).filter((c) => !LANG_MENU_TOP.includes(c))];
 import { store } from '../data/store';
 import { routeMeta } from '../lib/routes';
-import { SITE_URL, canonicalPath, canonicalUrl, absoluteUrl, isPrivatePath, robotsContent, clampDescription, pageTitle, graph, ldJson, websiteLd, organizationLd, localBusinessLd, webPageLd, breadcrumbLd, type Crumb } from '../lib/seo';
+import { SITE_URL, SITE_LIVE, canonicalPath, canonicalUrl, absoluteUrl, isPrivatePath, robotsContent, clampDescription, pageTitle, graph, ldJson, websiteLd, organizationLd, localBusinessLd, webPageLd, breadcrumbLd, type Crumb } from '../lib/seo';
 import { verification } from '../lib/analytics-config';
 import { zoned } from '../lib/hours';
 import Analytics from '../components/seo/Analytics.astro';
@@ -42,7 +42,8 @@ const lang = p.lang ?? meta?.lang ?? 'en';
 const title = meta?.title ?? pageTitle(p.title ?? store.name, store.name);
 const description = clampDescription(meta?.description ?? p.description ?? `Shipping, packing, mailboxes and printing at ${store.address}.`);
 // Not in the registry and not a known private path (an order code, a 404): never indexed by accident.
-const noindex = !!(p.noindex || priv || !meta || !meta.indexable || (Astro.response.status ?? 200) >= 400);
+// Pre-launch (no real domain configured): nothing is indexed anywhere.
+const noindex = !!(!SITE_LIVE || p.noindex || priv || !meta || !meta.indexable || (Astro.response.status ?? 200) >= 400);
 const canonicalHref = p.canonical ? absoluteUrl(canonicalPath(p.canonical)) : meta?.canonical ? absoluteUrl(canonicalPath(meta.canonical)) : canonicalUrl(path);
 const ogImage = absoluteUrl(p.ogImage ?? meta?.ogImage ?? '/images/og-default.png');
 const ogImageAlt = p.ogImageAlt ?? meta?.ogImageAlt ?? `${store.name}, ${store.address}`;

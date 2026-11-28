@@ -60,6 +60,10 @@ export interface StoreFacts {
   priceRange?: string;        // e.g. "$$" once the owners choose; blank leaves it out
   profiles: StoreProfiles;
   logo: string;               // site-relative path to the logo used in structured data
+  /** Customers can buy shipping labels online (PeterShip at /ship). While false, the marketing pages do not
+   *  promote online shipping, and /ship, /petership and /developers are kept out of search engines. The
+   *  pages themselves still work; hiding them from the menu is a separate decision. */
+  onlineShipping: boolean;
   // Other stores the same owner runs, each on its own deployment (T8). The counter pages show a switcher when this is set (T23).
   siblings?: { id: string; name: string; url: string }[];
 }
@@ -77,7 +81,7 @@ const weeklyHours: DayHours[] = [
 export const defaults: StoreFacts = {
   id: 'forsythe',
   name: "Goin' Postal Monroe",
-  legalName: 'Holsom Postal LLC', // as given by the owners Nov 28 2026; CLAUDE.md says "Wholesome Postal, LLC" — TODO confirm the exact registered spelling
+  legalName: 'Holsom Postal LLC', // the registered spelling, confirmed by Peter on Nov 28 2026
   address: '1800 Forsythe Ave, Suite 2, Monroe, LA 71201',
   street: '1800 Forsythe Ave',
   suite: 'Suite 2',
@@ -128,6 +132,8 @@ export const defaults: StoreFacts = {
     other: [],
   },
   logo: '/images/logo.png',
+  // Off until the e-commerce and mailbox side is stable (Peter, Nov 28 2026). Flip to true to promote online shipping again.
+  onlineShipping: false,
 };
 
 /** The defaults with a store's own facts laid over them. Top-level fields replace; `origin` and `profiles` merge field by field; lists replace whole. */

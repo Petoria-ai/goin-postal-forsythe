@@ -17,7 +17,14 @@ export interface SeoOverrides {
 /** published: live and indexed. draft: not built at all in production (SEO_PREVIEW_DRAFTS=1 builds it, noindexed). */
 export type Status = 'published' | 'draft';
 
-export interface Section { h: string; body?: string[]; list?: string[]; table?: { head: string[]; rows: string[][]; caption?: string } }
+/** `onlineOnly`: shown only while the store sells shipping online (store.onlineShipping). */
+export interface Section { h: string; body?: string[]; list?: string[]; table?: { head: string[]; rows: string[][]; caption?: string }; onlineOnly?: boolean }
+
+/** Paths that exist only for online shipping. Links and calls to action pointing at them are hidden while it is off. */
+export const ONLINE_SHIPPING_PATHS = ['/ship', '/petership', '/developers'];
+export const isOnlineShippingPath = (href: string) => ONLINE_SHIPPING_PATHS.some((p) => href === p || href.startsWith(p + '#') || href.startsWith(p + '?') || href.startsWith(p + '/'));
+/** Keep only what applies: online-only sections and FAQs drop out while online shipping is off. */
+export const forMode = <T extends { onlineOnly?: boolean }>(items: T[], online: boolean): T[] => items.filter((x) => online || !x.onlineOnly);
 
 export interface ImageRef { src: string; alt: string; width?: number; height?: number }
 

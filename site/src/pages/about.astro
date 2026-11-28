@@ -24,7 +24,7 @@ const meta = routeMeta('/about')!;
       <li><a href="/mailboxes"><strong>Mailboxes</strong><span>Physical and virtual mailboxes with a real street address.</span></a></li>
       <li><a href="/business-services"><strong>Business services</strong><span>Notary, fingerprinting, printing, fax, scanning and shredding.</span></a></li>
       <li><a href="/shop/business-cards"><strong>Business cards</strong><span>Designed online, picked up here.</span></a></li>
-      <li><a href="/petership"><strong>PeterShip</strong><span>Our own online shipping tool for customers and businesses.</span></a></li>
+      {store.onlineShipping && <li><a href="/petership"><strong>PeterShip</strong><span>Our own online shipping tool for customers and businesses.</span></a></li>}
     </ul>
   </section>
 

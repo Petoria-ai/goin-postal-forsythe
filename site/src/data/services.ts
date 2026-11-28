@@ -40,7 +40,7 @@ export const SERVICES: ServiceEntry[] = [
         '[Fragile items](/shipping/fragile), [heavy and oversized items](/shipping/heavy-oversized) and [freight on pallets](/shipping/freight)',
         '[Returns](/shipping/returns) for online purchases and [prepaid drop-offs](/shipping/drop-off)',
       ] },
-      { h: 'Ship online or at the counter', body: [
+      { h: 'Ship online or at the counter', onlineOnly: true, body: [
         'For U.S. addresses you can compare rates and buy a label online with [PeterShip](/ship), our own shipping tool, then print at home or show the QR code at the counter. International shipments, freight and anything that needs packing are handled in person.',
       ] },
       { h: 'Open seven days, including evenings', body: [
@@ -57,7 +57,7 @@ export const SERVICES: ServiceEntry[] = [
       { q: 'Are you a UPS Store or a FedEx Office?', a: 'No. {name} is an independently owned shipping store that ships with UPS, FedEx, USPS and DHL, so you can compare carriers in one place.' },
     ],
     related: ['/shipping/packing', '/shipping/drop-off', '/shipping/international', '/mailboxes'],
-    cta: [{ label: 'Compare rates online', href: '/ship', track: 'shipping_quote_start' }, { label: 'Ask for a quote', href: '/contact', track: 'quote_request_click' }],
+    cta: [{ label: 'Compare rates online', href: '/ship', track: 'shipping_quote_start' }, { label: 'Ask for a quote', href: '/contact', track: 'quote_request_click' }, { label: 'Call for a quote', href: 'tel', track: 'phone_click' }],
     status: 'published', updated: UPDATED,
     keywords: ['shipping store Monroe LA', 'shipping center near me', 'shipping store open seven days a week', 'alternatives to The UPS Store in Monroe'],
   },
@@ -65,13 +65,13 @@ export const SERVICES: ServiceEntry[] = [
     category: 'shipping', slug: 'domestic', name: 'Domestic shipping',
     h1: 'Domestic shipping from Monroe, LA',
     title: 'Domestic Shipping in Monroe, LA: Compare Carriers',
-    description: 'Send packages anywhere in the U.S. from Monroe with UPS, FedEx, USPS or DHL. Compare ground and express rates in store or online with PeterShip.',
-    intro: 'To ship a package anywhere in the United States, bring it to {name} at {street}, or buy the label online with [PeterShip](/ship). We compare ground, two-day and overnight options across carriers so you see every price before you pay.',
+    description: 'Send packages anywhere in the U.S. from Monroe with UPS, FedEx, USPS or DHL. We compare ground and express rates for you at the counter.',
+    intro: 'To ship a package anywhere in the United States, bring it to {name} at {street} or call {phone} for a quote. We compare ground, two-day and overnight options across carriers so you see every price before you pay.',
     sections: [
       { h: 'Ground, two-day or overnight', body: [
         'Ground services are usually the lowest price for packages that do not need to arrive on a set day. Express services cost more and arrive faster, often with a delivery date the carrier commits to. We show both so you can decide.',
       ] },
-      { h: 'Buy online, drop off here', body: [
+      { h: 'Buy online, drop off here', onlineOnly: true, body: [
         '[PeterShip](/ship) quotes USPS, UPS, FedEx and DHL for U.S. addresses, including Puerto Rico, the U.S. territories and military APO, FPO and DPO addresses. Pay by card, then print the label at home or show the QR code at the counter and we print it for you.',
       ] },
       { h: 'Size and weight limits', table: {
@@ -88,11 +88,12 @@ export const SERVICES: ServiceEntry[] = [
     providers: ['UPS', 'FedEx', 'USPS', 'DHL'],
     faqs: [
       { q: 'What is the cheapest way to ship a package in the U.S.?', a: 'It depends on weight, size and distance. Light packages are often cheapest with USPS; heavier boxes can be cheaper with UPS or FedEx Ground. We quote all of them so you can see.' },
-      { q: 'Can I buy a shipping label online and drop it off?', a: 'Yes. Buy it on our PeterShip page, then print it at home or show the QR code at our counter and we print and attach it.' },
-      { q: 'Do you ship to Puerto Rico and APO/FPO addresses?', a: 'Yes. Online quotes cover the 50 states, Washington DC, Puerto Rico, the U.S. territories and military APO, FPO and DPO addresses.' },
+      { q: 'Can I buy a shipping label online and drop it off?', onlineOnly: true, a: 'Yes. Buy it on our PeterShip page, then print it at home or show the QR code at our counter and we print and attach it.' },
+      { q: 'How do I get a shipping quote?', a: 'Bring the package in or call {phone} with its weight, size and the destination ZIP code. We compare UPS, FedEx, USPS and DHL for you.' },
+      { q: 'Do you ship to Puerto Rico and APO/FPO addresses?', a: 'Yes. We ship to all 50 states, Washington DC, Puerto Rico, the U.S. territories and military APO, FPO and DPO addresses.' },
     ],
     related: ['/shipping/ups', '/shipping/fedex', '/shipping/usps', '/shipping/packing'],
-    cta: [{ label: 'Get domestic rates', href: '/ship', track: 'shipping_quote_start' }],
+    cta: [{ label: 'Get domestic rates', href: '/ship', track: 'shipping_quote_start' }, { label: 'Call for a quote', href: 'tel', track: 'phone_click' }],
     status: 'published', updated: UPDATED,
     keywords: ['domestic shipping Monroe LA', 'ship a package Monroe'],
   },
@@ -112,8 +113,8 @@ export const SERVICES: ServiceEntry[] = [
       { h: 'Duties, taxes and restricted items', body: [
         'The destination country may charge import duties or taxes. Usually the receiver pays them on delivery. Every country restricts some items: batteries, liquids, perfume, food, medicine and cash are common examples. Tell us what you are sending and we will check the carrier\'s rules before you pay.',
       ] },
-      { h: 'Online quotes are U.S.-only', body: [
-        'Our online tool, [PeterShip](/ship), quotes U.S. addresses only. International shipments are quoted and booked in person or by phone at {phone}.',
+      { h: 'Booked in person or by phone', body: [
+        'International shipments are quoted and booked at the counter or by phone at [{phone}](tel), so we can check the paperwork and the contents with you.',
       ] },
     ],
     restrictions: ['Every shipment needs a customs declaration with contents and value.', 'Prohibited and restricted items differ by country and carrier.', 'Duties and taxes are set by the destination country, not by us.'],
@@ -123,7 +124,7 @@ export const SERVICES: ServiceEntry[] = [
       { q: 'Which carrier is best for international shipping?', a: 'For time-sensitive shipments, express services from DHL, UPS or FedEx are the fastest and track door to door. For lighter, less urgent items, USPS international services can cost less. We quote the options for your box.' },
       { q: 'Do I need to fill out a customs form?', a: 'Yes. Every international shipment needs a description of the contents and their value. We help you complete it at the counter.' },
       { q: 'Who pays import duties?', a: 'Usually the receiver pays any duties or taxes the destination country charges, when the package is delivered.' },
-      { q: 'Can I get an international quote online?', a: 'Our online tool quotes U.S. addresses only. Call {phone} or visit the counter for an international quote.' },
+      { q: 'Can I get an international quote online?', a: 'International quotes are given in person or by phone. Call {phone} or visit the counter.' },
     ],
     related: ['/shipping/vietnam', '/shipping/dhl', '/shipping/packing', '/guides/compare-ups-fedex-usps-dhl'],
     cta: [{ label: 'Call for an international quote', href: 'tel', track: 'phone_click' }, { label: 'Send us the details', href: '/contact', track: 'quote_request_click' }],
@@ -466,17 +467,16 @@ export const SERVICES: ServiceEntry[] = [
       { h: 'Ways to bring your label', list: [
         'A QR code or barcode on your phone from a retailer or carrier.',
         'A PDF label in your email.',
-        'A label you bought on our own [PeterShip](/ship) page: show the QR code and we print it.',
       ] },
       { h: 'Need a label too?', body: [
-        'If you do not have a label yet, we can sell you one at the counter, or you can buy one online with [PeterShip](/ship) and compare carriers first.',
+        'If you do not have a label yet, we sell you one at the counter after comparing UPS, FedEx, USPS and DHL for your package.',
       ] },
     ],
     faqs: [
       { q: 'Where can I print a shipping label near me in Monroe?', a: 'At {name}, {street}. Bring the QR code or emailed label and the package.' },
       { q: 'Can you print an Amazon return QR code?', a: 'Bring the return QR code or label on your phone and we will help you send it. See our returns page.' },
     ],
-    related: ['/shipping/returns', '/shipping/drop-off', '/guides/where-to-print-shipping-labels', '/ship'],
+    related: ['/shipping/returns', '/shipping/drop-off', '/guides/where-to-print-shipping-labels', '/shipping/domestic'],
     status: 'published', updated: UPDATED,
     keywords: ['print shipping label Monroe LA', 'where to print shipping labels'],
   },
@@ -493,7 +493,7 @@ export const SERVICES: ServiceEntry[] = [
       { h: 'No box? No problem', body: [
         'If the original box is gone, we can [pack it](/shipping/packing) for you.',
       ] },
-      { h: 'Business returns', body: [
+      { h: 'Business returns', onlineOnly: true, body: [
         'Online sellers with a PeterShip business account can give customers a prepaid return link. See [PeterShip for sellers](/petership).',
       ] },
     ],
@@ -624,7 +624,7 @@ export const SERVICES: ServiceEntry[] = [
         'A mailbox address is a mailing address. Some registrations, such as a registered agent for an LLC, have their own rules. Check what your filing requires before you use any mailbox address on it.',
       ] },
       { h: 'Ship from the same place', body: [
-        'Many mailbox holders ship from here too. A PeterShip [business account](/petership) adds discounted labels and monthly billing.',
+        'Many mailbox holders ship from here too: drop off, pack and send from the same counter where you collect your mail. See [shipping](/shipping).',
       ] },
     ],
     faqs: [
@@ -632,7 +632,7 @@ export const SERVICES: ServiceEntry[] = [
       { q: 'How do I get a business mailing address in Monroe?', a: 'Rent a physical or virtual mailbox at {name}. You need two IDs and a USPS Form 1583 that names the business.' },
       { q: 'Can several people at my business receive mail at one box?', a: 'Each person and the business must be listed on the Form 1583. Ask at the counter.' },
     ],
-    related: ['/mailboxes/physical', '/mailboxes/virtual', '/guides/how-to-get-a-business-mailing-address', '/petership'],
+    related: ['/mailboxes/physical', '/mailboxes/virtual', '/guides/how-to-get-a-business-mailing-address', '/shop/business-cards'],
     status: 'published', updated: UPDATED,
     keywords: ['business mailing address Monroe LA', 'small business mailbox Monroe'],
   },

@@ -1,12 +1,12 @@
 ---
-// "Related services" links. Only links to pages that are actually built and published are shown, so a
-// draft never becomes a broken link.
+// "Related services" links. Only pages that are built and indexable are shown, so a draft or a
+// switched-off page (online shipping) never becomes a link.
 import { allRoutes } from '../../lib/routes';
 import { canonicalPath } from '../../lib/seo';
 interface Props { paths: string[]; heading?: string }
 const { paths, heading = 'Related services' } = Astro.props;
 const routes = allRoutes();
-const items = paths.map((p) => routes.find((r) => r.path === canonicalPath(p) && r.status === 'published')).filter(Boolean) as ReturnType<typeof allRoutes>;
+const items = paths.map((p) => routes.find((r) => r.path === canonicalPath(p) && r.indexable)).filter(Boolean) as ReturnType<typeof allRoutes>;
 ---
 {items.length > 0 && (
   <section class="related" aria-labelledby="related-h">

@@ -502,7 +502,7 @@ Also track Shopify sales by state against the nexus thresholds. Consider Printif
 ## Decisions for Peter and Rin (and William)
 
 1. **Start dropship at all, and when?** The plan says after the by-hand resale is running, not before. Samples cost $250 to $400.
-2. **Which company sells?** The store's franchise LLC (Wholesome Postal), or the tech LLC from the [it-llc plan](../../it-llc/README.md). Marketplace accounts, the resale certificate and insurance go in that name.
+2. **Which company sells?** The store's franchise LLC (Holsom Postal), or the tech LLC from the [it-llc plan](../../it-llc/README.md). Marketplace accounts, the resale certificate and insurance go in that name.
 3. **Print-on-demand first, or goods first?** Print-on-demand has fewer ways to fail (no out-of-stock, no brand claims) and suits Etsy. Goods reach eBay's bigger audience.
 4. **The margin floor:** 15% kept after fees, ads and returns (eBay: price at least cost ÷ 0.62), or higher.
 5. **Open the Shopify shop** ($39 a month, or $29 billed yearly) now for dropship, or wait for the resale shop in phase 2?

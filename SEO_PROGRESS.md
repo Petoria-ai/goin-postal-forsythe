@@ -15,6 +15,7 @@ to do. Update it at the end of every milestone.
 | Milestone | State | Commit |
 |---|---|---|
 | Priority 1: essentials before launch | ✅ Done and validated, Nov 28 2026 | "SEO milestone 1" on branch `seo/priority-1` |
+| Priority 1 revisions: owner decisions applied | ✅ Done and validated, Nov 28 2026 | "SEO milestone 1b" on branch `seo/priority-1` |
 | Priority 2: growth and visibility | ⏸ Waiting for owner go-ahead (part of the code is already written, see below) | n/a |
 | Priority 3: future scalability | ⏸ Waiting for owner go-ahead (part of the code is already written, see below) | n/a |
 
@@ -91,7 +92,7 @@ src/lib/routes.ts       allRoutes(): every public URL with title, description, H
 ### Validation at milestone 1 (Nov 28 2026)
 
 - `npm test` (astro check, vitest, build): **0 type errors; 139/139 tests pass** (115 existing + 24 new in `tests/seo.test.ts`); build OK.
-- `npm run seo:audit`: **OK, 0 errors, 0 warnings.** 49 pages built, 46 indexable, 48 sitemap URLs (the extra two are the server-rendered `/ship` and `/track`).
+- `npm run seo:audit`: **OK, 0 errors, 0 warnings** (at milestone 1b: `npm run seo:check` OK with 44 indexable pages, 45 sitemap URLs; 142/142 tests). 49 pages built, 46 indexable, 48 sitemap URLs (the extra two are the server-rendered `/ship` and `/track`).
 - Local Worker (`astro preview`, wrangler):
   - Public pages return 200.
   - `/returns`, `/notary`, `/blog` and `/business-cards` return 301, keeping the query string.
@@ -160,36 +161,46 @@ and P3, not as finished work.
 
 ## Decisions for Peter and Rin
 
-1. **Legal entity spelling.** The brief says "Holsom Postal LLC". The repo's `CLAUDE.md` says the franchise company is "Wholesome Postal, LLC". The site now shows "operated by Holsom Postal LLC" in the footer, About page and JSON-LD. Confirm the exact registered name (`legalName` in `src/data/store.ts`).
-2. **Domain.** Canonical URLs, the sitemap and JSON-LD use `https://goinpostalforsythe.com`, taken from the repo's existing docs. If the real domain differs, set `PUBLIC_SITE_URL` in the Cloudflare build settings.
-3. **Google-Extended.** It is blocked now, which keeps the site out of Gemini training **and** out of Gemini-app grounding; Google Search and AI Overviews are not affected. Allow it (`allowGoogleExtended: true` in `src/data/crawlers.ts`) if showing up in Gemini app answers matters more than opting out of training.
-4. **International and Vietnam shipping.** The repo records William's Nov 7 decision to make PeterShip (online) domestic-only. The brief lists international and Vietnam cargo as current services. The pages say international is booked **at the counter**, and online quotes are U.S.-only. Confirm the counter still ships internationally, and which Vietnam cargo service is used, so the page can say more.
-5. **Services to confirm before deploy:** freight/pallet (partners), fingerprinting (which types: ink cards, electronic), fax, scanning, and custom box making. They are published on your word in the brief; set `status: 'draft'` in `services.ts` for any you do not offer yet.
-6. **Physical mailbox prices** (the register's template prices are placeholders) and the **Anytime Mailbox sign-up link** for the virtual mailbox page (`profiles.anytimeMailbox`).
-7. **Exact map pin** (`geo` in `store.ts`): copy it from the Google Business Profile.
-8. **Payment methods accepted** (`paymentAccepted`) and holiday closures (`specialHours`).
-9. **Privacy page:** have it reviewed. It describes only what the code does.
+### Settled (Nov 28 2026, applied in milestone 1b)
+- **Legal name: Holsom Postal LLC.** The site already used it. "Wholesome Postal" was corrected in `CLAUDE.md`, `AGENDA.md`, `README.md`, `monetization/README.md`, `monetization/it-llc/README.md`, `monetization/resale-macmini/dropship/README.md` and `shipping-client/llc/README.md`. `CHANGELOG.md` was left as is, because it is generated from past releases.
+- **No domain yet.** The store advertises through the franchise site, www.goinpostal.com, for now, and wants its own domain soon. The guessed `goinpostalforsythe.com` was removed. The site now builds in **pre-launch mode** until `PUBLIC_SITE_URL` is set: every page is noindex, robots.txt disallows all crawlers, there are no canonicals, and nothing points at a domain the store does not own. Setting the domain and rebuilding switches everything on; no code change is needed.
+- **Online shipping is off** until the e-commerce and mailbox side is stable. Switch: `onlineShipping: false` in `src/data/store.ts`. While it is off:
+  - `/ship`, `/petership` and `/developers` are noindexed and out of the sitemap.
+  - Service pages hide "Compare rates online" buttons and online-only sections and FAQs (marked `onlineOnly` in `services.ts`), and show Call and Get directions instead.
+  - The footer, 404 and About pages drop their online-shipping links, and llms.txt says shipping is booked at the counter or by phone.
+  - International shipping is described as booked at the counter or by phone.
+
+  Setting the switch to `true` restores all of it. Tests cover both states.
+- **Freight, fingerprinting, fax, scanning and custom boxes are confirmed.** Prices are given in person on purpose; those pages invite customers to walk in or call.
+- **Owner priority:** e-commerce and mailboxes come before online shipping. Order the Priority 2 and 3 work accordingly.
+
+### Still open
+1. **Google-Extended (Gemini).** Blocked now. Plain-language summary given to Peter: "training" means Google using the pages to build future AI models. Local "shipping store near me" answers in Gemini and Google come mostly from the Google Business Profile and Google Search, which this setting does not affect. Allowing it only lets the Gemini app quote the site's pages directly. **Recommendation: allow it** (`allowGoogleExtended: true` in `src/data/crawlers.ts`). Waiting for Peter's yes or no.
+2. **The home page and header still promote online shipping.** The existing header tabs "Ship a package" and "About PeterShip", and the home page's PeterShip hero and sidebar, are original site design, not SEO copy, so they were left alone. Ask whether to hide them while `onlineShipping` is false. While they stay, a visitor can still reach `/ship` and buy a label if the payment keys are set.
+3. **The franchise listing on goinpostal.com:** get the exact URL of the store's location page there. It can go in `profiles.other` as a verified profile (sameAs), and is worth linking until the store has its own domain.
+4. **Domain name to buy**, and whether GP Brands' franchise rules limit domains that use "Goin' Postal".
+5. **Physical mailbox prices** (the register's template prices are placeholders) and the **Anytime Mailbox sign-up link** (`profiles.anytimeMailbox`).
+6. **Exact map pin** (`geo`), payment methods (`paymentAccepted`), holiday closures (`specialHours`).
+7. **Privacy page:** have it reviewed before launch.
 
 ## Manual actions required from the owners (none block the code)
 
-Before deploying:
-- [ ] Merge `seo/priority-1` after review (CI runs the checks and the new SEO audit).
-- [ ] Confirm decisions 1, 2, 4 and 5 above.
-- [ ] Replace the Formspree placeholder `formEndpoint` in `store.ts`. The contact form does not send until this is done (this was already the case before).
-- [ ] Run the D1 schema on production once: `npm run db:remote`. It adds four new tables and is safe to re-run.
-- [ ] In Cloudflare: turn on **Always Use HTTPS**. Under **AI Crawl Control / Bot settings**, make sure OAI-SearchBot, Claude-SearchBot, PerplexityBot, ChatGPT-User, Claude-User and Perplexity-User are **not** blocked. New Cloudflare zones may block AI crawlers by default, and Bot Fight Mode can block them too. Also make sure Cloudflare's "managed robots.txt" does not overwrite the site's own.
+There is **no Cloudflare account yet**; the site has only been run locally. The code is built for Cloudflare Workers (KV, D1 and assets), and the free plan should cover it. Launch steps, in order:
 
-After deploying:
-- [ ] Google Search Console: add the domain property, verify (DNS, or set `PUBLIC_GOOGLE_SITE_VERIFICATION`), submit `https://<domain>/sitemap.xml`.
-- [ ] Bing Webmaster Tools: import from Search Console or verify with `PUBLIC_BING_SITE_VERIFICATION`, then submit the sitemap.
-- [ ] Google Business Profile, Bing Places and Apple Business Connect: set the name, address, phone and hours exactly as on the site. Put the verified profile URLs in `profiles` in `store.ts`.
-- [ ] Analytics IDs (Priority 2): see the environment variables below.
+1. [ ] **Google Business Profile.** Create or claim it now, with the same name, address, phone and hours as `store.ts`. It needs no website and is the biggest single local-search factor. Later, set the website field to the new domain.
+2. [ ] **Buy a domain.** Check GP Brands' rules on using "Goin' Postal" in it first.
+3. [ ] **Create a Cloudflare account** and connect this GitHub repo (Workers Builds). Create the KV namespace and the D1 database, and paste their ids into `site/wrangler.jsonc` (the `REPLACE_WITH_...` values). Run `npm run db:remote`. Add the domain.
+4. [ ] Set the build variable **`PUBLIC_SITE_URL=https://<the domain>`**. This turns off pre-launch mode.
+5. [ ] In Cloudflare, turn on **Always Use HTTPS**. Under AI Crawl Control / Bot settings, make sure OAI-SearchBot, Claude-SearchBot, PerplexityBot, ChatGPT-User, Claude-User and Perplexity-User are not blocked (new zones may block AI crawlers by default, and Bot Fight Mode can too), and that Cloudflare's managed robots.txt does not replace the site's own.
+6. [ ] Replace the Formspree placeholder `formEndpoint` in `store.ts`; until then the contact form does not send (this was already the case before).
+7. [ ] After going live: Google Search Console and Bing Webmaster Tools (verify, then submit `/sitemap.xml`); Bing Places and Apple Business Connect; put each verified profile URL in `profiles` in `store.ts`.
+8. [ ] Merge `seo/priority-1` into `main` after review. CI runs the tests and `npm run seo:check`.
 
 ### Environment variables (all optional; blank means the feature is off)
 
 | Name | Where | Purpose |
 |---|---|---|
-| `PUBLIC_SITE_URL` | Cloudflare build env | Canonical origin (default `https://goinpostalforsythe.com`) |
+| `PUBLIC_SITE_URL` | Cloudflare build env | **Required to go live.** The canonical origin, e.g. `https://www.example.com`. Unset = pre-launch mode (noindex everywhere, robots.txt blocks all) |
 | `PUBLIC_GOOGLE_SITE_VERIFICATION` | build env | Search Console meta tag |
 | `PUBLIC_BING_SITE_VERIFICATION` | build env | Bing Webmaster meta tag |
 | `PUBLIC_FACEBOOK_DOMAIN_VERIFICATION` | build env | Meta domain verification |
@@ -250,6 +261,6 @@ After deploying:
 
 ## How to resume in a new session
 
-1. `cd site && npm ci && npm test && npm run seo:audit`. All of them should pass.
+1. `cd site && npm ci && npm test && npm run seo:check`. All of them should pass. (`seo:check` builds once with a placeholder domain, because a build without `PUBLIC_SITE_URL` is in pre-launch mode, and then audits it.)
 2. Read this file's "Remaining work" for the next authorized priority.
 3. Keep the milestone process: when the priority is done, run the build, the tests and the audit, smoke-test with `npx astro preview`, update this file, make one commit per milestone, then stop for review. **Never deploy.**

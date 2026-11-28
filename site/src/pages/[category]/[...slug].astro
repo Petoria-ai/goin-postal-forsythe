@@ -10,7 +10,7 @@ import Faq from '../../components/seo/Faq.astro';
 import VisitUs from '../../components/seo/VisitUs.astro';
 import Related from '../../components/seo/Related.astro';
 import { SERVICES, CATEGORY_NAMES } from '../../data/services';
-import { pathOf, type ServiceEntry } from '../../data/content-types';
+import { pathOf, forMode, isOnlineShippingPath, type ServiceEntry } from '../../data/content-types';
 import { store, telHref, directionsUrl } from '../../data/store';
 import { storeTokens, richText, plainText } from '../../lib/richtext';
 import { serviceLd, faqLd, canonicalUrl } from '../../lib/seo';
@@ -27,9 +27,13 @@ const tk = storeTokens(store);
 const meta = routeMeta(path)!;
 const isHub = !svc.slug;
 const children = isHub ? SERVICES.filter((s) => s.category === svc.category && s.slug && s.status === 'published') : [];
-const faqs = svc.faqs.map((f) => ({ q: plainText(f.q, tk), a: plainText(f.a, tk) }));
+const online = store.onlineShipping;
+const svcFaqs = forMode(svc.faqs, online);
+const sections = forMode(svc.sections, online);
+const faqs = svcFaqs.map((f) => ({ q: plainText(f.q, tk), a: plainText(f.a, tk) }));
 const vi = svc.translations?.vi;
-const ctas = (svc.cta ?? []).map((c) => ({ ...c, href: c.href === 'tel' ? telHref() : c.href }));
+// Calls to action that lead to online shipping are hidden while it is off; the page always keeps Call and Get directions.
+const ctas = (svc.cta ?? []).filter((c) => online || !isOnlineShippingPath(c.href)).map((c) => ({ ...c, href: c.href === 'tel' ? telHref() : c.href }));
 const jsonLd = [
   serviceLd({ name: plainText(svc.h1, tk), description: meta.description, path, serviceType: svc.name, brand: undefined }, store),
   ...(isHub ? [{ '@type': 'ItemList', '@id': canonicalUrl(path) + '#services', name: `${CATEGORY_NAMES[svc.category]} at ${store.name}`, itemListElement: children.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, url: canonicalUrl(pathOf(c)) })) }] : []),
@@ -64,7 +68,7 @@ const jsonLd = [
       </section>
     )}
 
-    <ContentSections sections={svc.sections} tokens={tk} />
+    <ContentSections sections={sections} tokens={tk} />
 
     {svc.pricing && (
       <section class="content-section">
@@ -79,7 +83,7 @@ const jsonLd = [
       </section>
     )}
 
-    <Faq faqs={svc.faqs} tokens={tk} />
+    <Faq faqs={svcFaqs} tokens={tk} />
     <VisitUs />
     <Related paths={svc.related} />
     <p class="muted small updated">Last updated <time datetime={svc.updated}>{new Date(svc.updated + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</time>.</p>

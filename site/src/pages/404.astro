@@ -13,7 +13,7 @@ Astro.response.status = 404;
   </section>
   <ul class="link-grid">
     <li><a href="/shipping"><strong>Shipping</strong><span>UPS, FedEx, USPS and DHL, packing, drop-offs and returns</span></a></li>
-    <li><a href="/ship"><strong>Ship online</strong><span>Compare rates and buy a label</span></a></li>
+    {store.onlineShipping && <li><a href="/ship"><strong>Ship online</strong><span>Compare rates and buy a label</span></a></li>}
     <li><a href="/track"><strong>Track a package</strong><span>With your pickup code or tracking number</span></a></li>
     <li><a href="/mailboxes"><strong>Mailboxes</strong><span>Physical and virtual mailbox rental</span></a></li>
     <li><a href="/business-services"><strong>Business services</strong><span>Notary, printing, fax, scanning, shredding</span></a></li>

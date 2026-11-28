@@ -13,7 +13,15 @@ import { productPath } from '../data/catalog';
 const xmlEsc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
 
 // ---- robots.txt ------------------------------------------------------------------------------------
-export function robotsTxt(site: string, policy = crawlerPolicy): string {
+export function robotsTxt(site: string, policy = crawlerPolicy, live = true): string {
+  if (!live) return [
+    `# robots.txt for ${site}`,
+    '# PRE-LAUNCH MODE: no public domain is configured (PUBLIC_SITE_URL), so nothing may be crawled yet.',
+    '# Set PUBLIC_SITE_URL to the real domain and rebuild to open the site to search engines.',
+    'User-agent: *',
+    'Disallow: /',
+    '',
+  ].join('\n');
   const group = (agents: string[], allow: boolean, note: string) => [
     `# ${note}`,
     ...agents.map((a) => `User-agent: ${a}`),
@@ -89,7 +97,9 @@ export function llmsTxt(s: StoreFacts, routes: RouteMeta[], site: string, faqs: 
     '- Open seven days a week. Packages dropped off on weekends leave with the next scheduled carrier pickup.',
     `- Carriers: ${s.carriers.join(', ')}`,
     `- Service area: ${s.serviceArea.join(', ')}`,
-    '- Online shipping: PeterShip compares USPS, UPS, FedEx and DHL for U.S. addresses only; international shipments are booked at the counter.',
+    s.onlineShipping
+      ? '- Online shipping: PeterShip compares USPS, UPS, FedEx and DHL for U.S. addresses only; international shipments are booked at the counter.'
+      : '- Shipping is quoted and booked in person at the counter or by phone; prices for freight, packing and business services are given in person.',
     ...(profiles.length ? [`- Official profiles: ${profiles.map((p) => `${p.name} ${p.url}`).join('; ')}`] : []),
     '',
     '## Shipping services',

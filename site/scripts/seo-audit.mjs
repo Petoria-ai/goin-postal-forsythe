@@ -35,6 +35,11 @@ const builtPaths = new Set(htmlFiles.map(urlOf));
 const staticFiles = new Set(files.map((f) => '/' + relative(ROOT, f).replace(/\\/g, '/')));
 
 const robots = readFileSync(join(ROOT, 'robots.txt'), 'utf8');
+if (/PRE-LAUNCH MODE/.test(robots)) {
+  console.log('SEO audit: this build is in pre-launch mode (no PUBLIC_SITE_URL), so every page is noindexed on purpose.');
+  console.log('Run the audit on a build with a domain, e.g.: PUBLIC_SITE_URL=https://www.example.com npm run build && npm run seo:audit');
+  process.exit(1);
+}
 const siteMatch = robots.match(/^Sitemap: (https?:\/\/[^/\s]+)\/sitemap\.xml$/m);
 if (!siteMatch) err('robots.txt', 'no Sitemap line');
 const SITE = siteMatch?.[1] ?? '';

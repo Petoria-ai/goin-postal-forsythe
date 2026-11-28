@@ -1,8 +1,8 @@
 # The tech LLC: how the companies fit together, where to file, and every way to fund it
 
-The store runs as **Wholesome Postal, LLC**, the company that holds the Goin' Postal franchise. This plan sets out three things:
+The store runs as **Holsom Postal LLC**, the company that holds the Goin' Postal franchise. This plan sets out three things:
 
-- how the owners' other businesses should sit next to Wholesome Postal: PeterShip and the other software, the resale business, the deposit station and a future second store;
+- how the owners' other businesses should sit next to Holsom Postal: PeterShip and the other software, the resale business, the deposit station and a future second store;
 - which parish the tech company should file in, and what it takes to get started;
 - every funding, credit, grant and accelerator option for a small software company in northeast Louisiana in late 2026, then the federal programs, Arkansas and Mississippi, and the path from here (added the same day).
 
@@ -24,7 +24,7 @@ The same three colors as every chart in the repo ([full key](../README.md#how-to
 
 | Question | Answer |
 |---|---|
-| **Should PeterShip and the rest be subsidiaries of Wholesome Postal?** | **No.** Keep **Wholesome Postal, LLC as the franchise store only**, and form **one tech LLC as a sister company** owned by Peter, Rin and William, as PeterShip's license already says. The tech LLC owns all the software and licenses it to the store. A holding company over everything comes later, with a second store or an investor ([section 1](#1-how-the-companies-fit-together)) |
+| **Should PeterShip and the rest be subsidiaries of Holsom Postal?** | **No.** Keep **Holsom Postal LLC as the franchise store only**, and form **one tech LLC as a sister company** owned by Peter, Rin and William, as PeterShip's license already says. The tech LLC owns all the software and licenses it to the store. A holding company over everything comes later, with a second store or an investor ([section 1](#1-how-the-companies-fit-together)) |
 | **What's the tech LLC?** | The **PeterShip LLC already planned** in [`shipping-client/llc/`](../../shipping-client/llc/README.md), widened to own every piece of the owners' software: PeterShip, the Mac mini automations, the resale scripts, the AI tools. A name like **PeterShip Technologies, LLC** keeps the brand and leaves room |
 | **Which parish?** | **Ouachita.** Put the registered office and the principal office in Monroe, at the store or a small office. Two of the three members live there, the work and any staff will be there, and the free help at ULM is there. Louisiana's biggest software credit also needs a real Louisiana workplace with posted hours. Every funding program here is statewide, and sales tax on software follows the customer, not the company. **East Carroll** only makes sense if the company will truly operate and hire there ([section 2](#2-which-parish-to-file-in)) |
 | **What does it cost to start?** | **$125** to file, **$25** to reserve the name, **$35 a year** after, a registered agent, a Monroe occupational license (gross-receipts based, small at first), and an attorney's review of the papers ([section 3](#3-getting-started-step-by-step)) |
@@ -51,7 +51,7 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-  PR["Peter and Rin"]:::you --> WP["Wholesome Postal, LLC<br/>the Goin' Postal franchise<br/>at 1800 Forsythe Ave"]:::local
+  PR["Peter and Rin"]:::you --> WP["Holsom Postal LLC<br/>the Goin' Postal franchise<br/>at 1800 Forsythe Ave"]:::local
   GP["GP Brands<br/>the franchisor"]:::cloud -->|"franchise agreement"| WP
   O3["Peter, Rin and William<br/>the three Owners in<br/>PeterShip's LICENSE"]:::you -.->|"own the code jointly<br/>today, no company"| PS["PeterShip<br/>the software"]:::local
   PS -.->|"used by"| WP
@@ -62,27 +62,27 @@ flowchart TD
 
 Two facts shape everything below:
 
-1. **PeterShip has three owners and Wholesome Postal (as far as this plan knows) has two.** PeterShip's [`LICENSE`](../../shipping-client/LICENSE) names Peter, Rin and William as its Owners. If PeterShip were put under Wholesome Postal, William's third would have to come from somewhere: either a seat in Wholesome Postal, or a minority stake in the subsidiary. Both are awkward.
-2. **Wholesome Postal is bound by the franchise agreement.** Franchise agreements commonly have three kinds of clause that matter here: limits on what other business the franchisee company may do, the franchisor's consent before ownership changes, and claims on improvements or systems developed "in connection with" the franchise. Which of these GP Brands' agreement has is the first question for the attorney (and it belongs with issue 11). Anything placed *inside* Wholesome Postal sits within the agreement's reach.
+1. **PeterShip has three owners and Holsom Postal (as far as this plan knows) has two.** PeterShip's [`LICENSE`](../../shipping-client/LICENSE) names Peter, Rin and William as its Owners. If PeterShip were put under Holsom Postal, William's third would have to come from somewhere: either a seat in Holsom Postal, or a minority stake in the subsidiary. Both are awkward.
+2. **Holsom Postal is bound by the franchise agreement.** Franchise agreements commonly have three kinds of clause that matter here: limits on what other business the franchisee company may do, the franchisor's consent before ownership changes, and claims on improvements or systems developed "in connection with" the franchise. Which of these GP Brands' agreement has is the first question for the attorney (and it belongs with issue 11). Anything placed *inside* Holsom Postal sits within the agreement's reach.
 
 ### The four ways to arrange it
 
 ```mermaid
 flowchart TB
-  subgraph A["A. Everything inside Wholesome Postal"]
-    A1["Wholesome Postal, LLC<br/>store + PeterShip + resale<br/>+ deposits, as divisions"]:::local
+  subgraph A["A. Everything inside Holsom Postal"]
+    A1["Holsom Postal LLC<br/>store + PeterShip + resale<br/>+ deposits, as divisions"]:::local
   end
-  subgraph B["B. Subsidiaries under Wholesome Postal"]
-    B1["Wholesome Postal, LLC"]:::local --> B2["PeterShip LLC"]:::local
+  subgraph B["B. Subsidiaries under Holsom Postal"]
+    B1["Holsom Postal LLC"]:::local --> B2["PeterShip LLC"]:::local
     B1 --> B3["Resale LLC"]:::local
   end
   subgraph C["C. A holding company over sister companies"]
-    C0["Holding LLC<br/>Peter, Rin, William"]:::you --> C1["Wholesome Postal"]:::local
+    C0["Holding LLC<br/>Peter, Rin, William"]:::you --> C1["Holsom Postal"]:::local
     C0 --> C2["Tech LLC"]:::local
     C0 --> C3["Resale LLC"]:::local
   end
   subgraph D["D. Sister companies owned by the people"]
-    D0["Peter and Rin"]:::you --> D1["Wholesome Postal"]:::local
+    D0["Peter and Rin"]:::you --> D1["Holsom Postal"]:::local
     D9["Peter, Rin, William"]:::you --> D2["Tech LLC<br/>PeterShip and the software"]:::local
   end
   classDef local fill:#f2b705,stroke:#3b2c00,color:#3b2c00
@@ -90,14 +90,14 @@ flowchart TB
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
-| | A. All inside Wholesome Postal | B. Subsidiaries of Wholesome Postal | C. Holding company over sisters | **D. Sisters owned by the people (recommended now)** |
+| | A. All inside Holsom Postal | B. Subsidiaries of Holsom Postal | C. Holding company over sisters | **D. Sisters owned by the people (recommended now)** |
 |---|---|---|---|---|
 | **One problem can sink the rest?** | Yes: a store lawsuit or lease default reaches PeterShip and the stock | Partly: a subsidiary's debts stay in it, but the parent *owns* the subsidiaries, so the store's creditors can reach those shares | No: each company stands alone | No: each company stands alone |
-| **Franchise agreement's reach** | Everything is inside it | The subsidiaries are owned by the franchisee: arguable reach, and any restriction on the franchisee's "other business" bites | Wholesome Postal stays a single-purpose franchisee, which franchisors prefer | Same as C |
-| **Selling PeterShip** | A buyer must carve it out of the store's company | Wholesome Postal sells its subsidiary; the proceeds land in the franchisee | Clean: the holding sells the tech LLC | **Clean: the three owners sell the tech LLC** |
-| **William's third of PeterShip** | Needs a seat in Wholesome Postal | Needs a minority stake in the subsidiary next to Wholesome Postal | A share of the holding (but then he also owns part of the store) | **Direct, exactly as the LICENSE already says** |
-| **Changes Wholesome Postal's ownership?** | No | No | **Yes**: moving Wholesome Postal under a holding is an ownership change that usually needs GP Brands' written consent, maybe a transfer fee | No |
-| **Tax returns** | One partnership return | Subsidiaries owned 100% by the parent are disregarded; one with William in it files its own | One partnership return for the holding; 100%-owned sisters are disregarded | One return per multi-member company: Wholesome Postal's (already filed) and the tech LLC's |
+| **Franchise agreement's reach** | Everything is inside it | The subsidiaries are owned by the franchisee: arguable reach, and any restriction on the franchisee's "other business" bites | Holsom Postal stays a single-purpose franchisee, which franchisors prefer | Same as C |
+| **Selling PeterShip** | A buyer must carve it out of the store's company | Holsom Postal sells its subsidiary; the proceeds land in the franchisee | Clean: the holding sells the tech LLC | **Clean: the three owners sell the tech LLC** |
+| **William's third of PeterShip** | Needs a seat in Holsom Postal | Needs a minority stake in the subsidiary next to Holsom Postal | A share of the holding (but then he also owns part of the store) | **Direct, exactly as the LICENSE already says** |
+| **Changes Holsom Postal's ownership?** | No | No | **Yes**: moving Holsom Postal under a holding is an ownership change that usually needs GP Brands' written consent, maybe a transfer fee | No |
+| **Tax returns** | One partnership return | Subsidiaries owned 100% by the parent are disregarded; one with William in it files its own | One partnership return for the holding; 100%-owned sisters are disregarded | One return per multi-member company: Holsom Postal's (already filed) and the tech LLC's |
 | **Cost to set up** | Nothing new | $125 per subsidiary, $35 a year each | A holding plus each company, and the franchise consent | **$125 for the tech LLC, $35 a year** |
 | **Verdict** | No: puts PeterShip inside the franchise and the store's risks | No: William's share and the franchise problem | **Later**, once there are three or more businesses, a second store, or an investor | **Now** |
 
@@ -105,9 +105,9 @@ flowchart TB
 
 ```mermaid
 flowchart TD
-  PR["Peter and Rin"]:::you --> WP["Wholesome Postal, LLC<br/>the franchise store only<br/>+ the deposit station, if GP Brands allows it"]:::local
+  PR["Peter and Rin"]:::you --> WP["Holsom Postal LLC<br/>the franchise store only<br/>+ the deposit station, if GP Brands allows it"]:::local
   ALL["Peter, Rin and William"]:::you --> IT["The tech LLC<br/>(PeterShip Technologies, LLC?)<br/>PeterShip, the Mac mini automations,<br/>the AI tools, any software sold"]:::local
-  WOR["Owners decide<br/>(decision 1 in the resale plan)"]:::you -.-> RS["Resale: a division of<br/>Wholesome Postal, or its own<br/>Resale LLC if GP Brands objects<br/>or William's stock is consigned"]:::local
+  WOR["Owners decide<br/>(decision 1 in the resale plan)"]:::you -.-> RS["Resale: a division of<br/>Holsom Postal, or its own<br/>Resale LLC if GP Brands objects<br/>or William's stock is consigned"]:::local
   IT -->|"software license,<br/>monthly fee"| WP
   IT -.->|"license"| RS
   GP["GP Brands"]:::cloud -->|"franchise agreement"| WP
@@ -117,19 +117,19 @@ flowchart TD
   classDef you fill:#e8f1fb,stroke:#1d4ed8,color:#17202d
 ```
 
-- **Wholesome Postal, LLC stays the franchise store** and nothing else, except what has to happen at its counter under its name. The Green Dot or InComm deposit agreement will be with the company that runs the location, which is Wholesome Postal, if GP Brands allows it (issue 27).
-- **The tech LLC is a sister company owned by the three Owners**, exactly as PeterShip's LICENSE already reads. It owns PeterShip and every other piece of software the owners build: the Mac mini automations, the resale scripts, the tornado, the x402 gate. It **licenses** the software to Wholesome Postal for a monthly fee, under the draft license in [`shipping-client/llc/`](../../shipping-client/llc/software-license-to-store.md). The store deducts the fee as a business expense. The tech LLC earns it, at an arm's-length price the accountant agrees.
-- **Resale depends on its own decision 1.** If the store buys William's stock and GP Brands has no objection, resale can run as a division of Wholesome Postal (one sales tax account, the store's counter). If William's stock is on consignment, if GP Brands objects to non-franchise goods, or if the owners want its risks (returns, marketplace disputes, stock in other parishes) kept apart, it becomes its own LLC.
+- **Holsom Postal LLC stays the franchise store** and nothing else, except what has to happen at its counter under its name. The Green Dot or InComm deposit agreement will be with the company that runs the location, which is Holsom Postal, if GP Brands allows it (issue 27).
+- **The tech LLC is a sister company owned by the three Owners**, exactly as PeterShip's LICENSE already reads. It owns PeterShip and every other piece of software the owners build: the Mac mini automations, the resale scripts, the tornado, the x402 gate. It **licenses** the software to Holsom Postal for a monthly fee, under the draft license in [`shipping-client/llc/`](../../shipping-client/llc/software-license-to-store.md). The store deducts the fee as a business expense. The tech LLC earns it, at an arm's-length price the accountant agrees.
+- **Resale depends on its own decision 1.** If the store buys William's stock and GP Brands has no objection, resale can run as a division of Holsom Postal (one sales tax account, the store's counter). If William's stock is on consignment, if GP Brands objects to non-franchise goods, or if the owners want its risks (returns, marketplace disputes, stock in other parishes) kept apart, it becomes its own LLC.
 - **A second store** (West Carroll, agenda item 51) gets its own company, because franchisors usually want one franchisee entity per location. **That is the point to form a holding company** (option C), with GP Brands' consent, so the stores and the tech LLC sit under one owner the family controls.
 
-**Should anything be a subsidiary of Wholesome Postal? No.** It would put the software inside the franchise's reach, tie William's share to the store, and let the store's creditors reach what the owners most want to sell.
+**Should anything be a subsidiary of Holsom Postal? No.** It would put the software inside the franchise's reach, tie William's share to the store, and let the store's creditors reach what the owners most want to sell.
 
 ### Questions for the attorney and GP Brands, before anything is filed
 
-1. Who are Wholesome Postal's members, and in what shares? Its articles and operating agreement, please.
+1. Who are Holsom Postal's members, and in what shares? Its articles and operating agreement, please.
 2. What does the franchise agreement say about the franchisee company doing other business, about other companies the owners control, and about software or "improvements" developed by the owners?
 3. Does running PeterShip, a resale business or the deposit station need GP Brands' consent? (Add to issue 11's email.)
-4. Is the draft license from the tech LLC to Wholesome Postal acceptable to GP Brands, given the franchise's own systems (GP Rate Pro)?
+4. Is the draft license from the tech LLC to Holsom Postal acceptable to GP Brands, given the franchise's own systems (GP Rate Pro)?
 5. If a holding company comes later, what consent and fees does an ownership change need?
 
 ## 2. Which parish to file in
@@ -168,7 +168,7 @@ flowchart TD
   S0["Week 1<br/>Owners agree: structure D,<br/>name, percentages, manager"]:::you --> S1["Week 1 to 2<br/>Attorney: franchise agreement<br/>questions, operating agreement,<br/>IP assignment, store license"]:::cloud
   S1 --> S2["Week 2<br/>geauxBIZ: reserve name $25,<br/>file articles + initial report $125"]:::local
   S2 --> S3["Same day<br/>EIN from the IRS, free"]:::local
-  S3 --> S4["Week 3<br/>bank account; sign the IP<br/>assignment and the license<br/>to Wholesome Postal"]:::local
+  S3 --> S4["Week 3<br/>bank account; sign the IP<br/>assignment and the license<br/>to Holsom Postal"]:::local
   S4 --> S5["Week 3 to 4<br/>Monroe occupational license;<br/>Louisiana Revenue registration<br/>(SaaS sales tax, payroll later)"]:::local
   S5 --> S6["Month 1<br/>move Cloudflare, GitHub,<br/>Anthropic, Stripe, the domain<br/>to the company; insurance"]:::local
   S6 --> S7["Month 1<br/>first money: Cloudflare credits,<br/>LSBDC and TBDC sessions,<br/>LTTO call, EAP or gBETA"]:::local
@@ -184,8 +184,8 @@ flowchart TD
 | 3 | Reserve the name on geauxBIZ | Peter | $25 | "LLC" or "L.L.C." in the name |
 | 4 | File the Articles of Organization with the Initial Report and the registered agent's notarized acceptance | Peter | $125 (since Oct 1, 2026) | [`articles-and-initial-report.md`](../../shipping-client/llc/articles-and-initial-report.md) lists every field; registered office in Monroe |
 | 5 | Get the EIN | Peter | Free, same day | irs.gov |
-| 6 | Open the company's bank account | Peter | | Keep the tech LLC's money apart from Wholesome Postal's from day one |
-| 7 | Sign the IP assignment (dated after the LLC exists) and the license to Wholesome Postal | All three; Peter for the store | | The license fee is an arm's-length monthly price the accountant agrees |
+| 6 | Open the company's bank account | Peter | | Keep the tech LLC's money apart from Holsom Postal's from day one |
+| 7 | Sign the IP assignment (dated after the LLC exists) and the license to Holsom Postal | All three; Peter for the store | | The license fee is an arm's-length monthly price the accountant agrees |
 | 8 | Monroe occupational license | Peter | Small, by gross receipts | City of Monroe Tax & Revenue, 1401 Stubbs Ave; renew by the end of February |
 | 9 | Register with Louisiana Revenue | Accountant | | Sales tax on SaaS and digital products sold to Louisiana customers since Jan 1, 2025; withholding once anyone is on payroll |
 | 10 | Move the accounts to the company | William, Peter | | Cloudflare (hosts PeterShip), GitHub, the Anthropic Console organization for the Mac minis, Stripe, the domain, carrier developer accounts |
@@ -410,12 +410,12 @@ flowchart TD
 
 ## Decisions for Peter and Rin (and William)
 
-1. **Structure:** sister companies now (Wholesome Postal stays the franchise store; a tech LLC owned by all three), and a holding company only with a second store or an investor?
-2. **Wholesome Postal's members and shares,** and the franchise agreement's clauses on other business and owner-developed software. Send both to the attorney.
+1. **Structure:** sister companies now (Holsom Postal stays the franchise store; a tech LLC owned by all three), and a holding company only with a second store or an investor?
+2. **Holsom Postal's members and shares,** and the franchise agreement's clauses on other business and owner-developed software. Send both to the attorney.
 3. **The tech LLC's name:** PeterShip Technologies, LLC, plain PeterShip, LLC, or something broader?
 4. **Percentages, capital and manager** (the PeterShip LLC plan's decisions, still open).
 5. **Parish:** Ouachita (recommended), with the store's address or a small Monroe office?
-6. **Resale:** a division of Wholesome Postal or its own LLC (ties to the resale plan's decision 1)?
+6. **Resale:** a division of Holsom Postal or its own LLC (ties to the resale plan's decision 1)?
 7. **When to elect S-corporation treatment** so the owners' developer pay earns the 25% Digital Media credit?
 8. **Which first funding moves:** Cloudflare credits, an LSBDC session, TBDC and LTTO calls, an EAP or gBETA application, an NSF pitch by March 4, 2027?
 9. **Arkansas later:** agree to add an Arkansas sister company with a real Lake Village office and an Arkansas employee once a federal research grant is won or investors are lined up, rather than moving now?
@@ -424,7 +424,7 @@ flowchart TD
 
 ## Could not confirm
 
-- Wholesome Postal's members, shares and franchise agreement terms (only the owners have them).
+- Holsom Postal's members, shares and franchise agreement terms (only the owners have them).
 - The exact Secretary of State fees in the October 2026 schedule (the fee sheet's columns are jumbled; $125 to file and $35 a year match the earlier research).
 - Whether Louisiana requires any parish filing for a new LLC (none found).
 - East Carroll's and Lincoln's occupational license offices and fees today; the fee tables at low revenue.

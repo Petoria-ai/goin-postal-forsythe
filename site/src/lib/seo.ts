@@ -11,7 +11,10 @@ import { verifiedProfiles } from '../data/store';
 import { openingHoursSpecification, specialOpeningHoursSpecification } from './hours';
 
 /** The canonical origin, from astro.config.mjs `site` (PUBLIC_SITE_URL at build). No trailing slash. */
-export const SITE_URL: string = ((import.meta as any).env?.SITE || 'https://goinpostalforsythe.com').replace(/\/+$/, '');
+export const SITE_URL: string = ((import.meta as any).env?.SITE || 'http://localhost:4321').replace(/\/+$/, '');
+/** A real public https domain is configured. False = pre-launch mode: noindex everywhere, robots.txt blocks all. */
+export const isLiveSite = (site: string) => /^https:\/\//.test(site) && !/^https:\/\/(localhost|127\.|[^/]*\.workers\.dev|[^/]*\.pages\.dev)/.test(site);
+export const SITE_LIVE = isLiveSite(SITE_URL);
 
 /** Paths that are never indexed: staff tools, customer accounts, order pages, the API. Robots rules are a courtesy; these routes are protected by PINs, sessions and order codes. */
 export const PRIVATE_PREFIXES = ['/counter', '/api', '/account', '/ship/done', '/cards/done', '/return/', '/labels', '/demo-label', '/indexnow'] as const;
@@ -147,7 +150,7 @@ export function webPageLd(o: { path: string; title: string; description: string;
   });
 }
 
-export interface FaqItem { q: string; a: string }
+export interface FaqItem { q: string; a: string; onlineOnly?: boolean }
 /** FAQPage. Google shows FAQ rich results only for a few authoritative sites now; the markup still helps other engines and assistants read the answers. */
 export function faqLd(faqs: FaqItem[], path: string, site = SITE_URL) {
   return { '@type': 'FAQPage', '@id': canonicalUrl(path, site) + '#faq', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) };

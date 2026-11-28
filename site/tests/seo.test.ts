@@ -196,3 +196,31 @@ describe('rich text', () => {
     expect(plainText('Open until {weekdayClose}, Sunday {sundayHours}. Call {phone}.', tk)).toBe('Open until 6:30 PM, Sunday 10:00 AM to 3:00 PM. Call 318-570-2132.');
   });
 });
+
+describe('owner decisions (Nov 28 2026)', () => {
+  it('pre-launch mode: no real domain means robots.txt blocks everything', async () => {
+    const { isLiveSite } = await import('../src/lib/seo');
+    expect(isLiveSite('http://localhost:4321')).toBe(false);
+    expect(isLiveSite('https://goin-postal.workers.dev')).toBe(false);
+    expect(isLiveSite('https://www.example.com')).toBe(true);
+    const pre = robotsTxt('http://localhost:4321', undefined, false);
+    expect(pre).toMatch(/^User-agent: \*\nDisallow: \/$/m);
+    expect(pre).not.toContain('Allow: /');
+  });
+  it('online shipping is off: its pages are not indexed and published content does not link to them', async () => {
+    const { isOnlineShippingPath } = await import('../src/data/content-types');
+    expect(store.onlineShipping).toBe(false);
+    const routes = allRoutes();
+    for (const p of ['/ship', '/petership', '/developers']) expect(routes.find((r) => r.path === p)?.indexable, p).toBe(false);
+    expect(isOnlineShippingPath('/shipping')).toBe(false);
+    const offenders = indexableRoutes().flatMap((r) => r.links.filter((l) => isOnlineShippingPath(l)).map((l) => `${r.path} -> ${l}`));
+    expect(offenders).toEqual([]);
+    expect(llmsTxt(store, indexableRoutes(), SITE, [])).not.toContain('PeterShip');
+  });
+  it('switching online shipping on brings the pages back', () => {
+    const on = mergeStore(defaults, { onlineShipping: true });
+    const routes = allRoutes({ store: on });
+    expect(routes.find((r) => r.path === '/ship')?.indexable).toBe(true);
+    expect(routes.find((r) => r.path === '/shipping/domestic')?.links).toContain('/ship');
+  });
+});
