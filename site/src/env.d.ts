@@ -38,4 +38,21 @@ interface Env {
   DHL_API_KEY?: string; DHL_API_SECRET?: string; DHL_ACCOUNT_NUMBER?: string; DHL_SANDBOX?: string;
   // Street-address typeahead (v1.74.0): Google Places (New) key; blank means the US Census Bureau geocoder (free, US only). Issue 18.
   GOOGLE_PLACES_KEY?: string;
+  // SEO (v1.94.0). INDEXNOW_KEY: 8-128 letters, digits or dashes; served at /indexnow.txt. SEO_TASK_KEY: shared
+  // secret the daily IndexNow workflow sends to /api/seo (any long random string). Both blank = IndexNow off.
+  INDEXNOW_KEY?: string;
+  SEO_TASK_KEY?: string;
+}
+
+// Build-time, public tracking and verification IDs (src/lib/analytics-config.ts). All optional.
+interface ImportMetaEnv {
+  readonly PUBLIC_SITE_URL?: string;
+  readonly PUBLIC_GTM_ID?: string;
+  readonly PUBLIC_GA4_ID?: string;
+  readonly PUBLIC_GOOGLE_ADS_ID?: string;
+  readonly PUBLIC_GOOGLE_ADS_LABELS?: string;
+  readonly PUBLIC_META_PIXEL_ID?: string;
+  readonly PUBLIC_GOOGLE_SITE_VERIFICATION?: string;
+  readonly PUBLIC_BING_SITE_VERIFICATION?: string;
+  readonly PUBLIC_FACEBOOK_DOMAIN_VERIFICATION?: string;
 }

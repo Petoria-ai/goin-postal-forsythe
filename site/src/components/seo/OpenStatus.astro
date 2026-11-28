@@ -1,0 +1,30 @@
+---
+// "Open now until 6:30 PM" / "Closed · opens tomorrow at 9:00 AM", in the store's time zone. The page
+// is static, so the badge is filled in the browser from the hours in src/data/store.ts plus any live
+// closures staff add at /counter/seo (fetched from /api/hours). Without JavaScript the full hours
+// table next to it still says everything.
+import { store } from '../../data/store';
+const data = { weekly: store.weeklyHours, special: store.specialHours, tz: store.timezone };
+---
+<p class="open-status" data-open-status aria-live="polite"><span class="dot" aria-hidden="true"></span><span class="txt">Open 7 days a week</span></p>
+<script is:inline type="application/json" data-hours-json set:html={JSON.stringify(data)}></script>
+<script>
+  import { statusAt, type SpecialHours } from '../../lib/hours';
+  const raw = document.querySelector('[data-hours-json]')?.textContent;
+  if (raw) {
+    const data = JSON.parse(raw);
+    let special: SpecialHours[] = data.special;
+    const paint = () => {
+      const s = statusAt(new Date(), data.weekly, special, data.tz);
+      document.querySelectorAll<HTMLElement>('[data-open-status]').forEach((el) => {
+        el.classList.toggle('is-open', s.open);
+        el.classList.toggle('is-closed', !s.open);
+        el.querySelector('.txt')!.textContent = s.text;
+      });
+    };
+    paint();
+    setInterval(paint, 60_000);
+    // Live closures and holiday hours from the counter (no rebuild needed).
+    fetch('/api/hours').then((r) => (r.ok ? r.json() : null)).then((j) => { if (j && Array.isArray(j.special)) { special = [...data.special.filter((x: SpecialHours) => !j.special.some((y: SpecialHours) => y.date === x.date)), ...j.special]; paint(); } }).catch(() => {});
+  }
+</script>

@@ -1,0 +1,35 @@
+---
+// What the website itself does with visitors' data. It describes the code as built (src/lib/track.ts,
+// src/components/seo/Analytics.astro); keep it in step when tracking changes. The owners should have
+// it reviewed before launch.
+import Base from '../layouts/Base.astro';
+import { store, telHref } from '../data/store';
+import { analytics, anyTracking } from '../lib/analytics-config';
+import { routeMeta } from '../lib/routes';
+const meta = routeMeta('/privacy')!;
+const tools = [analytics.gtm && 'Google Tag Manager', (analytics.ga4 || analytics.gtm) && 'Google Analytics', analytics.googleAds && 'Google Ads conversion tracking', analytics.metaPixel && 'the Meta Pixel'].filter(Boolean);
+---
+<Base path="/privacy">
+  <section class="hero">
+    <h1>{meta.h1}</h1>
+    <p class="lead">This page covers the {store.name} website. Questions: call <a href={telHref()}>{store.phone}</a>.</p>
+  </section>
+  <section class="content-section" id="cookies">
+    <h2>Analytics and advertising cookies</h2>
+    {anyTracking()
+      ? <p>We use {tools.join(', ')} to understand which pages help customers and to measure our ads. These tools set cookies only after you choose <strong>Accept</strong>. If you choose <strong>No thanks</strong>, or your browser sends a Global Privacy Control signal, they are not set and the Meta Pixel is never loaded. You can change your choice at any time with <a href="#cookies" data-consent-open>Cookie choices</a>.</p>
+      : <p>The website does not currently use analytics or advertising cookies.</p>}
+  </section>
+  <section class="content-section">
+    <h2>What we never send to analytics</h2>
+    <p>Names, email addresses, phone numbers, street addresses, mailbox numbers, tracking numbers, payment details and the contents of your mail or orders are never sent to analytics or advertising platforms. The website removes them before any event is sent.</p>
+  </section>
+  <section class="content-section">
+    <h2>Cookies the website needs</h2>
+    <p>Signing in to your account sets a session cookie. Your text size, contrast and language choices are remembered in your browser. These are not used for tracking.</p>
+  </section>
+  <section class="content-section">
+    <h2>Payments</h2>
+    <p>Online card payments are handled by Stripe. Card numbers go to Stripe directly and never touch our website's servers.</p>
+  </section>
+</Base>

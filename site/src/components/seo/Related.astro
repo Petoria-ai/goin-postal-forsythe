@@ -1,0 +1,18 @@
+---
+// "Related services" links. Only links to pages that are actually built and published are shown, so a
+// draft never becomes a broken link.
+import { allRoutes } from '../../lib/routes';
+import { canonicalPath } from '../../lib/seo';
+interface Props { paths: string[]; heading?: string }
+const { paths, heading = 'Related services' } = Astro.props;
+const routes = allRoutes();
+const items = paths.map((p) => routes.find((r) => r.path === canonicalPath(p) && r.status === 'published')).filter(Boolean) as ReturnType<typeof allRoutes>;
+---
+{items.length > 0 && (
+  <section class="related" aria-labelledby="related-h">
+    <h2 id="related-h">{heading}</h2>
+    <ul class="link-grid">
+      {items.map((r) => <li><a href={r.path}><strong>{r.h1}</strong><span>{r.description}</span></a></li>)}
+    </ul>
+  </section>
+)}

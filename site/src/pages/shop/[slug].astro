@@ -1,0 +1,80 @@
+---
+// A product page, from src/data/catalog.ts: the indexable landing page for a product, with prices
+// from the same table checkout uses, options, specifications, FAQs and Product/Offer structured
+// data. The customization editor it links to (designUrl) is noindexed.
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import Faq from '../../components/seo/Faq.astro';
+import Related from '../../components/seo/Related.astro';
+import { PRODUCTS, CATEGORIES, lowPrice, productPath, type Product } from '../../data/catalog';
+import { store } from '../../data/store';
+import { storeTokens, plainText } from '../../lib/richtext';
+import { productLd, faqLd } from '../../lib/seo';
+import { routeMeta, previewDrafts } from '../../lib/routes';
+
+export const getStaticPaths = (() => PRODUCTS.filter((p) => p.status === 'published' || previewDrafts()).map((p) => ({ params: { slug: p.slug }, props: { p } }))) satisfies GetStaticPaths;
+interface Props { p: Product }
+const { p } = Astro.props;
+const path = productPath(p);
+const meta = routeMeta(path)!;
+const tk = { ...storeTokens(store), low: `$${lowPrice(p).toFixed(2)}`, quantities: p.variants.map((v) => v.name.replace(/ cards$/, '')).join(', ').replace(/, ([^,]*)$/, ' or $1') };
+const cat = CATEGORIES.find((c) => c.slug === p.category);
+const faqs = p.faqs.map((f) => ({ q: plainText(f.q, tk), a: plainText(f.a, tk) }));
+const img = p.images[0];
+const jsonLd = [
+  productLd({ path, name: p.name, description: meta.description, sku: p.sku, images: p.images.map((i) => i.src), brand: store.name, category: cat?.name,
+    offers: p.variants.map((v) => ({ price: v.price, name: v.name, sku: v.sku, availability: v.availability })),
+    pickupOnly: p.fulfillment === 'pickup', returnPolicyPath: p.returnPolicy?.path, returnDays: p.returnPolicy?.days,
+    additionalProperty: p.specs }),
+  ...(faqs.length ? [faqLd(faqs, path)] : []),
+];
+---
+<Base path={path} jsonLd={jsonLd} ogType="product" dateModified={p.updated}>
+  <article class="product" data-product={p.sku}>
+    <div class="product-top">
+      {img && <img class="product-img" src={img.src} alt={img.alt} width={img.width} height={img.height} fetchpriority="high" decoding="async" />}
+      <div>
+        <p class="kicker">{cat?.name ?? 'Shop'}</p>
+        <h1>{meta.h1}</h1>
+        <p class="lead">{plainText(p.intro, tk)}</p>
+        <p class="price">From <strong>${lowPrice(p).toFixed(2)}</strong></p>
+        {p.designUrl && <p class="btnrow"><a class="btn big kraft" href={p.designUrl} data-track="customize_start" data-track-item-id={p.sku} data-track-item-name={p.name}>Start designing</a></p>}
+        <p class="muted small">{p.fulfillment === 'pickup' ? `Pick up at ${store.address}.` : 'Shipped to you.'} Pay online by card.</p>
+      </div>
+    </div>
+
+    <section class="content-section" aria-labelledby="prices-h">
+      <h2 id="prices-h">Prices</h2>
+      <div class="table-wrap">
+        <table class="compare">
+          <thead><tr><th scope="col">Quantity</th><th scope="col">Price</th></tr></thead>
+          <tbody>{p.variants.map((v) => <tr><th scope="row">{v.name}</th><td>${v.price.toFixed(2)}</td></tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+
+    {p.options.length > 0 && (
+      <section class="content-section" aria-labelledby="opts-h">
+        <h2 id="opts-h">Options</h2>
+        <div class="grid">
+          {p.options.map((o) => (
+            <div class="card"><h3>{o.group}</h3><ul>{o.choices.map((c) => <li>{c.name}{c.price > 0 ? ` (+$${c.price.toFixed(2)})` : ' (included)'}</li>)}</ul></div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <section class="content-section" aria-labelledby="spec-h">
+      <h2 id="spec-h">Specifications</h2>
+      <dl class="specs">{p.specs.map((s) => <><dt>{s.name}</dt><dd>{s.value}</dd></>)}</dl>
+    </section>
+
+    <Faq faqs={p.faqs} tokens={tk} />
+    <Related paths={p.related} heading="Related" />
+  </article>
+  <script>
+    import { track } from '../../lib/track';
+    const el = document.querySelector<HTMLElement>('[data-product]');
+    if (el) track('view_item', { item_id: el.dataset.product, item_name: document.querySelector('h1')?.textContent ?? '' });
+  </script>
+</Base>

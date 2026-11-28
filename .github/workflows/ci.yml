@@ -39,6 +39,9 @@ jobs:
       - name: Build the site the way Cloudflare does
         working-directory: site
         run: npm run build
+      - name: SEO health check of the built site (titles, canonicals, JSON-LD, links, sitemap, robots)
+        working-directory: site
+        run: npm run seo:audit
       - name: Syntax-check the printer agent
         run: node --check shipping-client/printer-agent/agent.mjs && node --check shipping-client/shopify-connector/connector.mjs && node --check shipping-client/square-connector/connector.mjs && node --check shipping-client/ebay-connector/connector.mjs && node --check shipping-client/etsy-connector/connector.mjs
       - name: Syntax-check the Python scripts

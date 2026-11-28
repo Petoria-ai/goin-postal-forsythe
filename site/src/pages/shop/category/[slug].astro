@@ -1,0 +1,26 @@
+---
+// A product category. Built only when it has a published product; indexed only when it has at
+// least MIN_PRODUCTS_TO_INDEX (src/data/catalog.ts), so a one-product category does not compete with
+// its own product page. Sorting and filtering, when added, must use query parameters on this URL;
+// the canonical tag always points at the clean URL.
+import type { GetStaticPaths } from 'astro';
+import Base from '../../../layouts/Base.astro';
+import { CATEGORIES, PRODUCTS, liveCategories, productsIn, productPath, categoryPath, lowPrice, type Category } from '../../../data/catalog';
+import { routeMeta, previewDrafts } from '../../../lib/routes';
+import { canonicalUrl } from '../../../lib/seo';
+
+export const getStaticPaths = (() => liveCategories(CATEGORIES, PRODUCTS.filter((p) => p.status === 'published' || previewDrafts())).map((c) => ({ params: { slug: c.slug }, props: { c } }))) satisfies GetStaticPaths;
+interface Props { c: Category }
+const { c } = Astro.props;
+const path = categoryPath(c);
+const prods = productsIn(c.slug);
+const meta = routeMeta(path)!;
+const jsonLd = [{ '@type': 'ItemList', '@id': canonicalUrl(path) + '#products', itemListElement: prods.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: canonicalUrl(productPath(p)), name: p.name })) }];
+---
+<Base path={path} webPageType="CollectionPage" jsonLd={jsonLd}>
+  <section class="hero">
+    <h1>{meta.h1}</h1>
+    <p class="lead">{c.intro}</p>
+  </section>
+  <ul class="link-grid">{prods.map((p) => <li><a href={productPath(p)}>{p.images[0] && <img src={p.images[0].src} alt={p.images[0].alt} width="600" height="450" loading="lazy" decoding="async" />}<strong>{p.name}</strong><span>From ${lowPrice(p).toFixed(2)}</span></a></li>)}</ul>
+</Base>

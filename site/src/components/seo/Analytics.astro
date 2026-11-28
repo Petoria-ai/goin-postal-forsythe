@@ -1,0 +1,36 @@
+---
+// Loads the configured tracking tags once, with Google Consent Mode v2. Nothing at all is output when
+// no ID is set (src/lib/analytics-config.ts), so the site pays no performance cost until the owners
+// add one. Visitors with Global Privacy Control on are treated as having declined.
+import { analytics, anyTracking } from '../../lib/analytics-config';
+const on = anyTracking();
+const cfg = { gtm: analytics.gtm, ga4: analytics.gtm ? '' : analytics.ga4, ads: analytics.gtm ? '' : analytics.googleAds, labels: analytics.googleAdsLabels, pixel: analytics.gtm ? '' : analytics.metaPixel };
+---
+{on && (
+  <script is:inline define:vars={{ cfg }}>
+    window.__gpAnalytics = cfg;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    var choice = null; try { choice = localStorage.getItem('gp-consent'); } catch (e) {}
+    var gpc = !!navigator.globalPrivacyControl;
+    var granted = choice === 'granted' && !gpc ? 'granted' : 'denied';
+    gtag('consent', 'default', { analytics_storage: granted, ad_storage: granted, ad_user_data: granted, ad_personalization: granted, wait_for_update: 500 });
+    gtag('set', 'ads_data_redaction', granted !== 'granted');
+    function load(src) { var s = document.createElement('script'); s.async = true; s.src = src; document.head.appendChild(s); }
+    if (cfg.gtm) {
+      window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+      load('https://www.googletagmanager.com/gtm.js?id=' + cfg.gtm);
+    } else if (cfg.ga4 || cfg.ads) {
+      load('https://www.googletagmanager.com/gtag/js?id=' + (cfg.ga4 || cfg.ads));
+      gtag('js', new Date());
+      if (cfg.ga4) gtag('config', cfg.ga4);
+      if (cfg.ads) gtag('config', cfg.ads);
+    }
+    window.__gpLoadPixel = function () {
+      if (!cfg.pixel || window.fbq) return;
+      !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+      window.fbq('init', cfg.pixel); window.fbq('track', 'PageView');
+    };
+    if (granted === 'granted') window.__gpLoadPixel();
+  </script>
+)}

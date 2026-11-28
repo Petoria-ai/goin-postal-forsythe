@@ -1,0 +1,25 @@
+---
+// The cookie choice. Shown only when a tracking ID is configured, the visitor has not chosen yet and
+// Global Privacy Control is off. "No thanks" keeps analytics in cookieless consent mode and never
+// loads the Meta Pixel. The choice can be changed from the footer link.
+import { anyTracking } from '../../lib/analytics-config';
+const on = anyTracking();
+---
+{on && (
+  <div class="consent" id="consent" role="region" aria-label="Cookie choice" hidden>
+    <p>We use cookies to see which pages help customers and to measure our ads. No personal details are sent. <a href="/privacy">Privacy</a></p>
+    <p class="btnrow"><button type="button" class="btn small" id="consentYes">Accept</button> <button type="button" class="btn small kraft" id="consentNo">No thanks</button></p>
+  </div>
+)}
+<script>
+  import { consentChoice, setConsent, gpcOn } from '../../lib/track';
+  const box = document.getElementById('consent');
+  const w = window as any;
+  if (box && w.__gpAnalytics) {
+    if (!consentChoice() && !gpcOn()) box.hidden = false;
+    const close = (v: 'granted' | 'denied') => { setConsent(v); box.hidden = true; if (v === 'granted') w.__gpLoadPixel?.(); };
+    document.getElementById('consentYes')?.addEventListener('click', () => close('granted'));
+    document.getElementById('consentNo')?.addEventListener('click', () => close('denied'));
+    document.querySelectorAll('[data-consent-open]').forEach((el) => el.addEventListener('click', (e) => { e.preventDefault(); box.hidden = false; (document.getElementById('consentYes') as HTMLElement)?.focus(); }));
+  }
+</script>

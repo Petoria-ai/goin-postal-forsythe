@@ -3,6 +3,8 @@ import Base from '../layouts/Base.astro';
 import StoreInfo from '../components/StoreInfo.astro';
 import { store } from '../data/store';
 import pkg from '../../package.json';
+import { storeTokens } from '../lib/richtext';
+const tk = storeTokens(store);
 // The badge shows the release the site is running; bump site/package.json with every tag (CLAUDE.md release flow).
 const version = 'v' + pkg.version;
 ---
@@ -38,6 +40,17 @@ const version = 'v' + pkg.version;
             <div class="card"><h3>{s.link ? <a href={s.link} data-i18n={`svc.${s.key}.n`}>{s.name}</a> : <span data-i18n={`svc.${s.key}.n`}>{s.name}</span>}</h3><p data-i18n={`svc.${s.key}.b`}>{s.blurb}</p></div>
           ))}
         </div>
+      </section>
+
+      <section class="content-section" aria-labelledby="local-h">
+        <h2 id="local-h">Your shipping store in Monroe, open seven days</h2>
+        <p>{store.name} is an independently owned shipping and business service center at {tk.street} in {store.city}, serving {store.serviceArea.slice(0, -1).join(', ')} and {store.serviceArea[store.serviceArea.length - 1]}. Ship with {tk.carriers} at one counter, weekdays until {tk.weekdayClose} and on Saturday and Sunday.</p>
+        <ul class="link-grid">
+          <li><a href="/shipping"><strong>Shipping</strong><span>Domestic, international, freight, packing, drop-offs and returns</span></a></li>
+          <li><a href="/mailboxes"><strong>Mailboxes</strong><span>Physical and virtual mailboxes with a street address</span></a></li>
+          <li><a href="/business-services"><strong>Business services</strong><span>Notary, fingerprinting, printing, fax, scanning, shredding</span></a></li>
+          <li><a href="/about"><strong>About us</strong><span>Independent, local, every carrier under one roof</span></a></li>
+        </ul>
       </section>
     </div>
 

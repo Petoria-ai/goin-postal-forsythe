@@ -1,0 +1,48 @@
+---
+// About the store: who we are, where, what we do and why people choose us. Every fact here comes from
+// src/data/store.ts; nothing is claimed that the store cannot back up (no "cheapest", "fastest",
+// "best", no founding year until the owners give one).
+import Base from '../layouts/Base.astro';
+import VisitUs from '../components/seo/VisitUs.astro';
+import { store } from '../data/store';
+import { storeTokens } from '../lib/richtext';
+import { routeMeta } from '../lib/routes';
+const tk = storeTokens(store);
+const meta = routeMeta('/about')!;
+---
+<Base path="/about" webPageType="AboutPage">
+  <section class="hero">
+    <h1>{meta.h1}</h1>
+    <p class="lead">{store.name} is an independently owned shipping store and business service center at {tk.street} in {store.city}, Louisiana{store.legalName ? <>, operated by {store.legalName}</> : ''}. We help people and businesses in {store.serviceArea.slice(0, -1).join(', ')} and across {store.serviceArea[store.serviceArea.length - 1]} ship, receive mail and get office errands done in one stop.</p>
+  </section>
+
+  <section class="content-section">
+    <h2>What we do</h2>
+    <ul class="link-grid">
+      <li><a href="/shipping"><strong>Shipping</strong><span>{tk.carriers} at one counter, domestic and international, plus freight.</span></a></li>
+      <li><a href="/shipping/packing"><strong>Packing</strong><span>Bring it loose; we box, cushion and label it, including custom-size boxes.</span></a></li>
+      <li><a href="/mailboxes"><strong>Mailboxes</strong><span>Physical and virtual mailboxes with a real street address.</span></a></li>
+      <li><a href="/business-services"><strong>Business services</strong><span>Notary, fingerprinting, printing, fax, scanning and shredding.</span></a></li>
+      <li><a href="/shop/business-cards"><strong>Business cards</strong><span>Designed online, picked up here.</span></a></li>
+      <li><a href="/petership"><strong>PeterShip</strong><span>Our own online shipping tool for customers and businesses.</span></a></li>
+    </ul>
+  </section>
+
+  <section class="content-section">
+    <h2>Why customers choose us</h2>
+    <ul>
+      <li><strong>Open seven days a week.</strong> Weekdays {tk.weekdayHours}, Saturday {tk.saturdayHours} and Sunday {tk.sundayHours}.</li>
+      <li><strong>Open after work.</strong> Weekdays until {tk.weekdayClose}.</li>
+      <li><strong>Every major carrier under one roof.</strong> Compare {tk.carriers} instead of driving to a different store for each.</li>
+      <li><strong>Help in person.</strong> Packing, customs forms and choosing a service, at the counter.</li>
+      <li><strong>Shipping, mail and office work in one stop.</strong></li>
+    </ul>
+  </section>
+
+  <section class="content-section">
+    <h2>Independent, not a carrier's own store</h2>
+    <p>{store.name} is independently owned and operated. We are not a corporate location of UPS, FedEx, the U.S. Postal Service or DHL; we ship with all of them so you can choose. The Goin' Postal name and logo belong to GP Brands.</p>
+  </section>
+
+  <VisitUs />
+</Base>

@@ -68,8 +68,8 @@ export const TEMPLATES: { id: TemplateId; name: string }[] = [
 
 // Sample details for the gallery previews.
 export const SAMPLE = {
-  name: 'Rin Ho', title: 'Owner', company: "Goin' Postal Forsythe",
-  phone: '(318) 000-0000', email: 'hello@example.com', website: 'goinpostalforsythe.com',
+  name: 'Rin Ho', title: 'Owner', company: "Goin' Postal Monroe",
+  phone: '318-570-2132', email: 'hello@example.com', website: 'goinpostalforsythe.com',
   address: '1800 Forsythe Ave Ste 2, Monroe, LA', tagline: 'Ship it. Pack it. Print it.',
 };
 export type Details = typeof SAMPLE;

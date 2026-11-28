@@ -1,0 +1,47 @@
+---
+// The footer on every page: the business's name, address, phone and hours (the same NAP as the
+// Google Business Profile and the structured data), links to every service area, and only the
+// profile links that are verified in src/data/store.ts.
+import { store, telHref, directionsUrl, verifiedProfiles } from '../../data/store';
+import { groupHours } from '../../lib/hours';
+import { anyTracking } from '../../lib/analytics-config';
+import OpenStatus from './OpenStatus.astro';
+const groups = groupHours(store.weeklyHours);
+const profiles = verifiedProfiles().filter((p) => !/location page/i.test(p.name));
+const cols = [
+  { h: 'Shipping', links: [['Shipping store', '/shipping'], ['Ship online', '/ship'], ['UPS', '/shipping/ups'], ['FedEx', '/shipping/fedex'], ['USPS', '/shipping/usps'], ['DHL', '/shipping/dhl'], ['International', '/shipping/international'], ['Vietnam', '/shipping/vietnam'], ['Freight', '/shipping/freight'], ['Packing', '/shipping/packing'], ['Drop-off', '/shipping/drop-off'], ['Returns', '/shipping/returns'], ['Track', '/track']] },
+  { h: 'Mailboxes', links: [['Mailbox rental', '/mailboxes'], ['Physical mailbox', '/mailboxes/physical'], ['Virtual mailbox', '/mailboxes/virtual'], ['Business address', '/mailboxes/business-address'], ['Mail forwarding', '/mailboxes/mail-forwarding']] },
+  { h: 'Business services', links: [['All business services', '/business-services'], ['Notary', '/business-services/notary'], ['Fingerprinting', '/business-services/fingerprinting'], ['Printing and copies', '/business-services/printing'], ['Fax', '/business-services/fax'], ['Scanning', '/business-services/scanning'], ['Shredding', '/business-services/shredding'], ['Business cards', '/shop/business-cards']] },
+  { h: 'About', links: [['About us', '/about'], ['Contact and directions', '/contact'], ['Guides', '/guides'], ['PeterShip', '/petership'], ['Developers', '/developers'], ['Privacy', '/privacy']] },
+];
+---
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-nap">
+      <p class="foot-name"><strong>{store.name}</strong></p>
+      <address>
+        {store.street}{store.suite ? `, ${store.suite}` : ''}, {store.city}, {store.region} {store.postalCode}<br />
+        <a href={telHref()}>{store.phone}</a> · <a href={directionsUrl()} target="_blank" rel="noopener" data-track="directions_click">Directions</a>
+      </address>
+      <OpenStatus />
+      <ul class="foot-hours">{groups.map((g) => <li><span>{g.label}</span> {g.text}</li>)}</ul>
+      <p class="small">Serving {store.serviceArea.slice(0, -1).join(', ')} and {store.serviceArea[store.serviceArea.length - 1]}.</p>
+      {profiles.length > 0 && <p class="foot-social">{profiles.map((p, i) => <>{i > 0 && ' · '}<a href={p.url} rel="noopener me" target="_blank" data-track="social_click" data-track-platform={p.name}>{p.name}</a></>)}</p>}
+    </div>
+    <nav class="foot-cols" aria-label="Site">
+      {cols.map((c) => (
+        <div>
+          <h2 class="foot-h">{c.h}</h2>
+          <ul>{c.links.map(([label, href]) => <li><a href={href}>{label}</a></li>)}</ul>
+        </div>
+      ))}
+    </nav>
+    <p class="foot-legal small">
+      {store.name}{store.legalName ? <> is operated by {store.legalName}</> : ''}.{' '}
+      <span data-i18n="footer">Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.</span>{' '}
+      We ship with UPS, FedEx, USPS and DHL and are not a corporate location of any carrier.
+      {anyTracking() && <>{' '}· <a href="/privacy#cookies" data-consent-open>Cookie choices</a></>}
+      {' '}· <a href="/counter" rel="nofollow" data-i18n="st.in.link">Staff sign-in</a>
+    </p>
+  </div>
+</footer>

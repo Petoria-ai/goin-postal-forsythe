@@ -1,0 +1,52 @@
+---
+// One guide, from src/data/guides.ts. Direct answer first, then sections, FAQs, sources and dates.
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import ContentSections from '../../components/seo/ContentSections.astro';
+import Faq from '../../components/seo/Faq.astro';
+import Related from '../../components/seo/Related.astro';
+import VisitUs from '../../components/seo/VisitUs.astro';
+import { GUIDES, GUIDE_CATEGORY_NAMES } from '../../data/guides';
+import { guidePath, type GuideEntry } from '../../data/content-types';
+import { store } from '../../data/store';
+import { storeTokens, richText, plainText } from '../../lib/richtext';
+import { articleLd, faqLd } from '../../lib/seo';
+import { routeMeta, previewDrafts } from '../../lib/routes';
+
+export const getStaticPaths = (() => GUIDES.filter((g) => g.status === 'published' || previewDrafts()).map((g) => ({ params: { slug: g.slug }, props: { g } }))) satisfies GetStaticPaths;
+interface Props { g: GuideEntry }
+const { g } = Astro.props;
+const path = guidePath(g);
+const tk = storeTokens(store);
+const meta = routeMeta(path)!;
+const fmt = (d: string) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const faqs = (g.faqs ?? []).map((f) => ({ q: plainText(f.q, tk), a: plainText(f.a, tk) }));
+const jsonLd = [
+  articleLd({ path, headline: meta.h1, description: meta.description, datePublished: g.published, dateModified: g.updated, image: g.image?.src, section: GUIDE_CATEGORY_NAMES[g.category] }),
+  ...(faqs.length ? [faqLd(faqs, path)] : []),
+];
+---
+<Base path={path} jsonLd={jsonLd} ogType="article" datePublished={g.published} dateModified={g.updated}>
+  <article class="guide">
+    <header class="hero">
+      <p class="kicker">Guide · {GUIDE_CATEGORY_NAMES[g.category]}</p>
+      <h1>{meta.h1}</h1>
+      <p class="muted small">By {store.name} · Published <time datetime={g.published}>{fmt(g.published)}</time>{g.updated !== g.published && <> · Updated <time datetime={g.updated}>{fmt(g.updated)}</time></>}</p>
+    </header>
+    <section class="answer card" aria-label="Short answer">
+      <h2 class="sr-only">Short answer</h2>
+      <p set:html={richText(g.summary, tk)} />
+    </section>
+    <ContentSections sections={g.sections} tokens={tk} />
+    <Faq faqs={g.faqs ?? []} tokens={tk} />
+    {g.sources && g.sources.length > 0 && (
+      <section class="content-section">
+        <h2>Sources</h2>
+        <ul>{g.sources.map((s) => <li><a href={s.url} rel="noopener">{s.name}</a></li>)}</ul>
+        <p class="muted small">Carrier rules and limits change. Check the carrier's own site, or ask us, before you ship.</p>
+      </section>
+    )}
+    <Related paths={g.related} heading="Related pages" />
+    <VisitUs heading={`Visit ${store.name}`} />
+  </article>
+</Base>

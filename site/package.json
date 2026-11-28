@@ -14,7 +14,8 @@
     "db:remote": "wrangler d1 execute goin-postal --remote --file db/schema.sql",
     "check": "astro check",
     "test": "astro check && vitest run && astro build",
-    "test:unit": "vitest run"
+    "test:unit": "vitest run",
+    "seo:audit": "node scripts/seo-audit.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.2",

@@ -1,0 +1,15 @@
+---
+// Visible breadcrumb trail. The matching BreadcrumbList JSON-LD is added by Base.astro from the same list.
+import type { Crumb } from '../../lib/seo';
+interface Props { crumbs: Crumb[]; label?: string }
+const { crumbs, label = 'Breadcrumb' } = Astro.props;
+---
+{crumbs.length > 1 && (
+  <nav class="crumbs" aria-label={label}>
+    <ol>
+      {crumbs.map((c, i) => (
+        <li>{i < crumbs.length - 1 ? <a href={c.path}>{c.name}</a> : <span aria-current="page">{c.name}</span>}</li>
+      ))}
+    </ol>
+  </nav>
+)}

@@ -500,3 +500,55 @@ CREATE TABLE IF NOT EXISTS fulfillment_fees (
   statement_id INTEGER REFERENCES account_statements(id)
 );
 CREATE INDEX IF NOT EXISTS fulfillment_fees_account ON fulfillment_fees(account_id, statement_id);
+
+-- ---- SEO and local listings (v1.94.0) ----------------------------------------------------------
+-- Redirects staff add at /counter/seo when a page moves. Checked by src/middleware.ts only when a
+-- request would otherwise 404, so they cost nothing on normal pages.
+CREATE TABLE IF NOT EXISTS seo_redirects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_path TEXT NOT NULL UNIQUE,      -- /old-page (no domain, no query)
+  to_path TEXT NOT NULL,               -- /new-page or https://...
+  status INTEGER NOT NULL DEFAULT 301, -- 301 permanent or 302 temporary
+  note TEXT,
+  hits INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  by_name TEXT NOT NULL
+);
+
+-- Holiday hours and one-off closures, live on the site without a rebuild (the open-now badge reads
+-- /api/hours). Dates are YYYY-MM-DD in the store's time zone.
+CREATE TABLE IF NOT EXISTS special_hours (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL UNIQUE,
+  closed INTEGER NOT NULL DEFAULT 0,
+  opens TEXT,                          -- HH:MM, 24-hour; null when closed
+  closes TEXT,
+  label TEXT,                          -- "Christmas Day", "Closed for weather"
+  created_at TEXT NOT NULL,
+  by_name TEXT NOT NULL
+);
+
+-- Manual AI search visibility checks: someone asks ChatGPT, Claude, Gemini, Perplexity or Copilot a
+-- question and writes down what came back. Typed in by hand; nothing scrapes the AI platforms.
+CREATE TABLE IF NOT EXISTS ai_visibility_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  tested_on TEXT NOT NULL,             -- YYYY-MM-DD
+  platform TEXT NOT NULL,
+  query TEXT NOT NULL,
+  mentioned INTEGER NOT NULL DEFAULT 0,
+  position TEXT,                       -- "first", "listed", "not listed"
+  competitors TEXT,
+  sources TEXT,                        -- URLs the answer cited
+  notes TEXT,
+  created_at TEXT NOT NULL,
+  by_name TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ai_visibility_by_date ON ai_visibility_log(tested_on, platform);
+
+-- What was last sent to IndexNow, per URL, so the next submission sends only new, changed or removed pages.
+CREATE TABLE IF NOT EXISTS indexnow_log (
+  url TEXT PRIMARY KEY,
+  lastmod TEXT,
+  submitted_at TEXT NOT NULL,
+  removed INTEGER NOT NULL DEFAULT 0
+);

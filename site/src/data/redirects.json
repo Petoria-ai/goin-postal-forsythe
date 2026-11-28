@@ -1,0 +1,21 @@
+{
+  "_comment": "Old or alternative URLs and where they now live. Cloudflare applies these as 301s before anything else (the build writes dist/client/_redirects from this file, see astro.config.mjs). Add a line whenever a page moves or is renamed; never point a URL at itself. tests/seo.test.ts checks every target is a live page.",
+  "redirects": {
+    "/returns": "/shipping/returns",
+    "/services": "/shipping",
+    "/mailbox": "/mailboxes",
+    "/mailboxes/personal": "/mailboxes/physical",
+    "/mailboxes/package-receiving": "/mailboxes/physical",
+    "/mailboxes/small-business": "/mailboxes/business-address",
+    "/notary": "/business-services/notary",
+    "/printing": "/business-services/printing",
+    "/business-services/copying": "/business-services/printing",
+    "/shipping/prepaid-drop-off": "/shipping/drop-off",
+    "/shipping/custom-boxes": "/shipping/packing",
+    "/shipping/packaging": "/shipping/packing",
+    "/business-cards": "/shop/business-cards",
+    "/blog": "/guides",
+    "/about-us": "/about",
+    "/contact-us": "/contact"
+  }
+}

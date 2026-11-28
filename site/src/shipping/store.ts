@@ -143,12 +143,16 @@ const mem = {
   heartbeats: new Map<string, AgentHeartbeat>(),
   apiKeys: [] as ApiKeyRow[],
   x402: [] as X402PaymentRow[],
+  seoRedirects: [] as SeoRedirectRow[],
+  specialHours: [] as SpecialHoursRow[],
+  aiLog: [] as AiVisibilityRow[],
+  indexnow: new Map<string, IndexNowRow>(),
   seq: 1,
 };
 
 // ---- Export (T10) --------------------------------------------------------------------------------
 /** Every table in the schema, in schema order. The allow-list for the export; nothing else can be named. */
-export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees'] as const;
+export const EXPORT_TABLES = ['customers', 'shipments', 'tracking_events', 'dropoffs', 'qr_scans', 'retail_rules', 'staff', 'print_queue', 'shipment_contacts', 'notifications', 'quotes', 'addons', 'order_addons', 'audit_log', 'invoices', 'invoice_lines', 'day_closes', 'accounts', 'account_statements', 'shipment_billing', 'notes', 'print_failures', 'api_keys', 'x402_payments', 'return_requests', 'claims', 'pickups', 'shipment_photos', 'customer_addresses', 'return_links', 'benchmark_log', 'products', 'stock_moves', 'fulfillment_orders', 'fulfillment_fees', 'seo_redirects', 'special_hours', 'ai_visibility_log', 'indexnow_log'] as const;
 export type ExportTable = typeof EXPORT_TABLES[number];
 const memTable = (name: ExportTable): unknown[] => {
   switch (name) {
@@ -186,6 +190,10 @@ const memTable = (name: ExportTable): unknown[] => {
     case 'stock_moves': return mem.stockMoves;
     case 'fulfillment_orders': return mem.fulfillmentOrders;
     case 'fulfillment_fees': return mem.fees;
+    case 'seo_redirects': return mem.seoRedirects;
+    case 'special_hours': return mem.specialHours;
+    case 'ai_visibility_log': return mem.aiLog;
+    case 'indexnow_log': return [...mem.indexnow.values()];
     default: return [];
   }
 };
@@ -1621,4 +1629,104 @@ export async function report(env: Env, from: string, to: string): Promise<Report
     addons: { lines: addonRows.length, revenue: +addonRows.reduce((a, l) => a + l.total, 0).toFixed(2), by_item: [...byItem].map(([name, e]) => ({ name, qty: e.qty, revenue: +e.revenue.toFixed(2) })).sort((a, b) => b.revenue - a.revenue) },
     rows,
   };
+}
+
+// ---- SEO: redirects, special hours, AI visibility log, IndexNow (v1.94.0) -----------------------
+export interface SeoRedirectRow { id: number; from_path: string; to_path: string; status: number; note: string | null; hits: number; created_at: string; by_name: string }
+export interface SpecialHoursRow { id: number; date: string; closed: number; opens: string | null; closes: string | null; label: string | null; created_at: string; by_name: string }
+export interface AiVisibilityRow { id: number; tested_on: string; platform: string; query: string; mentioned: number; position: string | null; competitors: string | null; sources: string | null; notes: string | null; created_at: string; by_name: string }
+export interface IndexNowRow { url: string; lastmod: string | null; submitted_at: string; removed: number }
+
+export async function listSeoRedirects(env: Env): Promise<SeoRedirectRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM seo_redirects ORDER BY from_path').all<SeoRedirectRow>()).results;
+  return [...mem.seoRedirects].sort((a, b) => a.from_path.localeCompare(b.from_path));
+}
+export async function findSeoRedirect(env: Env, fromPath: string): Promise<SeoRedirectRow | null> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM seo_redirects WHERE from_path = ?1').bind(fromPath).first<SeoRedirectRow>()) ?? null;
+  return mem.seoRedirects.find((r) => r.from_path === fromPath) ?? null;
+}
+export async function saveSeoRedirect(env: Env, r: { from_path: string; to_path: string; status: number; note: string | null; by_name: string }): Promise<SeoRedirectRow> {
+  const at = now();
+  if (env.DB) {
+    await env.DB.prepare('INSERT INTO seo_redirects (from_path, to_path, status, note, hits, created_at, by_name) VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6) ON CONFLICT(from_path) DO UPDATE SET to_path = excluded.to_path, status = excluded.status, note = excluded.note, by_name = excluded.by_name')
+      .bind(r.from_path, r.to_path, r.status, r.note, at, r.by_name).run();
+    return (await findSeoRedirect(env, r.from_path))!;
+  }
+  const old = mem.seoRedirects.find((x) => x.from_path === r.from_path);
+  if (old) { Object.assign(old, r); return old; }
+  const row: SeoRedirectRow = { id: mem.seq++, hits: 0, created_at: at, ...r };
+  mem.seoRedirects.push(row);
+  return row;
+}
+export async function deleteSeoRedirect(env: Env, id: number): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('DELETE FROM seo_redirects WHERE id = ?1').bind(id).run()).meta?.changes ?? 0) > 0;
+  const i = mem.seoRedirects.findIndex((r) => r.id === id);
+  if (i < 0) return false;
+  mem.seoRedirects.splice(i, 1);
+  return true;
+}
+export async function countSeoRedirectHit(env: Env, id: number): Promise<void> {
+  if (env.DB) { await env.DB.prepare('UPDATE seo_redirects SET hits = hits + 1 WHERE id = ?1').bind(id).run(); return; }
+  const r = mem.seoRedirects.find((x) => x.id === id); if (r) r.hits++;
+}
+
+/** Special hours from a date on (YYYY-MM-DD), soonest first. */
+export async function listSpecialHours(env: Env, fromDate = ''): Promise<SpecialHoursRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM special_hours WHERE date >= ?1 ORDER BY date').bind(fromDate).all<SpecialHoursRow>()).results;
+  return mem.specialHours.filter((r) => r.date >= fromDate).sort((a, b) => a.date.localeCompare(b.date));
+}
+export async function saveSpecialHours(env: Env, r: { date: string; closed: boolean; opens: string | null; closes: string | null; label: string | null; by_name: string }): Promise<void> {
+  const at = now();
+  if (env.DB) {
+    await env.DB.prepare('INSERT INTO special_hours (date, closed, opens, closes, label, created_at, by_name) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7) ON CONFLICT(date) DO UPDATE SET closed = excluded.closed, opens = excluded.opens, closes = excluded.closes, label = excluded.label, by_name = excluded.by_name')
+      .bind(r.date, r.closed ? 1 : 0, r.opens, r.closes, r.label, at, r.by_name).run();
+    return;
+  }
+  const row = { date: r.date, closed: r.closed ? 1 : 0, opens: r.opens, closes: r.closes, label: r.label, by_name: r.by_name };
+  const old = mem.specialHours.find((x) => x.date === r.date);
+  if (old) Object.assign(old, row); else mem.specialHours.push({ id: mem.seq++, created_at: at, ...row });
+}
+export async function deleteSpecialHours(env: Env, date: string): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('DELETE FROM special_hours WHERE date = ?1').bind(date).run()).meta?.changes ?? 0) > 0;
+  const i = mem.specialHours.findIndex((r) => r.date === date);
+  if (i < 0) return false;
+  mem.specialHours.splice(i, 1);
+  return true;
+}
+
+export async function listAiVisibility(env: Env, limit = 200): Promise<AiVisibilityRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM ai_visibility_log ORDER BY tested_on DESC, id DESC LIMIT ?1').bind(limit).all<AiVisibilityRow>()).results;
+  return [...mem.aiLog].sort((a, b) => b.tested_on.localeCompare(a.tested_on) || b.id - a.id).slice(0, limit);
+}
+export async function addAiVisibility(env: Env, r: Omit<AiVisibilityRow, 'id' | 'created_at'>): Promise<AiVisibilityRow> {
+  const row = { ...r, created_at: now() };
+  if (env.DB) {
+    const res = await env.DB.prepare('INSERT INTO ai_visibility_log (tested_on, platform, query, mentioned, position, competitors, sources, notes, created_at, by_name) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10) RETURNING id')
+      .bind(row.tested_on, row.platform, row.query, row.mentioned, row.position, row.competitors, row.sources, row.notes, row.created_at, row.by_name).first<{ id: number }>();
+    return { id: res!.id, ...row };
+  }
+  const full = { id: mem.seq++, ...row };
+  mem.aiLog.push(full);
+  return full;
+}
+export async function deleteAiVisibility(env: Env, id: number): Promise<boolean> {
+  if (env.DB) return ((await env.DB.prepare('DELETE FROM ai_visibility_log WHERE id = ?1').bind(id).run()).meta?.changes ?? 0) > 0;
+  const i = mem.aiLog.findIndex((r) => r.id === id);
+  if (i < 0) return false;
+  mem.aiLog.splice(i, 1);
+  return true;
+}
+
+export async function listIndexNow(env: Env): Promise<IndexNowRow[]> {
+  if (env.DB) return (await env.DB.prepare('SELECT * FROM indexnow_log').all<IndexNowRow>()).results;
+  return [...mem.indexnow.values()];
+}
+export async function recordIndexNow(env: Env, rows: { url: string; lastmod: string | null; removed: boolean }[]): Promise<void> {
+  const at = now();
+  if (env.DB) {
+    const st = env.DB.prepare('INSERT INTO indexnow_log (url, lastmod, submitted_at, removed) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(url) DO UPDATE SET lastmod = excluded.lastmod, submitted_at = excluded.submitted_at, removed = excluded.removed');
+    if (rows.length) await env.DB.batch(rows.map((r) => st.bind(r.url, r.lastmod, at, r.removed ? 1 : 0)));
+    return;
+  }
+  for (const r of rows) mem.indexnow.set(r.url, { url: r.url, lastmod: r.lastmod, submitted_at: at, removed: r.removed ? 1 : 0 });
 }

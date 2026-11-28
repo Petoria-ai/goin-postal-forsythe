@@ -1,0 +1,23 @@
+---
+// Not found. Served with a real 404 status (never a soft 404), noindexed, and useful: the main
+// sections, the phone number and a search-free way back. Old URLs are redirected before this page is
+// reached (src/middleware.ts).
+import Base from '../layouts/Base.astro';
+import { store, telHref } from '../data/store';
+Astro.response.status = 404;
+---
+<Base title="Page not found" noindex hideCrumbs>
+  <section class="hero">
+    <h1>We could not find that page</h1>
+    <p class="lead">The link may be old or mistyped. These will get you where you were going:</p>
+  </section>
+  <ul class="link-grid">
+    <li><a href="/shipping"><strong>Shipping</strong><span>UPS, FedEx, USPS and DHL, packing, drop-offs and returns</span></a></li>
+    <li><a href="/ship"><strong>Ship online</strong><span>Compare rates and buy a label</span></a></li>
+    <li><a href="/track"><strong>Track a package</strong><span>With your pickup code or tracking number</span></a></li>
+    <li><a href="/mailboxes"><strong>Mailboxes</strong><span>Physical and virtual mailbox rental</span></a></li>
+    <li><a href="/business-services"><strong>Business services</strong><span>Notary, printing, fax, scanning, shredding</span></a></li>
+    <li><a href="/contact"><strong>Contact and directions</strong><span>Call <span>{store.phone}</span></span></a></li>
+  </ul>
+  <p><a class="btn" href="/">Home page</a> <a class="btn kraft" href={telHref()}>Call {store.phone}</a></p>
+</Base>

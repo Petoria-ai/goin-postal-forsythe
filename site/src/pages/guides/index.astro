@@ -1,0 +1,26 @@
+---
+// The guides index, grouped by topic. Only published guides are listed.
+import Base from '../../layouts/Base.astro';
+import { publishedGuides, GUIDE_CATEGORY_NAMES } from '../../data/guides';
+import { guidePath } from '../../data/content-types';
+import { routeMeta } from '../../lib/routes';
+import { canonicalUrl } from '../../lib/seo';
+const guides = publishedGuides();
+const cats = (Object.keys(GUIDE_CATEGORY_NAMES) as (keyof typeof GUIDE_CATEGORY_NAMES)[]).filter((c) => guides.some((g) => g.category === c));
+const meta = routeMeta('/guides')!;
+const jsonLd = [{ '@type': 'ItemList', '@id': canonicalUrl('/guides') + '#list', itemListElement: guides.map((g, i) => ({ '@type': 'ListItem', position: i + 1, url: canonicalUrl(guidePath(g)), name: routeMeta(guidePath(g))?.h1 })) }];
+---
+<Base path="/guides" webPageType="CollectionPage" jsonLd={jsonLd}>
+  <section class="hero">
+    <h1>{meta.h1}</h1>
+    <p class="lead">{meta.description}</p>
+  </section>
+  {cats.map((c) => (
+    <section aria-labelledby={`g-${c}`}>
+      <h2 id={`g-${c}`}>{GUIDE_CATEGORY_NAMES[c]}</h2>
+      <ul class="link-grid">
+        {guides.filter((g) => g.category === c).map((g) => { const m = routeMeta(guidePath(g))!; return <li><a href={guidePath(g)}><strong>{m.h1}</strong><span>{m.description}</span></a></li>; })}
+      </ul>
+    </section>
+  ))}
+</Base>

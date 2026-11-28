@@ -1,0 +1,87 @@
+---
+// Every service page and the three hubs (/shipping, /mailboxes, /business-services), from
+// src/data/services.ts. Static: built once per deploy. Only published entries are built (drafts too
+// when SEO_PREVIEW_DRAFTS=1, noindexed). The route registry supplies the title, description,
+// canonical and breadcrumbs through Base.astro.
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import ContentSections from '../../components/seo/ContentSections.astro';
+import Faq from '../../components/seo/Faq.astro';
+import VisitUs from '../../components/seo/VisitUs.astro';
+import Related from '../../components/seo/Related.astro';
+import { SERVICES, CATEGORY_NAMES } from '../../data/services';
+import { pathOf, type ServiceEntry } from '../../data/content-types';
+import { store, telHref, directionsUrl } from '../../data/store';
+import { storeTokens, richText, plainText } from '../../lib/richtext';
+import { serviceLd, faqLd, canonicalUrl } from '../../lib/seo';
+import { routeMeta, previewDrafts } from '../../lib/routes';
+
+export const getStaticPaths = (() => SERVICES
+  .filter((s) => s.status === 'published' || previewDrafts())
+  .map((s) => ({ params: { category: s.category, slug: s.slug || undefined }, props: { svc: s } }))) satisfies GetStaticPaths;
+
+interface Props { svc: ServiceEntry }
+const { svc } = Astro.props;
+const path = pathOf(svc);
+const tk = storeTokens(store);
+const meta = routeMeta(path)!;
+const isHub = !svc.slug;
+const children = isHub ? SERVICES.filter((s) => s.category === svc.category && s.slug && s.status === 'published') : [];
+const faqs = svc.faqs.map((f) => ({ q: plainText(f.q, tk), a: plainText(f.a, tk) }));
+const vi = svc.translations?.vi;
+const ctas = (svc.cta ?? []).map((c) => ({ ...c, href: c.href === 'tel' ? telHref() : c.href }));
+const jsonLd = [
+  serviceLd({ name: plainText(svc.h1, tk), description: meta.description, path, serviceType: svc.name, brand: undefined }, store),
+  ...(isHub ? [{ '@type': 'ItemList', '@id': canonicalUrl(path) + '#services', name: `${CATEGORY_NAMES[svc.category]} at ${store.name}`, itemListElement: children.map((c, i) => ({ '@type': 'ListItem', position: i + 1, name: c.name, url: canonicalUrl(pathOf(c)) })) }] : []),
+  ...(faqs.length ? [faqLd(faqs, path)] : []),
+];
+---
+<Base path={path} jsonLd={jsonLd} webPageType={isHub ? 'CollectionPage' : 'WebPage'} dateModified={svc.updated}>
+  <article class="service">
+    <header class="hero svc-hero">
+      <p class="kicker">{CATEGORY_NAMES[svc.category]} · {store.city}, {store.region}</p>
+      <h1>{meta.h1}</h1>
+      <p class="lead" set:html={richText(svc.intro, tk)} />
+      <p class="btnrow">
+        {ctas.map((c) => <a class="btn" href={c.href} data-track={c.track}>{c.label}</a>)}
+        {!ctas.some((c) => c.href.startsWith('tel:')) && <a class={ctas.length ? 'btn kraft' : 'btn'} href={telHref()} data-track="phone_click">Call {store.phone}</a>}
+        <a class="btn kraft" href={directionsUrl()} target="_blank" rel="noopener" data-track="directions_click">Get directions</a>
+      </p>
+      <ul class="facts" aria-label="At a glance">
+        <li><strong>Open 7 days</strong> weekdays until {tk.weekdayClose}</li>
+        <li><strong>{store.carriers.join(', ')}</strong> under one roof</li>
+        <li><strong>{store.street}</strong> {store.city}, {store.region}</li>
+      </ul>
+      {vi && vi.status === 'published' && <p class="lang-alt"><a href={vi.path} hreflang="vi" lang="vi">Đọc bằng tiếng Việt</a></p>}
+    </header>
+
+    {isHub && children.length > 0 && (
+      <section aria-labelledby="svc-list-h">
+        <h2 id="svc-list-h">{{ shipping: 'Shipping services', mailboxes: 'Mailbox services', 'business-services': 'Business services we offer' }[svc.category]}</h2>
+        <ul class="link-grid">
+          {children.map((c) => { const m = routeMeta(pathOf(c)); return <li><a href={pathOf(c)}><strong>{c.name}</strong><span>{m?.description}</span></a></li>; })}
+        </ul>
+      </section>
+    )}
+
+    <ContentSections sections={svc.sections} tokens={tk} />
+
+    {svc.pricing && (
+      <section class="content-section">
+        <h2>Pricing</h2>
+        <p set:html={richText(svc.pricing, tk)} />
+      </section>
+    )}
+    {svc.restrictions && svc.restrictions.length > 0 && (
+      <section class="content-section">
+        <h2>Requirements and restrictions</h2>
+        <ul>{svc.restrictions.map((r) => <li set:html={richText(r, tk)} />)}</ul>
+      </section>
+    )}
+
+    <Faq faqs={svc.faqs} tokens={tk} />
+    <VisitUs />
+    <Related paths={svc.related} />
+    <p class="muted small updated">Last updated <time datetime={svc.updated}>{new Date(svc.updated + 'T12:00:00Z').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</time>.</p>
+  </article>
+</Base>

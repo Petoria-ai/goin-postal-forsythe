@@ -1,0 +1,26 @@
+---
+// The shop hub: published products and the categories that have them. Grows automatically as the
+// catalog does; no empty categories are ever shown.
+import Base from '../../layouts/Base.astro';
+import { publishedProducts, liveCategories, productPath, categoryPath, lowPrice, categoryIndexable } from '../../data/catalog';
+import { routeMeta } from '../../lib/routes';
+import { canonicalUrl } from '../../lib/seo';
+const prods = publishedProducts();
+const cats = liveCategories().filter((c) => categoryIndexable(c));
+const meta = routeMeta('/shop');
+const jsonLd = [{ '@type': 'ItemList', '@id': canonicalUrl('/shop') + '#products', itemListElement: prods.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: canonicalUrl(productPath(p)), name: p.name })) }];
+---
+<Base path="/shop" webPageType="CollectionPage" jsonLd={jsonLd}>
+  <section class="hero">
+    <h1>{meta?.h1 ?? 'Shop'}</h1>
+    <p class="lead">{meta?.description}</p>
+  </section>
+  {cats.length > 0 && (
+    <section aria-labelledby="cats-h"><h2 id="cats-h">Categories</h2>
+      <ul class="link-grid">{cats.map((c) => <li><a href={categoryPath(c)}><strong>{c.name}</strong><span>{c.description}</span></a></li>)}</ul>
+    </section>
+  )}
+  <section aria-labelledby="prods-h"><h2 id="prods-h">Products</h2>
+    <ul class="link-grid">{prods.map((p) => <li><a href={productPath(p)}>{p.images[0] && <img src={p.images[0].src} alt={p.images[0].alt} width="600" height="450" loading="lazy" decoding="async" />}<strong>{p.name}</strong><span>From ${lowPrice(p).toFixed(2)}</span></a></li>)}</ul>
+  </section>
+</Base>

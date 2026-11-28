@@ -1,0 +1,20 @@
+---
+// Questions and direct answers, as plain HTML that search engines and AI assistants can read without
+// running any script. Native <details> so it works with no JavaScript and with the keyboard. The
+// FAQPage JSON-LD is built from the same list by the page.
+import type { FaqItem } from '../../lib/seo';
+import { richText, plainText } from '../../lib/richtext';
+interface Props { faqs: FaqItem[]; tokens: Record<string, string>; heading?: string; id?: string; open?: boolean }
+const { faqs, tokens, heading = 'Frequently asked questions', id = 'faq', open = true } = Astro.props;
+---
+{faqs.length > 0 && (
+  <section class="faq" aria-labelledby={`${id}-h`}>
+    <h2 id={`${id}-h`}>{heading}</h2>
+    {faqs.map((f) => (
+      <details open={open}>
+        <summary><h3>{plainText(f.q, tokens)}</h3></summary>
+        <p set:html={richText(f.a, tokens)} />
+      </details>
+    ))}
+  </section>
+)}

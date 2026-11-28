@@ -1,14 +1,14 @@
 {
   "_comment": "The first store. These match the defaults in src/data/store.ts, so Forsythe needs no STORE_JSON secret; the file is here as the pattern for the next store. scripts/new-store.py writes one of these per store.",
   "id": "forsythe",
-  "name": "Goin' Postal Forsythe",
-  "address": "1800 Forsythe Ave Ste 2, Monroe, LA 71201",
-  "phone": "(318) 000-0000",
+  "name": "Goin' Postal Monroe",
+  "address": "1800 Forsythe Ave, Suite 2, Monroe, LA 71201",
+  "phone": "318-570-2132",
   "email": "wbp93623@gmail.com",
   "origin": {
-    "contact_name": "Goin' Postal Forsythe",
-    "company_name": "Goin' Postal Forsythe",
-    "contact_phone": "+13180000000",
+    "contact_name": "Goin' Postal Monroe",
+    "company_name": "Goin' Postal Monroe",
+    "contact_phone": "+13185702132",
     "contact_email": "wbp93623@gmail.com",
     "line_1": "1800 Forsythe Ave Ste 2",
     "city": "Monroe",
@@ -16,5 +16,6 @@
     "postal_code": "71201",
     "country_alpha2": "US"
   },
-  "formEndpoint": "https://formspree.io/f/REPLACE_ME"
+  "formEndpoint": "https://formspree.io/f/REPLACE_ME",
+  "legalName": "Holsom Postal LLC"
 }

@@ -1,0 +1,28 @@
+---
+// Headed sections from the content files: paragraphs, bullet or numbered lists and comparison
+// tables, all plain HTML. Lists whose items start with **bold** are numbered steps.
+import type { Section } from '../../data/content-types';
+import { richText } from '../../lib/richtext';
+interface Props { sections: Section[]; tokens: Record<string, string>; level?: 2 | 3 }
+const { sections, tokens, level = 2 } = Astro.props;
+const H = `h${level}`;
+const ordered = (l: string[]) => l.length > 2 && l.every((x) => x.startsWith('**'));
+---
+{sections.map((s) => (
+  <section class="content-section">
+    <H>{s.h}</H>
+    {s.body?.map((b) => <p set:html={richText(b, tokens)} />)}
+    {s.list && (ordered(s.list)
+      ? <ol class="steps">{s.list.map((li) => <li set:html={richText(li, tokens)} />)}</ol>
+      : <ul>{s.list.map((li) => <li set:html={richText(li, tokens)} />)}</ul>)}
+    {s.table && (
+      <div class="table-wrap">
+        <table class="compare">
+          {s.table.caption && <caption>{s.table.caption}</caption>}
+          <thead><tr>{s.table.head.map((h, i) => <th scope="col">{i === 0 && !h ? <span class="sr-only">Item</span> : h}</th>)}</tr></thead>
+          <tbody>{s.table.rows.map((r) => <tr>{r.map((c, i) => (i === 0 ? <th scope="row" set:html={richText(c, tokens)} /> : <td set:html={richText(c, tokens)} />))}</tr>)}</tbody>
+        </table>
+      </div>
+    )}
+  </section>
+))}

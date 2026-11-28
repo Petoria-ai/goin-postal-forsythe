@@ -5,36 +5,113 @@ import { LANGS } from '../i18n/strings';
 const LANG_MENU_TOP = ['en', 'vi', 'af', 'es', 'fr', 'pt', 'nl'];
 const LANG_MENU_ORDER: string[] = [...LANG_MENU_TOP, ...LANGS.map((l) => l.code).filter((c) => !LANG_MENU_TOP.includes(c))];
 import { store } from '../data/store';
-interface Props { title: string; description?: string }
-const { title, description = `Shipping, packing, mailboxes and printing at ${store.address}.` } = Astro.props;
-// The brand reads "Goin' Postal" plus the store's own word: Forsythe, Oak Grove.
+import { routeMeta } from '../lib/routes';
+import { SITE_URL, canonicalPath, canonicalUrl, absoluteUrl, isPrivatePath, robotsContent, clampDescription, pageTitle, graph, ldJson, websiteLd, organizationLd, localBusinessLd, webPageLd, breadcrumbLd, type Crumb } from '../lib/seo';
+import { verification } from '../lib/analytics-config';
+import { zoned } from '../lib/hours';
+import Analytics from '../components/seo/Analytics.astro';
+import ConsentBanner from '../components/seo/ConsentBanner.astro';
+import Breadcrumbs from '../components/seo/Breadcrumbs.astro';
+import SiteFooter from '../components/seo/SiteFooter.astro';
+
+// SEO for every page comes from one place. A page that is in the route registry (src/lib/routes.ts:
+// every public page, service, guide and product) gets its title, description, canonical, robots and
+// breadcrumbs from there, so the <head> always matches the sitemap. Staff and order pages are not in
+// the registry: they pass a title and are automatically noindexed as private paths.
+interface Props {
+  title?: string;
+  description?: string;
+  path?: string;              // the page's canonical path; defaults to the URL being rendered
+  noindex?: boolean;
+  canonical?: string;         // override (another path or URL) when this page duplicates one
+  ogImage?: string; ogImageAlt?: string;
+  ogType?: 'website' | 'article' | 'product';
+  jsonLd?: unknown[];         // page-specific nodes (Service, FAQPage, Article, Product ...)
+  webPageType?: string;       // AboutPage, ContactPage, CollectionPage, FAQPage ...
+  lang?: 'en' | 'vi';
+  alternates?: { lang: string; path: string }[];
+  crumbs?: Crumb[];
+  hideCrumbs?: boolean;
+  datePublished?: string; dateModified?: string;
+}
+const p = Astro.props;
+const path = canonicalPath(p.path ?? Astro.url.pathname);
+const meta = routeMeta(path);
+const priv = isPrivatePath(path);
+const lang = p.lang ?? meta?.lang ?? 'en';
+const title = meta?.title ?? pageTitle(p.title ?? store.name, store.name);
+const description = clampDescription(meta?.description ?? p.description ?? `Shipping, packing, mailboxes and printing at ${store.address}.`);
+// Not in the registry and not a known private path (an order code, a 404): never indexed by accident.
+const noindex = !!(p.noindex || priv || !meta || !meta.indexable || (Astro.response.status ?? 200) >= 400);
+const canonicalHref = p.canonical ? absoluteUrl(canonicalPath(p.canonical)) : meta?.canonical ? absoluteUrl(canonicalPath(meta.canonical)) : canonicalUrl(path);
+const ogImage = absoluteUrl(p.ogImage ?? meta?.ogImage ?? '/images/og-default.png');
+const ogImageAlt = p.ogImageAlt ?? meta?.ogImageAlt ?? `${store.name}, ${store.address}`;
+const crumbs: Crumb[] = p.crumbs ?? meta?.crumbs ?? [];
+const alternates = p.alternates ?? meta?.alternates;
+const ogLocale = lang === 'vi' ? 'vi_VN' : 'en_US';
+const ld = priv || !meta ? null : graph([
+  websiteLd(store, SITE_URL, lang === 'vi' ? 'vi' : 'en-US'),
+  organizationLd(store),
+  localBusinessLd(store, SITE_URL, { todayYmd: zoned(new Date(), store.timezone).ymd }),
+  webPageLd({ path, title: meta.rawTitle, description, type: p.webPageType, lang: lang === 'vi' ? 'vi' : 'en-US', dateModified: p.dateModified ?? meta.lastmod, datePublished: p.datePublished, image: p.ogImage ?? meta.ogImage, hasBreadcrumb: crumbs.length > 1 }),
+  crumbs.length > 1 ? { ...breadcrumbLd(crumbs), '@id': canonicalUrl(path) + '#breadcrumb' } : null,
+  ...(p.jsonLd ?? []),
+]);
+// The brand reads "Goin' Postal" plus the store's own word: Monroe, Oak Grove.
 const brandRest = store.name.replace(/^Goin' Postal\s*/i, '') || store.name;
 // The nav tab for the page being viewed is drawn pressed (aria-current).
-const here = Astro.url.pathname.replace(/\/$/, '') || '/';
+const here = Astro.url.pathname.replace(/\/$/, '').replace(/\.html$/, '') || '/';
 const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')) ? 'page' : undefined);
 ---
 <!doctype html>
-<html lang="en">
+<html lang={lang === 'vi' ? 'vi' : 'en'} data-page-lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="icon" href="/favicon.svg" />
+    <meta name="robots" content={robotsContent({ noindex })} />
+    {!noindex && <link rel="canonical" href={canonicalHref} />}
+    {!noindex && alternates && alternates.length > 1 && alternates.map((a) => <link rel="alternate" hreflang={a.lang} href={canonicalUrl(a.path)} />)}
+    {!noindex && alternates && alternates.length > 1 && <link rel="alternate" hreflang="x-default" href={canonicalUrl(alternates.find((a) => a.lang === 'en')?.path ?? path)} />}
+    <meta name="theme-color" content="#0f1d3a" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
+    {!priv && <>
+      <meta property="og:type" content={p.ogType ?? 'website'} />
+      <meta property="og:site_name" content={store.name} />
+      <meta property="og:title" content={meta?.rawTitle ?? title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={canonicalHref} />
+      <meta property="og:locale" content={ogLocale} />
+      <meta property="og:image" content={ogImage} />
+      <meta property="og:image:alt" content={ogImageAlt} />
+      {ogImage.endsWith('/images/og-default.png') && <><meta property="og:image:width" content="1200" /><meta property="og:image:height" content="630" /></>}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={meta?.rawTitle ?? title} />
+      <meta name="twitter:description" content={description} />
+      <meta name="twitter:image" content={ogImage} />
+    </>}
+    {verification.google && <meta name="google-site-verification" content={verification.google} />}
+    {verification.bing && <meta name="msvalidate.01" content={verification.bing} />}
+    {verification.facebook && <meta name="facebook-domain-verification" content={verification.facebook} />}
+    {ld && <script type="application/ld+json" set:html={ldJson(ld)} />}
+    {!priv && <Analytics />}
   </head>
   <body>
     <a class="skip" href="#main" data-i18n="a11y.skip">Skip to content</a>
     <header class="top">
       <div class="wrap">
         <a class="brand" href="/">Goin' Postal <span>{brandRest}</span></a>
-        <nav>
+        <nav aria-label="Main">
           <a href="/ship" class="ps-tab" aria-current={cur('/ship')} data-i18n="home.cta">Ship a package</a>
           <a href="/track" aria-current={cur('/track')} data-i18n="nav.track">Track</a>
-          <a href="/cards" aria-current={cur('/cards')} data-i18n="nav.cards">Business cards</a>
+          <a href="/shop/business-cards" aria-current={cur('/shop') ?? cur('/cards')} data-i18n="nav.cards">Business cards</a>
           <a href="/#services" data-i18n="nav.services">Services</a>
-          <a href="/#hours" data-i18n="nav.hours">Hours</a>
+          <a href="/contact#visit" data-i18n="nav.hours">Hours</a>
           <a href="/contact" aria-current={cur('/contact')} data-i18n="nav.contact">Contact</a>
-          <a href="/account" aria-current={cur('/account')} data-i18n="nav.account">Account</a>
+          <a href="/account" aria-current={cur('/account')} data-i18n="nav.account" rel="nofollow">Account</a>
           <a href="/petership" aria-current={cur('/petership')} data-i18n="nav.about">About PeterShip</a>
           {Astro.url.pathname.startsWith('/counter') && store.siblings && store.siblings.length > 0 && (
             <select id="storeSwitch" aria-label="Store" title="Store">
@@ -59,21 +136,29 @@ const cur = (p: string) => (here === p || (p !== '/' && here.startsWith(p + '/')
       </div>
     </header>
     <main class="wrap" id="main">
+      {!p.hideCrumbs && <Breadcrumbs crumbs={crumbs} label={lang === 'vi' ? 'Đường dẫn' : 'Breadcrumb'} />}
       <slot />
     </main>
-    <footer>
-      <div class="wrap">
-        {store.name} · {store.address}.
-        <span data-i18n="footer">Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.</span>
-        · <a href="/counter" data-i18n="st.in.link">Staff sign-in</a>
-      </div>
-    </footer>
+    {priv ? (
+      <footer>
+        <div class="wrap">
+          {store.name} · {store.address}.
+          <span data-i18n="footer">Goin' Postal's name and logo belong to GP Brands. Independently owned and operated.</span>
+          · <a href="/counter" data-i18n="st.in.link">Staff sign-in</a>
+        </div>
+      </footer>
+    ) : <SiteFooter />}
+    {!priv && <ConsentBanner />}
     <script>
       import { apply, setLang, t, tf, type Lang } from '../i18n';
+      import { initTracking } from '../lib/track';
       (window as any).t = t; (window as any).tf = tf; // for the inline scripts on the order pages
+      // Pages written in one language only (the /vi/ pages) keep their text; the picker still switches the menus.
       apply();
-      // Staff pages keep working when the shop's internet drops: see public/counter-sw.js.
-      if (location.pathname.startsWith('/counter/') && 'serviceWorker' in navigator) navigator.serviceWorker.register('/counter-sw.js', { scope: '/counter/' }).catch(() => {});
+      // A page written in one language keeps that language on <html> whatever the menus are switched to.
+      const keepLang = () => { const pl = document.documentElement.dataset.pageLang; if (pl && pl !== 'en') document.documentElement.lang = pl; };
+      keepLang(); document.addEventListener('langchange', keepLang);
+      if (!location.pathname.startsWith('/counter') && !location.pathname.startsWith('/api')) initTracking();
       // Staff pages keep working when the shop's internet drops: see public/counter-sw.js.
       if (location.pathname.startsWith('/counter/') && 'serviceWorker' in navigator) navigator.serviceWorker.register('/counter-sw.js', { scope: '/counter/' }).catch(() => {});
       // Text size and contrast, remembered on this device.

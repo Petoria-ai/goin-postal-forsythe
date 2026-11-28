@@ -1,0 +1,33 @@
+---
+// Name, address, phone, hours and the two buttons people want: call and directions. Shown on every
+// service page, the contact page and the about page, all from src/data/store.ts.
+import { store, telHref, directionsUrl } from '../../data/store';
+import { groupHours } from '../../lib/hours';
+import OpenStatus from './OpenStatus.astro';
+interface Props { heading?: string; id?: string }
+const { heading = 'Hours and location', id = 'visit' } = Astro.props;
+const groups = groupHours(store.weeklyHours);
+---
+<section class="visit card" aria-labelledby={`${id}-h`} id={id}>
+  <h2 id={`${id}-h`}>{heading}</h2>
+  <OpenStatus />
+  <div class="visit-grid">
+    <address>
+      <strong>{store.name}</strong><br />
+      {store.street}{store.suite ? `, ${store.suite}` : ''}<br />
+      {store.city}, {store.region} {store.postalCode}<br />
+      <a href={telHref()}>{store.phone}</a>
+    </address>
+    <table class="hours">
+      <caption class="sr-only">Opening hours</caption>
+      <tbody>
+        {groups.map((g) => <tr><th scope="row">{g.label}</th><td>{g.text}</td></tr>)}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted small">Open seven days a week. Packages dropped off on a weekend leave with the next scheduled carrier pickup.</p>
+  <p class="btnrow">
+    <a class="btn" href={telHref()} data-track="phone_click">Call {store.phone}</a>
+    <a class="btn kraft" href={directionsUrl()} target="_blank" rel="noopener" data-track="directions_click">Get directions</a>
+  </p>
+</section>

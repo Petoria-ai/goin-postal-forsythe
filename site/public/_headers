@@ -1,0 +1,25 @@
+# Headers for files Cloudflare serves straight from static assets (every prerendered page, images,
+# scripts). Server-rendered routes get theirs from src/middleware.ts.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Strict-Transport-Security: max-age=31536000
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), payment=(self)
+
+# Fingerprinted build output never changes: cache for a year.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*
+  Cache-Control: public, max-age=2592000
+
+# Utility and editor pages: reachable, never indexed.
+/cards
+  X-Robots-Tag: noindex, follow
+/demo-label.html
+  X-Robots-Tag: noindex
+/batch-template.csv
+  X-Robots-Tag: noindex
+/openapi.json
+  X-Robots-Tag: noindex

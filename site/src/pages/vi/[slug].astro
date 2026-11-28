@@ -1,0 +1,40 @@
+---
+// Vietnamese pages, from the `translations.vi` block of a service in src/data/services.ts. A page is
+// built only when its translation is `published` (complete and reviewed by a native speaker), and the
+// English page then gains hreflang links to it. SEO_PREVIEW_DRAFTS=1 builds drafts for review,
+// noindexed and without hreflang.
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import ContentSections from '../../components/seo/ContentSections.astro';
+import Faq from '../../components/seo/Faq.astro';
+import { SERVICES } from '../../data/services';
+import { pathOf, type ServiceEntry, type TranslatedPage } from '../../data/content-types';
+import { store, telHref, directionsUrl } from '../../data/store';
+import { storeTokens, richText, plainText } from '../../lib/richtext';
+import { serviceLd, faqLd } from '../../lib/seo';
+import { routeMeta, previewDrafts } from '../../lib/routes';
+
+export const getStaticPaths = (() => SERVICES.filter((s) => s.translations?.vi && (s.translations.vi.status === 'published' || previewDrafts()))
+  .map((s) => ({ params: { slug: s.translations!.vi!.path.replace(/^\/vi\//, '') }, props: { svc: s, t: s.translations!.vi! } }))) satisfies GetStaticPaths;
+interface Props { svc: ServiceEntry; t: TranslatedPage }
+const { svc, t } = Astro.props;
+const tk = storeTokens(store);
+const meta = routeMeta(t.path)!;
+const faqs = t.faqs.map((f) => ({ q: plainText(f.q, tk), a: plainText(f.a, tk) }));
+const jsonLd = [{ ...serviceLd({ name: meta.h1, description: meta.description, path: t.path }, store), inLanguage: 'vi' }, ...(faqs.length ? [{ ...faqLd(faqs, t.path), inLanguage: 'vi' }] : [])];
+---
+<Base path={t.path} lang="vi" jsonLd={jsonLd} dateModified={t.updated}>
+  <article class="service" lang="vi">
+    <header class="hero svc-hero">
+      <h1>{meta.h1}</h1>
+      <p class="lead" set:html={richText(t.intro, tk)} />
+      <p class="btnrow">
+        <a class="btn" href={telHref()} data-track="phone_click">Gọi {store.phone}</a>
+        <a class="btn kraft" href={directionsUrl()} target="_blank" rel="noopener" data-track="directions_click">Chỉ đường</a>
+      </p>
+      <p class="lang-alt"><a href={pathOf(svc)} hreflang="en" lang="en">Read in English</a></p>
+    </header>
+    <ContentSections sections={t.sections} tokens={tk} />
+    <Faq faqs={t.faqs} tokens={tk} heading="Câu hỏi thường gặp" />
+  </article>
+</Base>
