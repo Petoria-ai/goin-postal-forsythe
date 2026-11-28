@@ -4,6 +4,12 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-27 18:09 CST · To-do: where to pick up the Gelato photos and codes tomorrow
+
+- **Asked for:** "just save this on the to do list when i return tomorrow".
+- **What changed:** P23 in the to-do list now has a "Pick up here" item: press **Find our products' codes** and send Claude the file, then the two ways to get Gelato's photos, then Claude puts in the real codes and the photos.
+- **Files:** [TODO.md](TODO.md)
+
 ## 2026-11-27 18:09 CST · Gelato files keep one whole product, to see if Gelato sends pictures
 
 - **Asked for:** "ok with this api. would u be able to get their photos or what?"
