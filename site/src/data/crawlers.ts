@@ -11,9 +11,9 @@
 //
 // Google-Extended is a special case: it is not a crawler, it is a permission token. Disallowing it
 // keeps the site out of Gemini model training AND out of "grounding" in the Gemini app and Vertex AI
-// (Google's docs bundle the two). It does not affect Google Search or AI Overviews. Decision for
-// Peter and Rin: allow Google-Extended if showing up in Gemini app answers matters more than opting
-// out of Gemini training. Until then it follows `allowTraining`.
+// (Google's docs bundle the two). It does not affect Google Search, AI Overviews or Maps, and local
+// "near me" answers come from the Google Business Profile. Decided Nov 28 2026 (Peter): keep it
+// blocked, since it brings no search benefit. Revisit only if Gemini app citations start to matter.
 //
 // Sources:
 //   OpenAI      https://developers.openai.com/api/docs/bots

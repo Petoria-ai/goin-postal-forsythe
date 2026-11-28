@@ -127,7 +127,8 @@ export const defaults: StoreFacts = {
   profiles: {
     facebook: 'https://www.facebook.com/monroegoinpostal/',
     // Fill in only after each listing is claimed and verified. Blank ones are never shown.
-    googleBusiness: '', googleReview: '', bingPlaces: '', appleBusiness: '', yelp: '', bbb: '',
+    googleBusiness: 'https://share.google/WSq90cS7IAT59Xtjm', // the Business Profile share link Peter sent, Nov 28 2026
+    googleReview: '', // TODO: the "Ask for reviews" link from the Business Profile bingPlaces: '', appleBusiness: '', yelp: '', bbb: '',
     instagram: '', nextdoor: '', upsLocator: '', fedexLocator: '', dhlLocator: '', anytimeMailbox: '',
     other: [],
   },
@@ -165,7 +166,7 @@ export const directionsUrl = (s: StoreFacts = store) => `https://www.google.com/
 export function verifiedProfiles(s: StoreFacts = store): { name: string; url: string }[] {
   const p = s.profiles;
   const named: [string, string | undefined][] = [
-    ['Facebook', p.facebook], ['Google', p.googleBusiness], ['Bing Places', p.bingPlaces], ['Apple Maps', p.appleBusiness],
+    ['Facebook', p.facebook], ['Google Maps', p.googleBusiness], ['Bing Places', p.bingPlaces], ['Apple Maps', p.appleBusiness],
     ['Yelp', p.yelp], ['Better Business Bureau', p.bbb], ['Instagram', p.instagram], ['Nextdoor', p.nextdoor],
     ['UPS location page', p.upsLocator], ['FedEx location page', p.fedexLocator], ['DHL location page', p.dhlLocator],
   ];

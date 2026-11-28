@@ -173,21 +173,23 @@ and P3, not as finished work.
   Setting the switch to `true` restores all of it. Tests cover both states.
 - **Freight, fingerprinting, fax, scanning and custom boxes are confirmed.** Prices are given in person on purpose; those pages invite customers to walk in or call.
 - **Owner priority:** e-commerce and mailboxes come before online shipping. Order the Priority 2 and 3 work accordingly.
+- **Header and home page stay as they are.** Peter will update the "Ship a package" and "About PeterShip" tabs and the home page's PeterShip panel himself as the business changes. Do not hide or restyle them.
+- **Google-Extended stays blocked.** It gives no search benefit: Google Search, AI Overviews, Maps and "near me" answers do not depend on it. Recorded in `src/data/crawlers.ts`.
+- **Google Business Profile exists and is being promoted.** Its share link, `https://share.google/WSq90cS7IAT59Xtjm`, is in `profiles.googleBusiness`. It now appears in the footer as "Google Maps", and in the LocalBusiness `sameAs` and `hasMap`. Optional: swap in the full Google Maps URL, which is more robust than a short link.
 
 ### Still open
-1. **Google-Extended (Gemini).** Blocked now. Plain-language summary given to Peter: "training" means Google using the pages to build future AI models. Local "shipping store near me" answers in Gemini and Google come mostly from the Google Business Profile and Google Search, which this setting does not affect. Allowing it only lets the Gemini app quote the site's pages directly. **Recommendation: allow it** (`allowGoogleExtended: true` in `src/data/crawlers.ts`). Waiting for Peter's yes or no.
-2. **The home page and header still promote online shipping.** The existing header tabs "Ship a package" and "About PeterShip", and the home page's PeterShip hero and sidebar, are original site design, not SEO copy, so they were left alone. Ask whether to hide them while `onlineShipping` is false. While they stay, a visitor can still reach `/ship` and buy a label if the payment keys are set.
-3. **The franchise listing on goinpostal.com:** get the exact URL of the store's location page there. It can go in `profiles.other` as a verified profile (sameAs), and is worth linking until the store has its own domain.
-4. **Domain name to buy**, and whether GP Brands' franchise rules limit domains that use "Goin' Postal".
-5. **Physical mailbox prices** (the register's template prices are placeholders) and the **Anytime Mailbox sign-up link** (`profiles.anytimeMailbox`).
-6. **Exact map pin** (`geo`), payment methods (`paymentAccepted`), holiday closures (`specialHours`).
-7. **Privacy page:** have it reviewed before launch.
+1. **The franchise listing on goinpostal.com:** get the exact URL of the store's location page there. It can go in `profiles.other` as a verified profile.
+2. **Domain name to buy**, and whether GP Brands' franchise rules limit domains that use "Goin' Postal".
+3. **The Business Profile's "Ask for reviews" link** (`profiles.googleReview`). The delivered-package email can then ask for reviews (`reviewUrl`).
+4. **Physical mailbox prices** (the register's template prices are placeholders) and the **Anytime Mailbox sign-up link** (`profiles.anytimeMailbox`).
+5. **Exact map pin** (`geo`), payment methods (`paymentAccepted`), holiday closures (`specialHours`).
+6. **Privacy page:** have it reviewed before launch.
 
 ## Manual actions required from the owners (none block the code)
 
 There is **no Cloudflare account yet**; the site has only been run locally. The code is built for Cloudflare Workers (KV, D1 and assets), and the free plan should cover it. Launch steps, in order:
 
-1. [ ] **Google Business Profile.** Create or claim it now, with the same name, address, phone and hours as `store.ts`. It needs no website and is the biggest single local-search factor. Later, set the website field to the new domain.
+1. [x] **Google Business Profile:** done and being promoted. Make sure its name, address, phone and hours match `store.ts` exactly. On launch day, set its website field to the new domain.
 2. [ ] **Buy a domain.** Check GP Brands' rules on using "Goin' Postal" in it first.
 3. [ ] **Create a Cloudflare account** and connect this GitHub repo (Workers Builds). Create the KV namespace and the D1 database, and paste their ids into `site/wrangler.jsonc` (the `REPLACE_WITH_...` values). Run `npm run db:remote`. Add the domain.
 4. [ ] Set the build variable **`PUBLIC_SITE_URL=https://<the domain>`**. This turns off pre-launch mode.
