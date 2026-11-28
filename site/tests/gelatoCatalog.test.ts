@@ -57,6 +57,17 @@ describe("Gelato's product list (read only)", () => {
     expect(c.errors).toEqual([]);
     expect(c.attributes[0].values).toEqual([{ uid: 'white', title: 'White' }, { uid: 'black', title: 'Black' }]);
   });
+  it('sends filters as attributeFilters, and warns if Gelato ignored them', async () => {
+    const bodies: any[] = [];
+    const f = (async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/catalogs/t-shirts')) return new Response('{"title":"T-shirts","productAttributes":[]}');
+      bodies.push(JSON.parse(String(init?.body)));
+      return new Response(JSON.stringify({ products: [{ productUid: 'a', attributes: { GarmentColor: 'white' } }, { productUid: 'b', attributes: { GarmentColor: 'red' } }] }));
+    }) as typeof fetch;
+    const c = await gelatoCatalog('k', 't-shirts', f, 2000, { GarmentColor: ['white'] });
+    expect(bodies[0]).toEqual({ attributeFilters: { GarmentColor: ['white'] }, limit: 100, offset: 0 });
+    expect(c.errors[0]).toMatch(/1 of 2 products don't match/);
+  });
   it('sends no Content-Type on a plain read', async () => {
     const heads: any[] = [];
     await gelatoCatalogs('k', (async (_u: string, init?: RequestInit) => { heads.push(init?.headers); return new Response('{"data":[]}'); }) as typeof fetch);

@@ -131,11 +131,20 @@ function listOf(x: any, idField: string): any[] {
   if (!x || typeof x !== 'object') return [];
   return Object.entries(x).map(([k, v]) => (v && typeof v === 'object' ? { [idField]: k, ...(v as object) } : { [idField]: k, title: String(v) }));
 }
+/** The searches behind "Find our products' codes": only the variants the print shop sells (printProducts.json), so
+ *  the answer is small even where a catalog is huge (Gelato's t-shirts catalog has over 200,000 codes). */
+export const OUR_SEARCHES: { name: string; catalog: string; filters: Record<string, string[]> }[] = [
+  { name: 'Unisex classic crewneck t-shirt', catalog: 't-shirts', filters: {
+    GarmentCut: ['unisex'], GarmentSubcategory: ['crewneck'], GarmentQuality: ['classic'], GarmentColor: ['white', 'black', 'navy', 'sports-grey'],
+    GarmentSize: ['S', 'M', 'L', 'XL', '2XL', '3XL'], GarmentPrint: ['4-0', '0-4', '4-4'], ProductStatus: ['activated'] } },
+  { name: 'Posters (200 gsm uncoated, portrait)', catalog: 'posters', filters: { UnifiedPaperType: ['200-gsm-80lb-uncoated'], Orientation: ['ver'], ProductStatus: ['activated'] } },
+  { name: 'Flyers (letter and smaller, portrait)', catalog: 'flyers', filters: { PaperFormat: ['LT', 'SM', 'A5', 'A6', 'DL'], Orientation: ['ver'], ProductStatus: ['activated'] } },
+];
 /** Gelato's own catalogs that aren't products (they answer with a server error). */
 export const GELATO_SKIP = new Set(['default', 'default-flat-prices', 'enterprise']);
 /** One catalog: its choices (size, color, ...) and up to `max` products with their codes and choices. Never throws:
  *  what failed is in `errors` (Gelato's own words), and a page size Gelato refuses is retried smaller. */
-export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = fetch, max = 500) {
+export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = fetch, max = 500, filters?: Record<string, string[]>) {
   const get = getter(key, f);
   const base = `${GELATO_PRODUCTS}/catalogs/${encodeURIComponent(uid)}`;
   const errors: string[] = [];
@@ -150,7 +159,7 @@ export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = 
   let hits: any = null; let limit = 100; let done = false;
   for (let offset = 0; offset < max && !done; ) {
     let page: any;
-    try { page = await get(`${base}/products:search`, { method: 'POST', body: JSON.stringify({ limit, offset }) }); }
+    try { page = await get(`${base}/products:search`, { method: 'POST', body: JSON.stringify(filters ? { attributeFilters: filters, limit, offset } : { limit, offset }) }); }
     catch (e: any) {
       if ((e as GelatoError).status === 400 || (e as GelatoError).status === 422) { if (limit > 25) { limit = limit === 100 ? 50 : 25; continue; } }
       errors.push(`products (limit ${limit}, offset ${offset}): ${e.message}`); break;
@@ -159,6 +168,11 @@ export async function gelatoCatalog(key: string, uid: string, f: typeof fetch = 
     const got: any[] = page?.products ?? [];
     for (const p of got) products.push({ uid: String(p.productUid ?? ''), attributes: p.attributes ?? {} });
     offset += limit; done = got.length < limit;
+  }
+  // If Gelato ignored the filters (a different field name), say so rather than pass off the wrong products.
+  if (filters) {
+    const off = products.filter((p) => Object.entries(filters).some(([k, vals]) => p.attributes[k] != null && !vals.includes(String(p.attributes[k]))));
+    if (off.length) errors.push(`filters: ${off.length} of ${products.length} products don't match the filters (Gelato may not have applied them)`);
   }
   return { uid, title: String(c?.title ?? uid), attributes, raw_choices: c?.productAttributes ?? null, products, more: !done && products.length >= max, hits, errors };
 }

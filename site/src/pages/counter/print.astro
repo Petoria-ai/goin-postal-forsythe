@@ -49,7 +49,7 @@ import StaffNav from '../../components/StaffNav.astro';
       <div id="poCatBox" hidden>
         <h4 data-i18n="st.po.cat.h">Gelato's product list</h4>
         <p class="muted small" data-i18n="st.po.cat.p">Reads every product Gelato makes (sizes, colors and product codes) and saves it as a file on this computer. Nothing is ordered, and the key is not in the file, so it's safe to send to Claude.</p>
-        <p class="btnrow"><button type="button" class="btn small" id="poCatBtn" data-i18n="st.po.cat.btn">Download Gelato's product list</button> <span id="poCatMsg" class="muted small"></span></p>
+        <p class="btnrow"><button type="button" class="btn small" id="poCatBtn" data-i18n="st.po.cat.btn">Download Gelato's product list</button> <button type="button" class="btn small kraft" id="poOursBtn" data-i18n="st.po.cat.ours">Find our products' codes</button> <span id="poCatMsg" class="muted small"></span></p>
       </div>
     </div>
   </div>
@@ -149,6 +149,27 @@ import StaffNav from '../../components/StaffNav.astro';
         a.download = `gelato-catalog-${new Date().toISOString().slice(0, 10)}.json`; a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 5000);
         out.textContent = tf('st.po.cat.done', { n: all.length, file: a.download }) + (failed.length ? ` (${failed.length} ✗: ${failed[0].errors[0]})` : '');
+      } catch (e: any) { out.textContent = ''; say(e.message, true); }
+      btn.disabled = false;
+    });
+    // Only the products the print shop sells (a few searches), so the file has the exact codes even where Gelato's
+    // catalog is too big to read whole.
+    $('poOursBtn').addEventListener('click', async () => {
+      const btn = $('poOursBtn') as HTMLButtonElement; const out = $('poCatMsg'); btn.disabled = true;
+      try {
+        const { count } = await api({ action: 'catalog_ours', n: -1 });
+        const searches: any[] = [];
+        for (let n = 0; n < count; n++) {
+          out.textContent = tf('st.po.cat.progress', { n: n + 1, of: count, title: '…' });
+          try { searches.push((await api({ action: 'catalog_ours', n })).search); } catch (e: any) { searches.push({ n, errors: [e.message] }); }
+        }
+        const file = { source: 'Gelato Product API v3 (our products)', saved_at: new Date().toISOString(), searches };
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(file, null, 1)], { type: 'application/json' }));
+        a.download = `gelato-our-products-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+        const bad = searches.filter((s) => s.errors?.length);
+        out.textContent = tf('st.po.cat.done', { n: searches.length, file: a.download }) + (bad.length ? ` (${bad.length} ✗: ${bad[0].errors[0]})` : '');
       } catch (e: any) { out.textContent = ''; say(e.message, true); }
       btn.disabled = false;
     });

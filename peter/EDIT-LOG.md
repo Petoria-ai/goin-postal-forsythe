@@ -4,6 +4,14 @@ Every edit made for Peter, newest first. Times are Central (the store's time zon
 
 ---
 
+## 2026-11-27 18:05 CST · Print orders: a "Find our products' codes" button
+
+- **What happened:** Peter's third download worked: 59 of Gelato's product groups with their sizes, colors and codes (only Gelato's t-shirt group stopped early, on a Gelato server error deep in the list). But Gelato's groups are huge (the t-shirt group alone has over 200,000 codes: every brand, color, size and print spot), and the download reads the first 500 of each, so the exact shirt, poster and flyer we sell weren't in it.
+- **What changed:** a second button, **Find our products' codes**, asks Gelato only for what we sell: the unisex classic crewneck t-shirt in white, black, navy and sport grey, sizes S to 3XL, front, back or both; our portrait posters; and letter-size and smaller flyers. It saves a small file (`gelato-our-products-<date>.json`) to send Claude. If Gelato ever ignores the filters, the file says so instead of passing off the wrong products. One more test (305 pass).
+- **Learned from the file:** what Gelato's API can and can't order is now in the to-do list (P23). Coasters, ornaments, candles, golf balls, lunch boxes, pet products, yard signs and vinyl banners are on Gelato's website but not in its API, so those stay "Ask for a price".
+- **Files:** [site/src/lib/gelato.ts](../site/src/lib/gelato.ts), [site/src/pages/api/print-staff.ts](../site/src/pages/api/print-staff.ts), [site/src/pages/counter/print.astro](../site/src/pages/counter/print.astro), [site/src/i18n/staff3.ts](../site/src/i18n/staff3.ts), [site/tests/gelatoCatalog.test.ts](../site/tests/gelatoCatalog.test.ts), [TODO.md](TODO.md)
+- **How to check it:** `git pull`, restart `npm run dev`, open Print orders with the owner PIN, press **Find our products' codes**, and send Claude the file.
+
 ## 2026-11-27 17:50 CST · Gelato's product list: read Gelato's sizes and colors the way Gelato sends them
 
 - **What happened:** Peter's second download showed Gelato answering for every product group (good news: the key and the addresses are right). Our page then tripped on Gelato's list of sizes and colors, which comes in a different shape than expected, so each group stopped there. Two of Gelato's own groups, "enterprise" and "default-flat-prices", aren't products and answer with a Gelato server error.
