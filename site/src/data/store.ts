@@ -129,7 +129,8 @@ export const defaults: StoreFacts = {
     // Fill in only after each listing is claimed and verified. Blank ones are never shown.
     googleBusiness: 'https://share.google/WSq90cS7IAT59Xtjm', // the Business Profile share link Peter sent, Nov 28 2026
     googleReview: '', // TODO: the "Ask for reviews" link from the Business Profile bingPlaces: '', appleBusiness: '', yelp: '', bbb: '',
-    instagram: '', nextdoor: '', upsLocator: '', fedexLocator: '', dhlLocator: '', anytimeMailbox: '',
+    instagram: '', nextdoor: '', upsLocator: '', fedexLocator: '', dhlLocator: '',
+    anytimeMailbox: 'https://www.anytimemailbox.com/s/monroe-1800-forsythe-avenue', // the store's location page, set up by Peter (Nov 28 2026)
     other: [{ name: "Goin' Postal store page", url: 'https://goinpostal.com/store/GP490.1' }], // the franchise's page for this store, from Peter Nov 28 2026
   },
   logo: '/images/logo.png',

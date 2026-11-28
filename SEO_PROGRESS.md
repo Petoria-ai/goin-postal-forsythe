@@ -176,13 +176,13 @@ and P3, not as finished work.
 - **Header and home page stay as they are.** Peter will update the "Ship a package" and "About PeterShip" tabs and the home page's PeterShip panel himself as the business changes. Do not hide or restyle them.
 - **Google-Extended stays blocked.** It gives no search benefit: Google Search, AI Overviews, Maps and "near me" answers do not depend on it. Recorded in `src/data/crawlers.ts`.
 - **Franchise store page:** `https://goinpostal.com/store/GP490.1` is in `profiles.other`, and is shown in the footer and in `sameAs`.
-- **Virtual mailbox sign-up:** once `profiles.anytimeMailbox` holds the store's Anytime Mailbox location page, a "Sign up online" button appears on `/mailboxes/virtual` automatically (CTA keyword `anytimeMailbox`). While it is blank the button is hidden and the page offers a phone call.
+- **Virtual mailbox sign-up:** `profiles.anytimeMailbox` is `https://www.anytimemailbox.com/s/monroe-1800-forsythe-avenue` (Peter set the location up himself). `/mailboxes/virtual` shows a "Sign up online" button to it (CTA keyword `anytimeMailbox`; the button hides if the link is ever blanked). The page could not be loaded from the build environment, because its network blocks anytimemailbox.com, so Peter is checking it in a private browser window.
 - **Google Business Profile exists and is being promoted.** Its share link, `https://share.google/WSq90cS7IAT59Xtjm`, is in `profiles.googleBusiness`. It now appears in the footer as "Google Maps", and in the LocalBusiness `sameAs` and `hasMap`. Optional: swap in the full Google Maps URL, which is more robust than a short link.
 
 ### Still open
 1. **Domain name to buy**, and whether GP Brands' franchise rules limit domains that use "Goin' Postal".
 2. **The Business Profile's "Ask for reviews" link** (`profiles.googleReview`). The delivered-package email can then ask for reviews (`reviewUrl`).
-3. **Physical mailbox prices** (the register's template prices are placeholders) and the **Anytime Mailbox sign-up link** (`profiles.anytimeMailbox`).
+3. **Physical mailbox prices** (the register's template prices are placeholders).
 4. **Exact map pin** (`geo`), payment methods (`paymentAccepted`), holiday closures (`specialHours`).
 5. **Privacy page:** have it reviewed before launch.
 
